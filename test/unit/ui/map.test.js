@@ -45,14 +45,6 @@ function createStyleSource() {
     };
 }
 
-function createStyleLayer() {
-    return {
-        id: 'background',
-        type: 'background'
-    };
-}
-
-
 test('Map', (t) => {
     t.beforeEach((callback) => {
         window.useFakeXMLHttpRequest();
@@ -362,11 +354,15 @@ test('Map', (t) => {
         t.test('returns the style with added layers', (t) => {
             const style = createStyle();
             const map = createMap({style: style});
+            const layer = {
+                id: 'background',
+                type: 'background'
+            };
 
             map.on('load', () => {
-                map.addLayer(createStyleLayer());
+                map.addLayer(layer);
                 t.deepEqual(map.getStyle(), util.extend(createStyle(), {
-                    layers: [createStyleLayer()]
+                    layers: [layer]
                 }));
                 t.end();
             });
@@ -375,15 +371,19 @@ test('Map', (t) => {
         t.test('returns the style with added source and layer', (t) => {
             const style = createStyle();
             const map = createMap({style: style});
-            const layer = util.extend(createStyleLayer(), {
-                source: createStyleSource()
-            });
+            const source = createStyleSource();
+            const layer = {
+                id: 'fill',
+                type: 'fill',
+                source: 'fill'
+            };
 
             map.on('load', () => {
+                map.addSource('fill', source);
                 map.addLayer(layer);
                 t.deepEqual(map.getStyle(), util.extend(createStyle(), {
-                    sources: {background: createStyleSource()},
-                    layers: [util.extend(createStyleLayer(), {source: 'background'})]
+                    sources: { fill: source },
+                    layers: [layer]
                 }));
                 t.end();
             });
@@ -641,6 +641,24 @@ test('Map', (t) => {
                 [bounds[1][0].toFixed(n), bounds[1][1].toFixed(n)]
             ];
         }
+
+        t.end();
+    });
+
+    t.test('#getMaxBounds', (t) => {
+        t.test('returns null when no bounds set', (t) => {
+            const map = createMap({zoom:0});
+            t.equal(map.getMaxBounds(), null);
+            t.end();
+        });
+
+        t.test('returns bounds', (t) => {
+            const map = createMap({zoom:0});
+            const bounds = [[-130.4297, 50.0642], [-61.52344, 24.20688]];
+            map.setMaxBounds(bounds);
+            t.deepEqual(map.getMaxBounds().toArray(), bounds);
+            t.end();
+        });
 
         t.end();
     });

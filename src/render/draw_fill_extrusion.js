@@ -1,4 +1,3 @@
-'use strict';
 
 const glMatrix = require('@mapbox/gl-matrix');
 const Buffer = require('../data/buffer');
@@ -12,7 +11,9 @@ const vec3 = glMatrix.vec3;
 module.exports = draw;
 
 function draw(painter, source, layer, coords) {
+    if (painter.isOpaquePass) return;
     if (layer.paint['fill-extrusion-opacity'] === 0) return;
+
     const gl = painter.gl;
     gl.disable(gl.STENCIL_TEST);
     gl.enable(gl.DEPTH_TEST);
@@ -102,8 +103,6 @@ function renderTextureToMap(gl, painter, layer, texture) {
 }
 
 function drawExtrusion(painter, source, layer, coord) {
-    if (painter.isOpaquePass) return;
-
     const tile = source.getTile(coord);
     const bucket = tile.getBucket(layer);
     if (!bucket) return;

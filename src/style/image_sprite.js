@@ -1,4 +1,4 @@
-'use strict';
+// @flow
 
 const Evented = require('../util/evented');
 const ajax = require('../util/ajax');
@@ -6,6 +6,13 @@ const browser = require('../util/browser');
 const normalizeURL = require('../util/mapbox').normalizeSpriteURL;
 
 class SpritePosition {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    pixelRatio: number;
+    sdf: boolean;
+
     constructor() {
         this.x = 0;
         this.y = 0;
@@ -17,8 +24,14 @@ class SpritePosition {
 }
 
 class ImageSprite extends Evented {
+    base: string;
+    retina: boolean;
 
-    constructor(base, eventedParent) {
+    data: ?{[string]: SpritePosition};
+    imgData: ?HTMLImageElement;
+    width: ?number;
+
+    constructor(base: string, eventedParent?: Evented) {
         super();
         this.base = base;
         this.retina = browser.devicePixelRatio > 1;
@@ -29,24 +42,22 @@ class ImageSprite extends Evented {
         ajax.getJSON(normalizeURL(base, format, '.json'), (err, data) => {
             if (err) {
                 this.fire('error', {error: err});
-                return;
+            } else if (data) {
+                this.data = (data : any);
+                if (this.imgData) this.fire('data', {dataType: 'style'});
             }
-
-            this.data = data;
-            if (this.imgData) this.fire('data', {dataType: 'style'});
         });
 
         ajax.getImage(normalizeURL(base, format, '.png'), (err, img) => {
             if (err) {
                 this.fire('error', {error: err});
-                return;
+            } else if (img) {
+                this.imgData = browser.getImageData(img);
+
+                this.width = img.width;
+
+                if (this.data) this.fire('data', {dataType: 'style'});
             }
-
-            this.imgData = browser.getImageData(img);
-
-            this.width = img.width;
-
-            if (this.data) this.fire('data', {dataType: 'style'});
         });
     }
 
@@ -70,7 +81,7 @@ class ImageSprite extends Evented {
         }
     }
 
-    getSpritePosition(name) {
+    getSpritePosition(name: string) {
         if (!this.loaded()) return new SpritePosition();
 
         const pos = this.data && this.data[name];

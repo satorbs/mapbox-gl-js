@@ -4,11 +4,11 @@ const Bucket = require('../bucket');
 const createElementArrayType = require('../element_array_type');
 const loadGeometry = require('../load_geometry');
 const EXTENT = require('../extent');
-const vectorTileFeatureTypes = require('vector-tile').VectorTileFeature.types;
+const vectorTileFeatureTypes = require('@mapbox/vector-tile').VectorTileFeature.types;
 
 import type {BucketParameters} from '../bucket';
 import type {ProgramInterface} from '../program_configuration';
-import type Point from 'point-geometry';
+import type Point from '@mapbox/point-geometry';
 import type {Segment} from '../array_group';
 
 // NOTE ON EXTRUDE SCALE:
@@ -96,7 +96,7 @@ class LineBucket extends Bucket {
 
     addFeature(feature: VectorTileFeature) {
         const layout = this.layers[0].layout;
-        const join = layout['line-join'];
+        const join = this.layers[0].getLayoutValue('line-join', {zoom: this.zoom}, feature.properties);
         const cap = layout['line-cap'];
         const miterLimit = layout['line-miter-limit'];
         const roundLimit = layout['line-round-limit'];

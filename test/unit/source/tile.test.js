@@ -61,7 +61,7 @@ test('querySourceFeatures', (t) => {
         geojsonWrapper.name = '_geojsonTileLayer';
         tile.rawTileData = vtpbf({ layers: { '_geojsonTileLayer': geojsonWrapper }});
         result = [];
-        t.doesNotThrow(tile.querySourceFeatures(result));
+        t.doesNotThrow(() => { tile.querySourceFeatures(result); });
         t.equal(result.length, 0);
         t.end();
     });
@@ -192,6 +192,41 @@ test('Tile#redoPlacement', (t) => {
         tile.placementSource.on('data', ()=>{
             if (tile.state === 'loaded') t.end();
         });
+    });
+
+    test('changing cameraToCenterDistance does not trigger placement for low pitch', (t)=>{
+        const tile = new Tile(new TileCoord(1, 1, 1));
+        tile.loadVectorData(createVectorData(), createPainter());
+        t.stub(tile, 'reloadSymbolData').returns(null);
+        const source1 = util.extend(new Evented(), {
+            type: 'vector',
+            dispatcher: {
+                send: (name, data, cb) => {
+                    cb();
+                }
+            },
+            map: {
+                transform: { cameraToCenterDistance: 1, pitch: 10, cameraToTileDistance: () => { return 1; } },
+                painter: { tileExtentVAO: {vao: 0}}
+            }
+        });
+
+        const source2 = util.extend(new Evented(), {
+            type: 'vector',
+            dispatcher: {
+                send: () => {}
+            },
+            map: {
+                transform: { cameraToCenterDistance: 2, pitch: 10, cameraToTileDistance: () => { return 1; } },
+                painter: { tileExtentVAO: {vao: 0}}
+            }
+        });
+
+        tile.redoPlacement(source1);
+        tile.redoPlacement(source2);
+
+        t.ok(tile.state === 'loaded');
+        t.end();
     });
 
     t.end();

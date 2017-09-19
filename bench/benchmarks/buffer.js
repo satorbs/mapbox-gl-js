@@ -24,7 +24,7 @@ module.exports = function run() {
     const evented = new Evented();
 
     const stylesheetURL = `https://api.mapbox.com/styles/v1/mapbox/streets-v9?access_token=${accessToken}`;
-    ajax.getJSON(stylesheetURL, (err, stylesheet) => {
+    ajax.getJSON({ url: stylesheetURL }, (err, stylesheet) => {
         if (err) return evented.fire('error', {error: err});
 
         evented.fire('log', {
@@ -82,6 +82,12 @@ module.exports = function run() {
     return evented;
 };
 
+class StubMap extends Evented {
+    _transformRequest(url) {
+        return { url };
+    }
+}
+
 function preloadAssets(stylesheet, callback) {
     const assets = {
         glyphs: {},
@@ -89,7 +95,7 @@ function preloadAssets(stylesheet, callback) {
         tiles: {}
     };
 
-    const style = new Style(stylesheet);
+    const style = new Style(stylesheet, new StubMap());
 
     style.on('style.load', () => {
         function getGlyphs(params, callback) {
@@ -99,21 +105,21 @@ function preloadAssets(stylesheet, callback) {
             });
         }
 
-        function getIcons(params, callback) {
-            style.getIcons(0, params, (err, icons) => {
+        function getImages(params, callback) {
+            style.getImages(0, params, (err, icons) => {
                 assets.icons[JSON.stringify(params)] = icons;
                 callback(err, icons);
             });
         }
 
         function getTile(url, callback) {
-            ajax.getArrayBuffer(url, (err, response) => {
+            ajax.getArrayBuffer({ url }, (err, response) => {
                 assets.tiles[url] = response.data;
                 callback(err, response.data);
             });
         }
 
-        runSample(stylesheet, getGlyphs, getIcons, getTile, (err) => {
+        runSample(stylesheet, getGlyphs, getImages, getTile, (err) => {
             style._remove();
             callback(err, assets);
         });
@@ -125,7 +131,7 @@ function preloadAssets(stylesheet, callback) {
 
 }
 
-function runSample(stylesheet, getGlyphs, getIcons, getTile, callback) {
+function runSample(stylesheet, getGlyphs, getImages, getTile, callback) {
     const layerIndex = new StyleLayerIndex(deref(stylesheet.layers));
 
     const timeStart = performance.now();
@@ -148,8 +154,8 @@ function runSample(stylesheet, getGlyphs, getIcons, getTile, callback) {
         const actor = {
             send: function(action, params, sendCallback) {
                 setTimeout(() => {
-                    if (action === 'getIcons') {
-                        getIcons(params, sendCallback);
+                    if (action === 'getImages') {
+                        getImages(params, sendCallback);
                     } else if (action === 'getGlyphs') {
                         getGlyphs(params, sendCallback);
                     } else assert(false);

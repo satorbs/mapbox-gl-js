@@ -31,7 +31,7 @@ class TileCoord {
         this.id = ((dim * dim * w + dim * this.y + this.x) * 32) + this.z;
 
         // for caching pos matrix calculation when rendering
-        (this : any).posMatrix = null;
+        (this: any).posMatrix = null;
     }
 
     toString() {
@@ -93,6 +93,19 @@ class TileCoord {
             new TileCoord(z, x, y + 1, this.w),
             new TileCoord(z, x + 1, y + 1, this.w)
         ];
+    }
+
+    scaledTo(targetZ: number, sourceMaxZoom: number) {
+        // the id represents an overscaled tile, return the same coordinates with a lower z
+        if (this.z > sourceMaxZoom) {
+            return new TileCoord(targetZ, this.x, this.y, this.w);
+        }
+
+        if (targetZ <= this.z) {
+            return new TileCoord(targetZ, this.x >> (this.z - targetZ), this.y >> (this.z - targetZ), this.w); // parent or same
+        } else {
+            return new TileCoord(targetZ, this.x << (targetZ - this.z), this.y << (targetZ - this.z), this.w); // child
+        }
     }
 
     static cover(z: number, bounds: [Coordinate, Coordinate, Coordinate, Coordinate],

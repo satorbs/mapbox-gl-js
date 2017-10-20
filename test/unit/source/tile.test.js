@@ -8,10 +8,10 @@ const fs = require('fs');
 const path = require('path');
 const vtpbf = require('vt-pbf');
 const FeatureIndex = require('../../../src/data/feature_index');
-const CollisionTile = require('../../../src/symbol/collision_tile');
+const CollisionIndex = require('../../../src/symbol/collision_index');
+const Transform = require('../../../src/geo/transform');
 const CollisionBoxArray = require('../../../src/symbol/collision_box');
 const util = require('../../../src/util/util');
-const Evented = require('../../../src/util/evented');
 
 test('querySourceFeatures', (t) => {
     const features = [{
@@ -132,100 +132,96 @@ test('querySourceFeatures', (t) => {
     t.end();
 });
 
-test('Tile#redoPlacement', (t) => {
+test('Tile#setMask', (t) => {
 
-    test('redoPlacement on an empty tile', (t) => {
+    t.test('simple mask', (t)=>{
+        const tile = new Tile(0, 0, 0);
+        const gl = require('gl')(10, 10);
+        tile.setMask([new TileCoord(1, 0, 0).id, new TileCoord(1, 1, 1).id], gl);
+        t.deepEqual(tile.mask, [new TileCoord(1, 0, 0).id, new TileCoord(1, 1, 1).id]);
+        t.end();
+    });
+
+    t.test('complex mask', (t) => {
+        const tile = new Tile(0, 0, 0);
+        const gl = require('gl')(10, 10);
+        tile.setMask([new TileCoord(1, 0, 1).id, new TileCoord(1, 1, 0).id, new TileCoord(2, 2, 3).id,
+            new TileCoord(2, 3, 2).id, new TileCoord(3, 6, 7).id, new TileCoord(3, 7, 6).id], gl);
+        t.deepEqual(tile.mask, [new TileCoord(1, 0, 1).id, new TileCoord(1, 1, 0).id, new TileCoord(2, 2, 3).id,
+            new TileCoord(2, 3, 2).id, new TileCoord(3, 6, 7).id, new TileCoord(3, 7, 6).id]);
+        t.end();
+
+    });
+    t.end();
+
+});
+
+test('Tile#isLessThan', (t)=>{
+    t.test('correctly sorts tiles', (t)=>{
+        const tiles = [
+            new TileCoord(9, 146, 195, 0),
+            new TileCoord(9, 147, 195, 0),
+            new TileCoord(9, 148, 195, 0),
+            new TileCoord(9, 149, 195, 0),
+            new TileCoord(9, 144, 196, 1),
+            new TileCoord(9, 145, 196, 0),
+            new TileCoord(9, 146, 196, 0),
+            new TileCoord(9, 147, 196, 1),
+            new TileCoord(9, 145, 194, 0),
+            new TileCoord(9, 149, 196, 0),
+            new TileCoord(10, 293, 391, 0),
+            new TileCoord(10, 291, 390, 0),
+            new TileCoord(10, 293, 390, 1),
+            new TileCoord(10, 294, 390, 0),
+            new TileCoord(10, 295, 390, 0),
+            new TileCoord(10, 291, 391, 0),
+        ];
+
+        const sortedTiles = tiles.sort((a, b) => { return a.isLessThan(b) ? -1 : b.isLessThan(a) ? 1 : 0; });
+
+        t.deepEqual(sortedTiles, [
+            new TileCoord(9, 145, 194, 0),
+            new TileCoord(9, 145, 196, 0),
+            new TileCoord(9, 146, 195, 0),
+            new TileCoord(9, 146, 196, 0),
+            new TileCoord(9, 147, 195, 0),
+            new TileCoord(9, 148, 195, 0),
+            new TileCoord(9, 149, 195, 0),
+            new TileCoord(9, 149, 196, 0),
+            new TileCoord(10, 291, 390, 0),
+            new TileCoord(10, 291, 391, 0),
+            new TileCoord(10, 293, 391, 0),
+            new TileCoord(10, 294, 390, 0),
+            new TileCoord(10, 295, 390, 0),
+            new TileCoord(9, 144, 196, 1),
+            new TileCoord(9, 147, 196, 1),
+            new TileCoord(10, 293, 390, 1)
+        ]);
+        t.end();
+    });
+    t.end();
+});
+
+test('Tile#placeLayer', (t) => {
+    test('placeLayer on an empty tile', (t) => {
         const tile = new Tile(new TileCoord(1, 1, 1));
         tile.loadVectorData(null, createPainter());
 
-        t.doesNotThrow(() => tile.redoPlacement({type: 'vector'}));
-        t.notOk(tile.redoWhenDone);
+        t.doesNotThrow(() => tile.placeLayer(false, new CollisionIndex(new Transform()), {id: 'layer'}));
         t.end();
     });
 
-    test('redoPlacement on a loading tile', (t) => {
+    test('placeLayer on a loading tile', (t) => {
         const tile = new Tile(new TileCoord(1, 1, 1));
-        t.doesNotThrow(() => tile.redoPlacement({type: 'vector'}));
-        t.ok(tile.redoWhenDone);
+        t.doesNotThrow(() => tile.placeLayer(false, new CollisionIndex(new Transform()), {id: 'layer'}));
         t.end();
     });
 
-    test('redoPlacement on a reloading tile', (t) => {
+    test('placeLayer on a reloading tile', (t) => {
         const tile = new Tile(new TileCoord(1, 1, 1));
         tile.loadVectorData(createVectorData(), createPainter());
 
-        const options = {
-            type: 'vector',
-            dispatcher: {
-                send: () => {}
-            },
-            map: {
-                transform: { cameraToCenterDistance: 1, cameraToTileDistance: () => { return 1; } }
-            }
-        };
-
-        tile.redoPlacement(options);
-        tile.redoPlacement(options);
-
-        t.ok(tile.redoWhenDone);
-        t.end();
-    });
-
-    test('reloaded tile fires a data event on completion', (t)=>{
-        const tile = new Tile(new TileCoord(1, 1, 1));
-        tile.loadVectorData(createVectorData(), createPainter());
-        t.stub(tile, 'reloadSymbolData').returns(null);
-        const source = util.extend(new Evented(), {
-            type: 'vector',
-            dispatcher: {
-                send: (name, data, cb) => {
-                    if (name === 'redoPlacement') setTimeout(cb, 300);
-                }
-            },
-            map: {
-                transform: { cameraToCenterDistance: 1, cameraToTileDistance: () => { return 1; } },
-                painter: { tileExtentVAO: {vao: 0}}
-            }
-        });
-
-        tile.redoPlacement(source);
-        tile.placementSource.on('data', ()=>{
-            if (tile.state === 'loaded') t.end();
-        });
-    });
-
-    test('changing cameraToCenterDistance does not trigger placement for low pitch', (t)=>{
-        const tile = new Tile(new TileCoord(1, 1, 1));
-        tile.loadVectorData(createVectorData(), createPainter());
-        t.stub(tile, 'reloadSymbolData').returns(null);
-        const source1 = util.extend(new Evented(), {
-            type: 'vector',
-            dispatcher: {
-                send: (name, data, cb) => {
-                    cb();
-                }
-            },
-            map: {
-                transform: { cameraToCenterDistance: 1, pitch: 10, cameraToTileDistance: () => { return 1; } },
-                painter: { tileExtentVAO: {vao: 0}}
-            }
-        });
-
-        const source2 = util.extend(new Evented(), {
-            type: 'vector',
-            dispatcher: {
-                send: () => {}
-            },
-            map: {
-                transform: { cameraToCenterDistance: 2, pitch: 10, cameraToTileDistance: () => { return 1; } },
-                painter: { tileExtentVAO: {vao: 0}}
-            }
-        });
-
-        tile.redoPlacement(source1);
-        tile.redoPlacement(source2);
-
-        t.ok(tile.state === 'loaded');
+        tile.placeLayer(false, new CollisionIndex(new Transform()), {id: 'layer'});
         t.end();
     });
 
@@ -325,7 +321,6 @@ function createVectorData(options) {
     const collisionBoxArray = new CollisionBoxArray();
     return util.extend({
         collisionBoxArray: collisionBoxArray.serialize(),
-        collisionTile: (new CollisionTile(0, 0, 1, 1, collisionBoxArray)).serialize(),
         featureIndex: (new FeatureIndex(new TileCoord(1, 1, 1))).serialize(),
         buckets: []
     }, options);

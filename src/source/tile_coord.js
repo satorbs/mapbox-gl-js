@@ -4,6 +4,11 @@ const assert = require('assert');
 const WhooTS = require('@mapbox/whoots-js');
 const Coordinate = require('../geo/coordinate');
 
+/**
+ * @module TileCoord
+ * @private
+ */
+
 class TileCoord {
     z: number;
     x: number;
@@ -76,6 +81,20 @@ class TileCoord {
         return new TileCoord(this.z, this.x, this.y, 0);
     }
 
+    isLessThan(rhs: TileCoord) {
+        if (this.w < rhs.w) return true;
+        if (this.w > rhs.w) return false;
+
+        if (this.z < rhs.z) return true;
+        if (this.z > rhs.z) return false;
+
+        if (this.x < rhs.x) return true;
+        if (this.x > rhs.x) return false;
+
+        if (this.y < rhs.y) return true;
+        return false;
+    }
+
     // Return the coordinates of the tile's children
     children(sourceMaxZoom: number) {
 
@@ -106,6 +125,18 @@ class TileCoord {
         } else {
             return new TileCoord(targetZ, this.x << (targetZ - this.z), this.y << (targetZ - this.z), this.w); // child
         }
+    }
+
+    /**
+     * @param {TileCoord} parent TileCoord that is potentially a parent of this TileCoord
+     * @param {number} sourceMaxZoom x and y coordinates only shift with z up to sourceMaxZoom
+     * @returns {boolean} result boolean describing whether or not `child` is a child tile of the root
+     */
+    isChildOf(parent: TileCoord, sourceMaxZoom: number) {
+        const parentZ = Math.min(sourceMaxZoom, parent.z);
+        const childZ = Math.min(sourceMaxZoom, this.z);
+        // We're first testing for z == 0, to avoid a 32 bit shift, which is undefined.
+        return parent.z === 0 || (parent.z < this.z && parent.x === (this.x >> (childZ - parentZ)) && parent.y === (this.y >> (childZ - parentZ)));
     }
 
     static cover(z: number, bounds: [Coordinate, Coordinate, Coordinate, Coordinate],

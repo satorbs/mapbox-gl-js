@@ -7,7 +7,7 @@ const VertexBuffer = require('../gl/vertex_buffer');
 import type StyleLayer from '../style/style_layer';
 import type {ViewType, StructArray, SerializedStructArray, StructArrayTypeParameters} from '../util/struct_array';
 import type Program from '../render/program';
-import type {Feature} from '../style-spec/function';
+import type {Feature} from '../style-spec/expression';
 
 type LayoutAttribute = {
     name: string,
@@ -29,6 +29,8 @@ export type ProgramInterface = {
     layoutAttributes: Array<LayoutAttribute>,
     indexArrayType: Class<StructArray>,
     dynamicLayoutAttributes?: Array<LayoutAttribute>,
+    opacityAttributes?: Array<LayoutAttribute>,
+    collisionAttributes?: Array<LayoutAttribute>,
     paintAttributes?: Array<PaintAttribute>,
     indexArrayType2?: Class<StructArray>
 }
@@ -108,7 +110,7 @@ class SourceFunctionBinder implements Binder {
                        start: number,
                        length: number,
                        feature: Feature) {
-        const value = layer.getPaintValue(this.property, undefined, feature);
+        const value = layer.getPaintValue(this.property, {zoom: 0}, feature);
 
         if (this.type === 'color') {
             const color = packColor(value);
@@ -362,7 +364,7 @@ class ProgramConfiguration {
 class ProgramConfigurationSet {
     programConfigurations: {[string]: ProgramConfiguration};
 
-    constructor(programInterface: ProgramInterface, layers: Array<StyleLayer>, zoom: number, arrays?: {+[string]: ?SerializedProgramConfiguration}) {
+    constructor(programInterface: ProgramInterface, layers: $ReadOnlyArray<StyleLayer>, zoom: number, arrays?: {+[string]: ?SerializedProgramConfiguration}) {
         this.programConfigurations = {};
         if (arrays) {
             for (const layer of layers) {

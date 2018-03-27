@@ -1,14 +1,11 @@
-/* global process, __dirname */
-'use strict';
-
-const t = require('mapbox-gl-js-test').test,
-    fs = require('fs'),
-    glob = require('glob'),
-    spec = require('../../../src/style-spec'),
-    path = require('path'),
-    validate = require('../../../src/style-spec').validate,
-    v8 = require('../../../src/style-spec/reference/v8'),
-    migrate = require('../../../src/style-spec').migrate;
+import { test as t } from 'mapbox-gl-js-test';
+import fs from 'fs';
+import glob from 'glob';
+import spec from '../../../src/style-spec/style-spec';
+import path from 'path';
+import validate from '../../../src/style-spec/validate_style';
+import v8 from '../../../src/style-spec/reference/v8';
+import migrate from '../../../src/style-spec/migrate';
 
 const UPDATE = !!process.env.UPDATE;
 
@@ -19,8 +16,10 @@ t('does not migrate from version 5', (t) => {
     t.end();
 });
 
-t('migrates to latest version from version 6', (t) => {
-    t.deepEqual(migrate({version: 6, layers: []}).version, spec.latest.$version);
+t('does not migrate from version 6', (t) => {
+    t.throws(() => {
+        migrate({version: 6, layers: []});
+    }, new Error('cannot migrate from', 6));
     t.end();
 });
 

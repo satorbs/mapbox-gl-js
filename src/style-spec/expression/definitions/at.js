@@ -1,12 +1,8 @@
 // @flow
 
-const {
-    array,
-    ValueType,
-    NumberType
-} = require('../types');
+import { array, ValueType, NumberType } from '../types';
 
-const RuntimeError = require('../runtime_error');
+import RuntimeError from '../runtime_error';
 
 import type { Expression } from '../expression';
 import type ParsingContext from '../parsing_context';
@@ -15,13 +11,11 @@ import type { Type, ArrayType } from '../types';
 import type { Value } from '../values';
 
 class At implements Expression {
-    key: string;
     type: Type;
     index: Expression;
     input: Expression;
 
-    constructor(key: string, type: Type, index: Expression, input: Expression) {
-        this.key = key;
+    constructor(type: Type, index: Expression, input: Expression) {
         this.type = type;
         this.index = index;
         this.input = input;
@@ -37,15 +31,19 @@ class At implements Expression {
         if (!index || !input) return null;
 
         const t: ArrayType = (input.type: any);
-        return new At(context.key, t.itemType, index, input);
+        return new At(t.itemType, index, input);
     }
 
     evaluate(ctx: EvaluationContext) {
         const index = ((this.index.evaluate(ctx): any): number);
         const array = ((this.input.evaluate(ctx): any): Array<Value>);
 
-        if (index < 0 || index >= array.length) {
-            throw new RuntimeError(`Array index out of bounds: ${index} > ${array.length}.`);
+        if (index < 0) {
+            throw new RuntimeError(`Array index out of bounds: ${index} < 0.`);
+        }
+
+        if (index >= array.length) {
+            throw new RuntimeError(`Array index out of bounds: ${index} > ${array.length - 1}.`);
         }
 
         if (index !== Math.floor(index)) {
@@ -59,6 +57,10 @@ class At implements Expression {
         fn(this.index);
         fn(this.input);
     }
+
+    possibleOutputs() {
+        return [undefined];
+    }
 }
 
-module.exports = At;
+export default At;

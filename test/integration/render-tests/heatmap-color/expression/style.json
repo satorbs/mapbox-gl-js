@@ -3,7 +3,8 @@
   "metadata": {
     "test": {
       "height": 64,
-      "width": 256
+      "width": 256,
+      "description": "Contains two expected images (for ubyte-based rendering and half-float-based); one of them should pass depending on platform."
     }
   },
   "center": [
@@ -35,7 +36,7 @@
       "source-layer": "poi_label",
       "paint": {
         "heatmap-color": [
-          "curve",
+          "interpolate",
           ["linear"],
           ["heatmap-density"],
           0, "rgba(0, 0, 255, 0)",

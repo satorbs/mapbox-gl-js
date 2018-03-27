@@ -1,14 +1,12 @@
-'use strict';
-
-const test = require('mapbox-gl-js-test').test;
-const fs = require('fs');
-const path = require('path');
-const Protobuf = require('pbf');
-const VectorTile = require('@mapbox/vector-tile').VectorTile;
-const Point = require('@mapbox/point-geometry');
-const segment = require('../../../src/data/segment');
-const FillBucket = require('../../../src/data/bucket/fill_bucket');
-const StyleLayer = require('../../../src/style/style_layer');
+import { test } from 'mapbox-gl-js-test';
+import fs from 'fs';
+import path from 'path';
+import Protobuf from 'pbf';
+import { VectorTile } from '@mapbox/vector-tile';
+import Point from '@mapbox/point-geometry';
+import segment from '../../../src/data/segment';
+import FillBucket from '../../../src/data/bucket/fill_bucket';
+import FillStyleLayer from '../../../src/style/style_layer/fill_style_layer';
 
 // Load a fill feature from fixture tile.
 const vt = new VectorTile(new Protobuf(fs.readFileSync(path.join(__dirname, '/../../fixtures/mbsv5-6-18-23.vector.pbf'))));
@@ -23,7 +21,9 @@ function createPolygon(numPoints) {
 }
 
 test('FillBucket', (t) => {
-    const layer = new StyleLayer({ id: 'test', type: 'fill', layout: {} });
+    const layer = new FillStyleLayer({ id: 'test', type: 'fill', layout: {} });
+    layer.recalculate({zoom: 0, zoomHistory: {}});
+
     const bucket = new FillBucket({ layers: [layer] });
 
     bucket.addFeature({}, [[
@@ -47,7 +47,7 @@ test('FillBucket segmentation', (t) => {
     // breaking across array groups without tests taking a _long_ time.
     t.stub(segment, 'MAX_VERTEX_ARRAY_LENGTH').value(256);
 
-    const layer = new StyleLayer({
+    const layer = new FillStyleLayer({
         id: 'test',
         type: 'fill',
         layout: {},
@@ -55,10 +55,7 @@ test('FillBucket segmentation', (t) => {
             'fill-color': ['to-color', ['get', 'foo'], '#000']
         }
     });
-
-    // this, plus the style function, sets things up so that
-    // populatePaintArrays iterates through each vertex
-    layer.updatePaintTransition('fill-color', [], {});
+    layer.recalculate({zoom: 0, zoomHistory: {}});
 
     const bucket = new FillBucket({ layers: [layer] });
 

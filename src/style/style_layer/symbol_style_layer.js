@@ -1,56 +1,71 @@
 // @flow
 
-const StyleLayer = require('../style_layer');
-const SymbolBucket = require('../../data/bucket/symbol_bucket');
-const assert = require('assert');
+import StyleLayer from '../style_layer';
 
-import type {Feature, GlobalProperties} from '../../style-spec/expression';
+import SymbolBucket from '../../data/bucket/symbol_bucket';
+import resolveTokens from '../../util/token';
+import { isExpression } from '../../style-spec/expression';
+import assert from 'assert';
+import properties from './symbol_style_layer_properties';
+import { Transitionable, Transitioning, Layout, PossiblyEvaluated } from '../properties';
+
 import type {BucketParameters} from '../../data/bucket';
+import type {LayoutProps, PaintProps} from './symbol_style_layer_properties';
+import type {Feature} from '../../style-spec/expression';
+import type EvaluationParameters from '../evaluation_parameters';
 
 class SymbolStyleLayer extends StyleLayer {
+    _unevaluatedLayout: Layout<LayoutProps>;
+    layout: PossiblyEvaluated<LayoutProps>;
 
-    getLayoutValue(name: string, globals: GlobalProperties, feature?: Feature): any {
-        const value = super.getLayoutValue(name, globals, feature);
-        if (value !== 'auto') {
-            return value;
+    _transitionablePaint: Transitionable<PaintProps>;
+    _transitioningPaint: Transitioning<PaintProps>;
+    paint: PossiblyEvaluated<PaintProps>;
+
+    constructor(layer: LayerSpecification) {
+        super(layer, properties);
+    }
+
+    recalculate(parameters: EvaluationParameters) {
+        super.recalculate(parameters);
+
+        if (this.layout.get('icon-rotation-alignment') === 'auto') {
+            if (this.layout.get('symbol-placement') === 'line') {
+                this.layout._values['icon-rotation-alignment'] = 'map';
+            } else {
+                this.layout._values['icon-rotation-alignment'] = 'viewport';
+            }
         }
 
-        switch (name) {
-        case 'text-rotation-alignment':
-        case 'icon-rotation-alignment':
-            return this.getLayoutValue('symbol-placement', globals, feature) === 'line' ? 'map' : 'viewport';
-        case 'text-pitch-alignment':
-            return this.getLayoutValue('text-rotation-alignment', globals, feature);
-        case 'icon-pitch-alignment':
-            return this.getLayoutValue('icon-rotation-alignment', globals, feature);
-        default:
-            return value;
+        if (this.layout.get('text-rotation-alignment') === 'auto') {
+            if (this.layout.get('symbol-placement') === 'line') {
+                this.layout._values['text-rotation-alignment'] = 'map';
+            } else {
+                this.layout._values['text-rotation-alignment'] = 'viewport';
+            }
+        }
+
+        // If unspecified, `*-pitch-alignment` inherits `*-rotation-alignment`
+        if (this.layout.get('text-pitch-alignment') === 'auto') {
+            this.layout._values['text-pitch-alignment'] = this.layout.get('text-rotation-alignment');
+        }
+        if (this.layout.get('icon-pitch-alignment') === 'auto') {
+            this.layout._values['icon-pitch-alignment'] = this.layout.get('icon-rotation-alignment');
         }
     }
 
-    getLayoutDeclaration(name: string) {
-        return this._layoutDeclarations[name];
+    getValueAndResolveTokens(name: *, feature: Feature) {
+        const value = this.layout.get(name).evaluate(feature);
+        const unevaluated = this._unevaluatedLayout._values[name];
+        if (!unevaluated.isDataDriven() && !isExpression(unevaluated.value)) {
+            return resolveTokens(feature.properties, value);
+        }
+
+        return value;
     }
 
-    isLayoutValueFeatureConstant(name: string) {
-        const declaration = this._layoutDeclarations[name];
-        return !declaration || declaration.expression.isFeatureConstant;
-    }
-
-    isLayoutValueZoomConstant(name: string) {
-        const declaration = this._layoutDeclarations[name];
-        return !declaration || declaration.expression.isZoomConstant;
-    }
-
-    createBucket(parameters: BucketParameters) {
-        // Eventually we need to make SymbolBucket conform to the Bucket interface.
-        // Hack around it with casts for now.
-        return (new SymbolBucket((parameters: any)): any);
-    }
-
-    isOpacityZero(zoom: number, property: string) {
-        return this.isPaintValueFeatureConstant(property) &&
-            this.getPaintValue(property, { zoom: zoom }) === 0;
+    createBucket(parameters: BucketParameters<*>) {
+        return new SymbolBucket(parameters);
     }
 
     queryRadius(): number {
@@ -63,4 +78,4 @@ class SymbolStyleLayer extends StyleLayer {
     }
 }
 
-module.exports = SymbolStyleLayer;
+export default SymbolStyleLayer;

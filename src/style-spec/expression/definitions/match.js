@@ -1,7 +1,8 @@
 // @flow
 
-const assert = require('assert');
-const { typeOf } = require('../values');
+import assert from 'assert';
+
+import { typeOf } from '../values';
 
 import type { Expression } from '../expression';
 import type ParsingContext from '../parsing_context';
@@ -12,7 +13,6 @@ import type { Type } from '../types';
 type Cases = {[number | string]: number};
 
 class Match implements Expression {
-    key: string;
     type: Type;
     inputType: Type;
 
@@ -21,8 +21,7 @@ class Match implements Expression {
     outputs: Array<Expression>;
     otherwise: Expression;
 
-    constructor(key: string, inputType: Type, outputType: Type, input: Expression, cases: Cases, outputs: Array<Expression>, otherwise: Expression) {
-        this.key = key;
+    constructor(inputType: Type, outputType: Type, input: Expression, cases: Cases, outputs: Array<Expression>, otherwise: Expression) {
         this.inputType = inputType;
         this.type = outputType;
         this.input = input;
@@ -92,7 +91,7 @@ class Match implements Expression {
         if (!otherwise) return null;
 
         assert(inputType && outputType);
-        return new Match(context.key, (inputType: any), (outputType: any), input, cases, outputs, otherwise);
+        return new Match((inputType: any), (outputType: any), input, cases, outputs, otherwise);
     }
 
     evaluate(ctx: EvaluationContext) {
@@ -105,6 +104,12 @@ class Match implements Expression {
         this.outputs.forEach(fn);
         fn(this.otherwise);
     }
+
+    possibleOutputs() {
+        return []
+            .concat(...this.outputs.map((out) => out.possibleOutputs()))
+            .concat(this.otherwise.possibleOutputs());
+    }
 }
 
-module.exports = Match;
+export default Match;

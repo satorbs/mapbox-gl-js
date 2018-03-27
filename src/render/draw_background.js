@@ -1,51 +1,59 @@
 // @flow
 
-const pattern = require('./pattern');
+import {
+    isPatternMissing,
+    setPatternUniforms,
+    prepare as preparePattern
+} from './pattern';
+
+import StencilMode from '../gl/stencil_mode';
+import DepthMode from '../gl/depth_mode';
 
 import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
 import type BackgroundStyleLayer from '../style/style_layer/background_style_layer';
 
-module.exports = drawBackground;
+export default drawBackground;
 
 function drawBackground(painter: Painter, sourceCache: SourceCache, layer: BackgroundStyleLayer) {
-    if (layer.isOpacityZero(painter.transform.zoom)) return;
+    const color = layer.paint.get('background-color');
+    const opacity = layer.paint.get('background-opacity');
 
-    const gl = painter.gl;
+    if (opacity === 0) return;
+
+    const context = painter.context;
+    const gl = context.gl;
     const transform = painter.transform;
     const tileSize = transform.tileSize;
-    const color = layer.paint['background-color'];
-    const image = layer.paint['background-pattern'];
-    const opacity = layer.paint['background-opacity'];
+    const image = layer.paint.get('background-pattern');
 
-    const pass = (!image && color[3] === 1 && opacity === 1) ? 'opaque' : 'translucent';
+    const pass = (!image && color.a === 1 && opacity === 1) ? 'opaque' : 'translucent';
     if (painter.renderPass !== pass) return;
 
-    gl.disable(gl.STENCIL_TEST);
-
-    painter.setDepthSublayer(0);
+    context.setStencilMode(StencilMode.disabled);
+    context.setDepthMode(painter.depthModeForSublayer(0, pass === 'opaque' ? DepthMode.ReadWrite : DepthMode.ReadOnly));
+    context.setColorMode(painter.colorModeForRenderPass());
 
     let program;
     if (image) {
-        if (pattern.isPatternMissing(image, painter)) return;
-        program = painter.useProgram('fillPattern', painter.basicFillProgramConfiguration);
-        pattern.prepare(image, painter, program);
-        painter.tileExtentPatternVAO.bind(gl, program, painter.tileExtentBuffer);
+        if (isPatternMissing(image, painter)) return;
+        program = painter.useProgram('backgroundPattern');
+        preparePattern(image, painter, program);
+        painter.tileExtentPatternVAO.bind(context, program, painter.tileExtentBuffer, []);
     } else {
-        program = painter.useProgram('fill', painter.basicFillProgramConfiguration);
-        gl.uniform4fv(program.uniforms.u_color, color);
-        painter.tileExtentVAO.bind(gl, program, painter.tileExtentBuffer);
+        program = painter.useProgram('background');
+        gl.uniform4fv(program.uniforms.u_color, [color.r, color.g, color.b, color.a]);
+        painter.tileExtentVAO.bind(context, program, painter.tileExtentBuffer, []);
     }
 
     gl.uniform1f(program.uniforms.u_opacity, opacity);
+    const tileIDs = transform.coveringTiles({tileSize});
 
-    const coords = transform.coveringTiles({tileSize});
-
-    for (const coord of coords) {
+    for (const tileID of tileIDs) {
         if (image) {
-            pattern.setTile({coord, tileSize}, painter, program);
+            setPatternUniforms({tileID, tileSize}, painter, program);
         }
-        gl.uniformMatrix4fv(program.uniforms.u_matrix, false, painter.transform.calculatePosMatrix(coord));
+        gl.uniformMatrix4fv(program.uniforms.u_matrix, false, painter.transform.calculatePosMatrix(tileID.toUnwrapped()));
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, painter.tileExtentBuffer.length);
     }
 }

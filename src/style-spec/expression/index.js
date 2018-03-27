@@ -1,21 +1,27 @@
 // @flow
 
-const assert = require('assert');
-const ParsingError = require('./parsing_error');
-const ParsingContext = require('./parsing_context');
-const EvaluationContext = require('./evaluation_context');
-const {CompoundExpression} = require('./compound_expression');
-const Curve = require('./definitions/curve');
-const Coalesce = require('./definitions/coalesce');
-const Let = require('./definitions/let');
-const definitions = require('./definitions');
-const isConstant = require('./is_constant');
-const {unwrap} = require('./values');
+import assert from 'assert';
+
+import extend from '../util/extend';
+import ParsingError from './parsing_error';
+import ParsingContext from './parsing_context';
+import EvaluationContext from './evaluation_context';
+import CompoundExpression from './compound_expression';
+import Step from './definitions/step';
+import Interpolate from './definitions/interpolate';
+import Coalesce from './definitions/coalesce';
+import Let from './definitions/let';
+import definitions from './definitions';
+import * as isConstant from './is_constant';
+import RuntimeError from './runtime_error';
+import { success, error } from '../util/result';
 
 import type {Type} from './types';
 import type {Value} from './values';
 import type {Expression} from './expression';
-import type {InterpolationType} from './definitions/curve';
+import type {StylePropertySpecification} from '../style-spec';
+import type {Result} from '../util/result';
+import type {InterpolationType} from './definitions/interpolate';
 
 export type Feature = {
     +type: 1 | 2 | 3 | 'Unknown' | 'Point' | 'MultiPoint' | 'LineString' | 'MultiLineString' | 'Polygon' | 'MultiPolygon',
@@ -28,80 +34,64 @@ export type GlobalProperties = {
     heatmapDensity?: number
 };
 
-export type StyleExpressionContext = 'property' | 'filter';
+export class StyleExpression {
+    expression: Expression;
 
-export type StyleExpressionErrors = {
-    result: 'error',
-    errors: Array<ParsingError>
-};
+    _evaluator: EvaluationContext;
+    _defaultValue: Value;
+    _warningHistory: {[key: string]: boolean};
+    _enumValues: {[string]: any};
 
-type ZoomConstantExpression = {
-    result: 'success',
-    context: StyleExpressionContext,
-    isZoomConstant: true,
-    isFeatureConstant: boolean,
-    evaluate: (globals: GlobalProperties, feature?: Feature) => any,
-    // parsed: Expression
-};
+    constructor(expression: Expression, propertySpec: StylePropertySpecification) {
+        this.expression = expression;
+        this._warningHistory = {};
+        this._defaultValue = getDefaultValue(propertySpec);
+        if (propertySpec.type === 'enum') {
+            this._enumValues = propertySpec.values;
+        }
+    }
 
-export type StyleDeclarationExpression = ZoomConstantExpression | {
-    result: 'success',
-    context: 'property',
-    isZoomConstant: false,
-    isFeatureConstant: boolean,
-    evaluate: (globals: GlobalProperties, feature?: Feature) => any,
-    // parsed: Expression,
-    interpolation: InterpolationType,
-    zoomStops: Array<number>
-};
+    evaluateWithoutErrorHandling(globals: GlobalProperties, feature?: Feature): any {
+        if (!this._evaluator) {
+            this._evaluator = new EvaluationContext();
+        }
 
-export type StyleFilterExpression = ZoomConstantExpression | {
-    result: 'success',
-    context: 'filter',
-    isZoomConstant: false,
-    isFeatureConstant: boolean,
-    evaluate: (GlobalProperties, feature?: Feature) => any,
-    // parsed: Expression,
-};
+        this._evaluator.globals = globals;
+        this._evaluator.feature = feature;
 
-export type StyleExpression = StyleDeclarationExpression | StyleFilterExpression;
+        return this.expression.evaluate(this._evaluator);
+    }
 
-export type StylePropertySpecification = {
-    type: 'number',
-    'function': boolean,
-    'property-function': boolean,
-    default?: number
-} | {
-    type: 'string',
-    'function': boolean,
-    'property-function': boolean,
-    default?: string
-} | {
-    type: 'boolean',
-    'function': boolean,
-    'property-function': boolean,
-    default?: boolean
-} | {
-    type: 'enum',
-    'function': boolean,
-    'property-function': boolean,
-    values: {[string]: {}},
-    default?: string
-} | {
-    type: 'array',
-    'function': boolean,
-    'property-function': boolean,
-    value: 'number' | 'string' | 'boolean',
-    length?: number,
-    default?: Array<Value>
-} | {
-    type: 'color',
-    'function': boolean,
-    'property-function': boolean,
-    default?: string
-};
+    evaluate(globals: GlobalProperties, feature?: Feature): any {
+        if (!this._evaluator) {
+            this._evaluator = new EvaluationContext();
+        }
 
-function isExpression(expression: mixed) {
+        this._evaluator.globals = globals;
+        this._evaluator.feature = feature;
+
+        try {
+            const val = this.expression.evaluate(this._evaluator);
+            if (val === null || val === undefined) {
+                return this._defaultValue;
+            }
+            if (this._enumValues && !(val in this._enumValues)) {
+                throw new RuntimeError(`Expected value to be one of ${Object.keys(this._enumValues).map(v => JSON.stringify(v)).join(', ')}, but found ${JSON.stringify(val)} instead.`);
+            }
+            return val;
+        } catch (e) {
+            if (!this._warningHistory[e.message]) {
+                this._warningHistory[e.message] = true;
+                if (typeof console !== 'undefined') {
+                    console.warn(e.message);
+                }
+            }
+            return this._defaultValue;
+        }
+    }
+}
+
+export function isExpression(expression: mixed) {
     return Array.isArray(expression) && expression.length > 0 &&
         typeof expression[0] === 'string' && expression[0] in definitions;
 }
@@ -115,164 +105,234 @@ function isExpression(expression: mixed) {
  *
  * @private
  */
-function createExpression(expression: mixed,
-                          propertySpec: StylePropertySpecification,
-                          context: StyleExpressionContext,
-                          options: {handleErrors?: boolean} = {}): StyleExpressionErrors | StyleExpression {
+export function createExpression(expression: mixed, propertySpec: StylePropertySpecification): Result<StyleExpression, Array<ParsingError>> {
     const parser = new ParsingContext(definitions, [], getExpectedType(propertySpec));
     const parsed = parser.parse(expression);
     if (!parsed) {
         assert(parser.errors.length > 0);
-        return {
-            result: 'error',
-            errors: parser.errors
-        };
+        return error(parser.errors);
     }
 
-    const evaluator = new EvaluationContext();
+    return success(new StyleExpression(parsed, propertySpec));
+}
 
-    let evaluate;
-    if (options.handleErrors === false) {
-        evaluate = function (globals, feature) {
-            evaluator.globals = globals;
-            evaluator.feature = feature;
-            return parsed.evaluate(evaluator);
-        };
-    } else {
-        const warningHistory: {[key: string]: boolean} = {};
-        const defaultValue = getDefaultValue(propertySpec);
-        evaluate = function (globals, feature) {
-            evaluator.globals = globals;
-            evaluator.feature = feature;
-            try {
-                const val = parsed.evaluate(evaluator);
-                if (val === null || val === undefined) {
-                    return unwrap(defaultValue);
-                }
-                return unwrap(val);
-            } catch (e) {
-                if (!warningHistory[e.message]) {
-                    warningHistory[e.message] = true;
-                    if (typeof console !== 'undefined') {
-                        console.warn(e.message);
-                    }
-                }
-                return unwrap(defaultValue);
-            }
-        };
+export class ZoomConstantExpression<Kind> {
+    kind: Kind;
+    _styleExpression: StyleExpression;
+
+    constructor(kind: Kind, expression: StyleExpression) {
+        this.kind = kind;
+        this._styleExpression = expression;
     }
+
+    evaluateWithoutErrorHandling(globals: GlobalProperties, feature?: Feature): any {
+        return this._styleExpression.evaluateWithoutErrorHandling(globals, feature);
+    }
+
+    evaluate(globals: GlobalProperties, feature?: Feature): any {
+        return this._styleExpression.evaluate(globals, feature);
+    }
+}
+
+export class ZoomDependentExpression<Kind> {
+    kind: Kind;
+    zoomStops: Array<number>;
+
+    _styleExpression: StyleExpression;
+    _interpolationType: ?InterpolationType;
+
+    constructor(kind: Kind, expression: StyleExpression, zoomCurve: Step | Interpolate) {
+        this.kind = kind;
+        this.zoomStops = zoomCurve.labels;
+        this._styleExpression = expression;
+        if (zoomCurve instanceof Interpolate) {
+            this._interpolationType = zoomCurve.interpolation;
+        }
+    }
+
+    evaluateWithoutErrorHandling(globals: GlobalProperties, feature?: Feature): any {
+        return this._styleExpression.evaluateWithoutErrorHandling(globals, feature);
+    }
+
+    evaluate(globals: GlobalProperties, feature?: Feature): any {
+        return this._styleExpression.evaluate(globals, feature);
+    }
+
+    interpolationFactor(input: number, lower: number, upper: number): number {
+        if (this._interpolationType) {
+            return Interpolate.interpolationFactor(this._interpolationType, input, lower, upper);
+        } else {
+            return 0;
+        }
+    }
+}
+
+export type ConstantExpression = {
+    kind: 'constant',
+    +evaluate: (globals: GlobalProperties, feature?: Feature) => any,
+}
+
+export type SourceExpression = {
+    kind: 'source',
+    +evaluate: (globals: GlobalProperties, feature?: Feature) => any,
+};
+
+export type CameraExpression = {
+    kind: 'camera',
+    +evaluate: (globals: GlobalProperties, feature?: Feature) => any,
+    +interpolationFactor: (input: number, lower: number, upper: number) => number,
+    zoomStops: Array<number>
+};
+
+export type CompositeExpression = {
+    kind: 'composite',
+    +evaluate: (globals: GlobalProperties, feature?: Feature) => any,
+    +interpolationFactor: (input: number, lower: number, upper: number) => number,
+    zoomStops: Array<number>
+};
+
+export type StylePropertyExpression =
+    | ConstantExpression
+    | SourceExpression
+    | CameraExpression
+    | CompositeExpression;
+
+export function createPropertyExpression(expression: mixed, propertySpec: StylePropertySpecification): Result<StylePropertyExpression, Array<ParsingError>> {
+    expression = createExpression(expression, propertySpec);
+    if (expression.result === 'error') {
+        return expression;
+    }
+
+    const parsed = expression.value.expression;
 
     const isFeatureConstant = isConstant.isFeatureConstant(parsed);
-    if (!isFeatureConstant && context === 'property' && !propertySpec['property-function']) {
-        return {
-            result: 'error',
-            errors: [new ParsingError('', 'property expressions not supported')]
-        };
+    if (!isFeatureConstant && !propertySpec['property-function']) {
+        return error([new ParsingError('', 'property expressions not supported')]);
     }
 
     const isZoomConstant = isConstant.isGlobalPropertyConstant(parsed, ['zoom']);
-    if (isZoomConstant) {
-        return {
-            result: 'success',
-            context: context,
-            isZoomConstant: true,
-            isFeatureConstant,
-            evaluate,
-            parsed
-        };
-    } else if (context === 'filter') {
-        return {
-            result: 'success',
-            context: 'filter',
-            isZoomConstant: false,
-            isFeatureConstant,
-            evaluate,
-            parsed
-        };
+    if (!isZoomConstant && propertySpec['zoom-function'] === false) {
+        return error([new ParsingError('', 'zoom expressions not supported')]);
     }
 
     const zoomCurve = findZoomCurve(parsed);
-    if (!zoomCurve) {
-        return {
-            result: 'error',
-            errors: [new ParsingError('', '"zoom" expression may only be used as input to a top-level "curve" expression.')]
-        };
-    } else if (!(zoomCurve instanceof Curve)) {
-        return {
-            result: 'error',
-            errors: [new ParsingError(zoomCurve.key, zoomCurve.error)]
-        };
-    } else if (zoomCurve.interpolation.name !== 'step' && propertySpec['function'] === 'piecewise-constant') {
-        return {
-            result: 'error',
-            errors: [new ParsingError(zoomCurve.key, 'interpolation type must be "step" for this property')]
-        };
+    if (!zoomCurve && !isZoomConstant) {
+        return error([new ParsingError('', '"zoom" expression may only be used as input to a top-level "step" or "interpolate" expression.')]);
+    } else if (zoomCurve instanceof ParsingError) {
+        return error([zoomCurve]);
+    } else if (zoomCurve instanceof Interpolate && propertySpec['function'] === 'piecewise-constant') {
+        return error([new ParsingError('', '"interpolate" expressions cannot be used with this property')]);
     }
 
-    return {
-        result: 'success',
-        context: 'property',
-        isZoomConstant: false,
-        isFeatureConstant,
-        evaluate,
-        parsed,
+    if (!zoomCurve) {
+        return success(isFeatureConstant ?
+            (new ZoomConstantExpression('constant', expression.value): ConstantExpression) :
+            (new ZoomConstantExpression('source', expression.value): SourceExpression));
+    }
 
-        // capture metadata from the curve definition that's needed for
-        // our prepopulate-and-interpolate approach to paint properties
-        // that are zoom-and-property dependent.
-        interpolation: zoomCurve.interpolation,
-        zoomStops: zoomCurve.labels
-    };
+    return success(isFeatureConstant ?
+        (new ZoomDependentExpression('camera', expression.value, zoomCurve): CameraExpression) :
+        (new ZoomDependentExpression('composite', expression.value, zoomCurve): CompositeExpression));
 }
 
-module.exports.createExpression = createExpression;
-module.exports.isExpression = isExpression;
+import { isFunction, createFunction } from '../function';
+import { Color } from './values';
 
-// Zoom-dependent expressions may only use ["zoom"] as the input to a
-// 'top-level' "curve" expression. (The curve may be wrapped in one or more
-// "let" or "coalesce" expressions.)
-function findZoomCurve(expression: Expression): null | Curve | {key: string, error: string} {
-    if (expression instanceof Curve) {
-        const input = expression.input;
-        if (input instanceof CompoundExpression && input.name === 'zoom') {
-            return expression;
-        } else {
-            return null;
+// serialization wrapper for old-style stop functions normalized to the
+// expression interface
+export class StylePropertyFunction<T> {
+    _parameters: PropertyValueSpecification<T>;
+    _specification: StylePropertySpecification;
+
+    kind: 'constant' | 'source' | 'camera' | 'composite';
+    evaluate: (globals: GlobalProperties, feature?: Feature) => any;
+    interpolationFactor: ?(input: number, lower: number, upper: number) => number;
+    zoomStops: ?Array<number>;
+
+    constructor(parameters: PropertyValueSpecification<T>, specification: StylePropertySpecification) {
+        this._parameters = parameters;
+        this._specification = specification;
+        extend(this, createFunction(this._parameters, this._specification));
+    }
+
+    static deserialize(serialized: {_parameters: PropertyValueSpecification<T>, _specification: StylePropertySpecification}) {
+        return ((new StylePropertyFunction(serialized._parameters, serialized._specification)): StylePropertyFunction<T>);
+    }
+
+    static serialize(input: StylePropertyFunction<T>) {
+        return {
+            _parameters: input._parameters,
+            _specification: input._specification
+        };
+    }
+}
+
+export function normalizePropertyExpression<T>(value: PropertyValueSpecification<T>, specification: StylePropertySpecification): StylePropertyExpression {
+    if (isFunction(value)) {
+        return (new StylePropertyFunction(value, specification): any);
+
+    } else if (isExpression(value)) {
+        const expression = createPropertyExpression(value, specification);
+        if (expression.result === 'error') {
+            // this should have been caught in validation
+            throw new Error(expression.value.map(err => `${err.key}: ${err.message}`).join(', '));
         }
-    } else if (expression instanceof Let) {
-        return findZoomCurve(expression.result);
+        return expression.value;
+
+    } else {
+        let constant: any = value;
+        if (typeof value === 'string' && specification.type === 'color') {
+            constant = Color.parse(value);
+        }
+        return {
+            kind: 'constant',
+            evaluate: () => constant
+        };
+    }
+}
+
+// Zoom-dependent expressions may only use ["zoom"] as the input to a top-level "step" or "interpolate"
+// expression (collectively referred to as a "curve"). The curve may be wrapped in one or more "let" or
+// "coalesce" expressions.
+function findZoomCurve(expression: Expression): Step | Interpolate | ParsingError | null {
+    let result = null;
+    if (expression instanceof Let) {
+        result = findZoomCurve(expression.result);
+
     } else if (expression instanceof Coalesce) {
-        let result = null;
         for (const arg of expression.args) {
-            const e = findZoomCurve(arg);
-            if (!e) {
-                continue;
-            } else if (e.error) {
-                return e;
-            } else if (e instanceof Curve && !result) {
-                result = e;
-            } else {
-                return {
-                    key: e.key,
-                    error: 'Only one zoom-based curve may be used in a style function.'
-                };
+            result = findZoomCurve(arg);
+            if (result) {
+                break;
             }
         }
 
-        return result;
-    } else {
-        return null;
+    } else if ((expression instanceof Step || expression instanceof Interpolate) &&
+        expression.input instanceof CompoundExpression &&
+        expression.input.name === 'zoom') {
+
+        result = expression;
     }
+
+    if (result instanceof ParsingError) {
+        return result;
+    }
+
+    expression.eachChild((child) => {
+        const childResult = findZoomCurve(child);
+        if (childResult instanceof ParsingError) {
+            result = childResult;
+        } else if (!result && childResult) {
+            result = new ParsingError('', '"zoom" expression may only be used as input to a top-level "step" or "interpolate" expression.');
+        } else if (result && childResult && result !== childResult) {
+            result = new ParsingError('', 'Only one zoom-based "step" or "interpolate" subexpression may be used in an expression.');
+        }
+    });
+
+    return result;
 }
 
-const {
-    ColorType,
-    StringType,
-    NumberType,
-    BooleanType,
-    ValueType,
-    array
-} = require('./types');
+import { ColorType, StringType, NumberType, BooleanType, ValueType, array } from './types';
 
 function getExpectedType(spec: StylePropertySpecification): Type | null {
     const types = {
@@ -290,21 +350,17 @@ function getExpectedType(spec: StylePropertySpecification): Type | null {
     return types[spec.type] || null;
 }
 
-const {isFunction} = require('../function');
-const parseColor = require('../util/parse_color');
-const {Color} = require('./values');
-
-function getDefaultValue(spec: StylePropertySpecification): Value | null {
-    const defaultValue = spec.default;
-    if (spec.type === 'color' && isFunction(defaultValue)) {
+function getDefaultValue(spec: StylePropertySpecification): Value {
+    if (spec.type === 'color' && isFunction(spec.default)) {
         // Special case for heatmap-color: it uses the 'default:' to define a
         // default color ramp, but createExpression expects a simple value to fall
         // back to in case of runtime errors
-        return [0, 0, 0, 0];
+        return new Color(0, 0, 0, 0);
     } else if (spec.type === 'color') {
-        const c: [number, number, number, number] = (parseColor((defaultValue: any)): any);
-        assert(Array.isArray(c));
-        return new Color(c[0], c[1], c[2], c[3]);
+        return Color.parse(spec.default) || null;
+    } else if (spec.default === undefined) {
+        return null;
+    } else {
+        return spec.default;
     }
-    return defaultValue === undefined ? null : defaultValue;
 }

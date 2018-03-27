@@ -1,46 +1,96 @@
 // @flow
 
-const StyleLayer = require('../style_layer');
-const CircleBucket = require('../../data/bucket/circle_bucket');
-const {multiPolygonIntersectsBufferedMultiPoint} = require('../../util/intersection_tests');
-const {getMaximumPaintValue, translateDistance, translate} = require('../query_utils');
+import StyleLayer from '../style_layer';
 
+import CircleBucket from '../../data/bucket/circle_bucket';
+import { multiPolygonIntersectsBufferedPoint } from '../../util/intersection_tests';
+import { getMaximumPaintValue, translateDistance, translate } from '../query_utils';
+import properties from './circle_style_layer_properties';
+import { Transitionable, Transitioning, PossiblyEvaluated } from '../properties';
+import {vec4} from '@mapbox/gl-matrix';
+import Point from '@mapbox/point-geometry';
+
+import type Transform from '../../geo/transform';
 import type {Bucket, BucketParameters} from '../../data/bucket';
-import type Point from '@mapbox/point-geometry';
+import type {PaintProps} from './circle_style_layer_properties';
 
 class CircleStyleLayer extends StyleLayer {
-    createBucket(parameters: BucketParameters) {
+    _transitionablePaint: Transitionable<PaintProps>;
+    _transitioningPaint: Transitioning<PaintProps>;
+    paint: PossiblyEvaluated<PaintProps>;
+
+    constructor(layer: LayerSpecification) {
+        super(layer, properties);
+    }
+
+    createBucket(parameters: BucketParameters<*>) {
         return new CircleBucket(parameters);
     }
 
-    isOpacityZero(zoom: number) {
-        return this.isPaintValueFeatureConstant('circle-opacity') &&
-            this.getPaintValue('circle-opacity', { zoom: zoom }) === 0 &&
-            (this.isPaintValueFeatureConstant('circle-stroke-width') &&
-                this.getPaintValue('circle-stroke-width', { zoom: zoom }) === 0) ||
-            (this.isPaintValueFeatureConstant('circle-stroke-opacity') &&
-                this.getPaintValue('circle-stroke-opacity', { zoom: zoom }) === 0);
-    }
-
     queryRadius(bucket: Bucket): number {
-        const circleBucket: CircleBucket = (bucket: any);
+        const circleBucket: CircleBucket<CircleStyleLayer> = (bucket: any);
         return getMaximumPaintValue('circle-radius', this, circleBucket) +
-            translateDistance(this.paint['circle-translate']);
+            getMaximumPaintValue('circle-stroke-width', this, circleBucket) +
+            translateDistance(this.paint.get('circle-translate'));
     }
 
     queryIntersectsFeature(queryGeometry: Array<Array<Point>>,
                            feature: VectorTileFeature,
                            geometry: Array<Array<Point>>,
                            zoom: number,
-                           bearing: number,
-                           pixelsToTileUnits: number): boolean {
+                           transform: Transform,
+                           pixelsToTileUnits: number,
+                           posMatrix: Float32Array): boolean {
         const translatedPolygon = translate(queryGeometry,
-            this.getPaintValue('circle-translate', {zoom}, feature),
-            this.getPaintValue('circle-translate-anchor', {zoom}, feature),
-            bearing, pixelsToTileUnits);
-        const circleRadius = this.getPaintValue('circle-radius', {zoom}, feature) * pixelsToTileUnits;
-        return multiPolygonIntersectsBufferedMultiPoint(translatedPolygon, geometry, circleRadius);
+            this.paint.get('circle-translate'),
+            this.paint.get('circle-translate-anchor'),
+            transform.angle, pixelsToTileUnits);
+        const radius = this.paint.get('circle-radius').evaluate(feature);
+        const stroke = this.paint.get('circle-stroke-width').evaluate(feature);
+        const size  = radius + stroke;
+
+        // For pitch-alignment: map, compare feature geometry to query geometry in the plane of the tile
+        // // Otherwise, compare geometry in the plane of the viewport
+        // // A circle with fixed scaling relative to the viewport gets larger in tile space as it moves into the distance
+        // // A circle with fixed scaling relative to the map gets smaller in viewport space as it moves into the distance
+        const alignWithMap = this.paint.get('circle-pitch-alignment') === 'map';
+        const transformedPolygon = alignWithMap ? translatedPolygon : projectQueryGeometry(translatedPolygon, posMatrix, transform);
+        const transformedSize = alignWithMap ? size * pixelsToTileUnits : size;
+
+        for (const ring of geometry) {
+            for (const point of ring) {
+
+                const transformedPoint = alignWithMap ? point : projectPoint(point, posMatrix, transform);
+
+                let adjustedSize = transformedSize;
+                const projectedCenter = vec4.transformMat4([], [point.x, point.y, 0, 1], posMatrix);
+                if (this.paint.get('circle-pitch-scale') === 'viewport' && this.paint.get('circle-pitch-alignment') === 'map') {
+                    adjustedSize *= projectedCenter[3] / transform.cameraToCenterDistance;
+                } else if (this.paint.get('circle-pitch-scale') === 'map' && this.paint.get('circle-pitch-alignment') === 'viewport') {
+                    adjustedSize *= transform.cameraToCenterDistance / projectedCenter[3];
+                }
+
+                if (multiPolygonIntersectsBufferedPoint(transformedPolygon, transformedPoint, adjustedSize)) return true;
+            }
+        }
+
+        return false;
     }
 }
 
-module.exports = CircleStyleLayer;
+function projectPoint(p: Point, posMatrix: Float32Array, transform: Transform) {
+    const point = vec4.transformMat4([], [p.x, p.y, 0, 1], posMatrix);
+    return new Point(
+            (point[0] / point[3] + 1) * transform.width * 0.5,
+            (point[1] / point[3] + 1) * transform.height * 0.5);
+}
+
+function projectQueryGeometry(queryGeometry: Array<Array<Point>>, posMatrix: Float32Array, transform: Transform) {
+    return queryGeometry.map((r) => {
+        return r.map((p) => {
+            return projectPoint(p, posMatrix, transform);
+        });
+    });
+}
+
+export default CircleStyleLayer;

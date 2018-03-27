@@ -1,9 +1,10 @@
 // @flow
 
-const {HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, ImageData} = require('../util/window');
+import window from '../util/window';
+const { HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, ImageData } = window;
 
+import type Context from '../gl/context';
 import type {RGBAImage, AlphaImage} from '../util/image';
-import type {ImageTextureSource} from '../source/image_source';
 
 export type TextureFormat =
     | $PropertyType<WebGLRenderingContext, 'RGBA'>
@@ -17,40 +18,51 @@ export type TextureWrap =
     | $PropertyType<WebGLRenderingContext, 'CLAMP_TO_EDGE'>
     | $PropertyType<WebGLRenderingContext, 'MIRRORED_REPEAT'>;
 
+type EmptyImage = {
+    width: number,
+    height: number,
+    data: null
+}
+
 export type TextureImage =
     | RGBAImage
     | AlphaImage
-    | ImageTextureSource;
+    | HTMLImageElement
+    | HTMLCanvasElement
+    | HTMLVideoElement
+    | ImageData
+    | EmptyImage;
 
 class Texture {
-    gl: WebGLRenderingContext;
+    context: Context;
     size: Array<number>;
     texture: WebGLTexture;
     format: TextureFormat;
     filter: ?TextureFilter;
     wrap: ?TextureWrap;
 
-    constructor(gl: WebGLRenderingContext, image: TextureImage, format: TextureFormat) {
-        this.gl = gl;
+    constructor(context: Context, image: TextureImage, format: TextureFormat, premultiply: ?boolean) {
+        this.context = context;
 
         const {width, height} = image;
         this.size = [width, height];
         this.format = format;
 
-        this.texture = gl.createTexture();
-        this.update(image);
+        this.texture = context.gl.createTexture();
+        this.update(image, premultiply);
     }
 
-    update(image: TextureImage) {
+    update(image: TextureImage, premultiply: ?boolean) {
         const {width, height} = image;
         this.size = [width, height];
 
-        const {gl} = this;
+        const {context} = this;
+        const {gl} = context;
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        context.pixelStoreUnpack.set(1);
 
-        if (this.format === gl.RGBA) {
-            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, (true: any));
+        if (this.format === gl.RGBA && premultiply !== false) {
+            context.pixelStoreUnpackPremultiplyAlpha.set(true);
         }
 
         if (image instanceof HTMLImageElement || image instanceof HTMLCanvasElement || image instanceof HTMLVideoElement || image instanceof ImageData) {
@@ -61,7 +73,8 @@ class Texture {
     }
 
     bind(filter: TextureFilter, wrap: TextureWrap, minFilter: ?TextureFilter) {
-        const {gl} = this;
+        const {context} = this;
+        const {gl} = context;
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
         if (filter !== this.filter) {
@@ -78,10 +91,10 @@ class Texture {
     }
 
     destroy() {
-        const {gl} = this;
+        const {gl} = this.context;
         gl.deleteTexture(this.texture);
         this.texture = (null: any);
     }
 }
 
-module.exports = Texture;
+export default Texture;

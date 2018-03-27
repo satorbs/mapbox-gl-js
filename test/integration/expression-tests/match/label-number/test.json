@@ -28,6 +28,7 @@
       },
       {"error": "Expected value to be of type number, but found null instead."},
       {"error": "Expected value to be of type number, but found null instead."}
-    ]
+    ],
+    "serialized": ["match", ["number", ["get", "x"]], 0, "match", "otherwise"]
   }
 }

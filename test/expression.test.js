@@ -1,10 +1,13 @@
-'use strict';
 
-require('flow-remove-types/register');
+/* eslint-disable import/unambiguous, no-global-assign */
+
+require('@mapbox/flow-remove-types/register');
+require = require("@std/esm")(module, true);
+
 const expressionSuite = require('./integration').expression;
-const { createExpression } = require('../src/style-spec/expression');
+const { createPropertyExpression } = require('../src/style-spec/expression');
 const { toString } = require('../src/style-spec/expression/types');
-const { unwrap } = require('../src/style-spec/expression/values');
+const ignores = require('./ignores.json');
 
 let tests;
 
@@ -12,17 +15,17 @@ if (process.argv[1] === __filename && process.argv.length > 2) {
     tests = process.argv.slice(2);
 }
 
-expressionSuite.run('js', {tests: tests}, (fixture) => {
-    const spec = fixture.propertySpec || {};
+expressionSuite.run('js', { ignores, tests }, (fixture) => {
+    const spec = Object.assign({}, fixture.propertySpec);
     spec['function'] = true;
     spec['property-function'] = true;
 
-    const expression = createExpression(fixture.expression, spec, 'property', {handleErrors: false});
+    let expression = createPropertyExpression(fixture.expression, spec);
     if (expression.result === 'error') {
         return {
             compiled: {
-                result: expression.result,
-                errors: expression.errors.map((err) => ({
+                result: 'error',
+                errors: expression.value.map((err) => ({
                     key: err.key,
                     error: err.message
                 }))
@@ -30,18 +33,22 @@ expressionSuite.run('js', {tests: tests}, (fixture) => {
         };
     }
 
+    expression = expression.value;
+
+    const type = expression._styleExpression.expression.type; // :scream:
+
     const outputs = [];
     const result = {
         outputs,
         compiled: {
-            result: expression.result,
-            isZoomConstant: expression.isZoomConstant,
-            isFeatureConstant: expression.isFeatureConstant,
-            type: toString(expression.parsed.type)
+            result: 'success',
+            isFeatureConstant: expression.kind === 'constant' || expression.kind === 'camera',
+            isZoomConstant: expression.kind === 'constant' || expression.kind === 'source',
+            type: toString(type)
         }
     };
 
-    for (const input of fixture.inputs) {
+    for (const input of fixture.inputs || []) {
         try {
             const feature = { properties: input[1].properties || {} };
             if ('id' in input[1]) {
@@ -50,7 +57,11 @@ expressionSuite.run('js', {tests: tests}, (fixture) => {
             if ('geometry' in input[1]) {
                 feature.type = input[1].geometry.type;
             }
-            outputs.push(unwrap(expression.evaluate(input[0], feature)));
+            let value = expression.evaluateWithoutErrorHandling(input[0], feature);
+            if (type.kind === 'color') {
+                value = [value.r, value.g, value.b, value.a];
+            }
+            outputs.push(value);
         } catch (error) {
             if (error.name === 'ExpressionEvaluationError') {
                 outputs.push({ error: error.toJSON() });

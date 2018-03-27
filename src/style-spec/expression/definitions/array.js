@@ -1,17 +1,9 @@
 // @flow
 
-const {
-    toString,
-    array,
-    ValueType,
-    StringType,
-    NumberType,
-    BooleanType,
-    checkSubtype
-} = require('../types');
+import { toString, array, ValueType, StringType, NumberType, BooleanType, checkSubtype } from '../types';
 
-const {typeOf} = require('../values');
-const RuntimeError = require('../runtime_error');
+import { typeOf } from '../values';
+import RuntimeError from '../runtime_error';
 
 import type { Expression } from '../expression';
 import type ParsingContext from '../parsing_context';
@@ -25,12 +17,10 @@ const types = {
 };
 
 class ArrayAssertion implements Expression {
-    key: string;
     type: ArrayType;
     input: Expression;
 
-    constructor(key: string, type: ArrayType, input: Expression) {
-        this.key = key;
+    constructor(type: ArrayType, input: Expression) {
         this.type = type;
         this.input = input;
     }
@@ -66,7 +56,7 @@ class ArrayAssertion implements Expression {
         const input = context.parse(args[args.length - 1], args.length - 1, ValueType);
         if (!input) return null;
 
-        return new ArrayAssertion(context.key, type, input);
+        return new ArrayAssertion(type, input);
     }
 
     evaluate(ctx: EvaluationContext) {
@@ -81,6 +71,10 @@ class ArrayAssertion implements Expression {
     eachChild(fn: (Expression) => void) {
         fn(this.input);
     }
+
+    possibleOutputs() {
+        return this.input.possibleOutputs();
+    }
 }
 
-module.exports = ArrayAssertion;
+export default ArrayAssertion;

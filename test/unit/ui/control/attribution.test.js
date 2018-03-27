@@ -1,10 +1,8 @@
-'use strict';
-
-const test = require('mapbox-gl-js-test').test;
-const window = require('../../../../src/util/window');
-const Map = require('../../../../src/ui/map');
-const config = require('../../../../src/util/config');
-const AttributionControl = require('../../../../src/ui/control/attribution_control');
+import { test } from 'mapbox-gl-js-test';
+import window from '../../../../src/util/window';
+import Map from '../../../../src/ui/map';
+import config from '../../../../src/util/config';
+import AttributionControl from '../../../../src/ui/control/attribution_control';
 
 function createMap() {
     const container = window.document.createElement('div');
@@ -119,5 +117,41 @@ test('AttributionControl has the correct edit map link', (t) => {
                 t.end();
             }
         });
+    });
+});
+
+test('AttributionControl is hidden if empty', (t) => {
+    const map = createMap();
+    const attribution = new AttributionControl();
+    map.addControl(attribution);
+    map.on('load', () => {
+        map.addSource('1', { type: 'vector' });
+    });
+
+    const container = map.getContainer();
+
+    const checkEmptyFirst = () => {
+        t.equal(attribution._container.innerHTML, '');
+        t.equal(container.querySelectorAll('.mapboxgl-attrib-empty').length, 1, 'includes empty class when no attribution strings are provided');
+
+        map.addSource('2', { type: 'vector', attribution: 'Hello World' });
+    };
+
+    const checkNotEmptyLater = () => {
+        t.equal(attribution._container.innerHTML, 'Hello World');
+        t.equal(container.querySelectorAll('.mapboxgl-attrib-empty').length, 0, 'removes empty class when source with attribution is added');
+        t.end();
+    };
+
+    let times = 0;
+    map.on('data', (e) => {
+        if (e.dataType === 'source' && e.sourceDataType === 'metadata') {
+            times++;
+            if (times === 1) {
+                checkEmptyFirst();
+            } else if (times === 2) {
+                checkNotEmptyLater();
+            }
+        }
     });
 });

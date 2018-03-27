@@ -1,11 +1,20 @@
 // @flow
 
-const StyleLayer = require('../style_layer');
+import StyleLayer from '../style_layer';
+
+import properties from './raster_style_layer_properties';
+import { Transitionable, Transitioning, PossiblyEvaluated } from '../properties';
+
+import type {PaintProps} from './raster_style_layer_properties';
 
 class RasterStyleLayer extends StyleLayer {
-    isOpacityZero(zoom: number) {
-        return this.getPaintValue('raster-opacity', { zoom: zoom }) === 0;
+    _transitionablePaint: Transitionable<PaintProps>;
+    _transitioningPaint: Transitioning<PaintProps>;
+    paint: PossiblyEvaluated<PaintProps>;
+
+    constructor(layer: LayerSpecification) {
+        super(layer, properties);
     }
 }
 
-module.exports = RasterStyleLayer;
+export default RasterStyleLayer;

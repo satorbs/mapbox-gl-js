@@ -1,7 +1,8 @@
 // @flow
 
-const assert = require('assert');
-const { BooleanType } = require('../types');
+import assert from 'assert';
+
+import { BooleanType } from '../types';
 
 import type { Expression } from '../expression';
 import type ParsingContext from '../parsing_context';
@@ -11,14 +12,12 @@ import type { Type } from '../types';
 type Branches = Array<[Expression, Expression]>;
 
 class Case implements Expression {
-    key: string;
     type: Type;
 
     branches: Branches;
     otherwise: Expression;
 
-    constructor(key: string, type: Type, branches: Branches, otherwise: Expression) {
-        this.key = key;
+    constructor(type: Type, branches: Branches, otherwise: Expression) {
         this.type = type;
         this.branches = branches;
         this.otherwise = otherwise;
@@ -52,7 +51,7 @@ class Case implements Expression {
         if (!otherwise) return null;
 
         assert(outputType);
-        return new Case(context.key, (outputType: any), branches, otherwise);
+        return new Case((outputType: any), branches, otherwise);
     }
 
     evaluate(ctx: EvaluationContext) {
@@ -71,6 +70,12 @@ class Case implements Expression {
         }
         fn(this.otherwise);
     }
+
+    possibleOutputs() {
+        return []
+            .concat(...this.branches.map(([_, out]) => out.possibleOutputs()))
+            .concat(this.otherwise.possibleOutputs());
+    }
 }
 
-module.exports = Case;
+export default Case;

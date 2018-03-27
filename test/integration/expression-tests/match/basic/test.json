@@ -20,6 +20,15 @@
       {
         "error": "Expected value to be of type string, but found number instead."
       }
+    ],
+    "serialized": [
+      "match",
+      ["string", ["get", "x"]],
+      "a",
+      "Apple",
+      "b",
+      "Banana",
+      "Kumquat"
     ]
   }
 }

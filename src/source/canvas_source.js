@@ -1,16 +1,21 @@
 // @flow
 
-const ImageSource = require('./image_source');
-const window = require('../util/window');
+import ImageSource from './image_source';
+
+import window from '../util/window';
+import rasterBoundsAttributes from '../data/raster_bounds_attributes';
+import VertexArrayObject from '../render/vertex_array_object';
+import Texture from '../render/texture';
+import { ErrorEvent } from '../util/evented';
 
 import type Map from '../ui/map';
 import type Dispatcher from '../util/dispatcher';
-import type Evented from '../util/evented';
+import type {Evented} from '../util/evented';
 
 /**
  * A data source containing the contents of an HTML canvas.
  * (See the [Style Specification](https://www.mapbox.com/mapbox-gl-style-spec/#sources-canvas) for detailed documentation of options.)
- * @interface CanvasSource
+ *
  * @example
  * // add to map
  * map.addSource('some id', {
@@ -42,35 +47,50 @@ class CanvasSource extends ImageSource {
     canvas: HTMLCanvasElement;
     width: number;
     height: number;
-    canvasData: ?ImageData;
     play: () => void;
     pause: () => void;
+    _playing: boolean;
 
+    /**
+     * @private
+     */
     constructor(id: string, options: CanvasSourceSpecification, dispatcher: Dispatcher, eventedParent: Evented) {
         super(id, options, dispatcher, eventedParent);
         this.options = options;
         this.animate = options.animate !== undefined ? options.animate : true;
     }
 
+    /**
+     * Enables animation. The image will be copied from the canvas to the map on each frame.
+     * @method play
+     * @instance
+     * @memberof CanvasSource
+     */
+
+    /**
+     * Disables animation. The map will display a static copy of the canvas image.
+     * @method pause
+     * @instance
+     * @memberof CanvasSource
+     */
+
     load() {
         this.canvas = this.canvas || window.document.getElementById(this.options.canvas);
         this.width = this.canvas.width;
         this.height = this.canvas.height;
-        if (this._hasInvalidDimensions()) return this.fire('error', new Error('Canvas dimensions cannot be less than or equal to zero.'));
 
-        let loopID;
+        if (this._hasInvalidDimensions()) {
+            this.fire(new ErrorEvent(new Error('Canvas dimensions cannot be less than or equal to zero.')));
+            return;
+        }
 
         this.play = function() {
-            if (loopID === undefined) {
-                loopID = this.map.style.animationLoop.set(Infinity);
-                this.map._rerender();
-            }
+            this._playing = true;
+            this.map._rerender();
         };
 
         this.pause = function() {
-            if (loopID !== undefined) {
-                loopID = this.map.style.animationLoop.cancel(loopID);
-            }
+            this._playing = false;
         };
 
         this._finishLoading();
@@ -101,6 +121,8 @@ class CanvasSource extends ImageSource {
      * Sets the canvas's coordinates and re-renders the map.
      *
      * @method setCoordinates
+     * @instance
+     * @memberof CanvasSource
      * @param {Array<Array<number>>} coordinates Four geographical coordinates,
      *   represented as arrays of longitude and latitude numbers, which define the corners of the canvas.
      *   The coordinates start at the top left corner of the canvas and proceed in clockwise order.
@@ -124,7 +146,34 @@ class CanvasSource extends ImageSource {
 
         if (Object.keys(this.tiles).length === 0) return; // not enough data for current position
 
-        this._prepareImage(this.map.painter.gl, this.canvas, resize);
+        const context = this.map.painter.context;
+        const gl = context.gl;
+
+        if (!this.boundsBuffer) {
+            this.boundsBuffer = context.createVertexBuffer(this._boundsArray, rasterBoundsAttributes.members);
+        }
+
+        if (!this.boundsVAO) {
+            this.boundsVAO = new VertexArrayObject();
+        }
+
+        if (!this.texture) {
+            this.texture = new Texture(context, this.canvas, gl.RGBA);
+            this.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
+        } else if (resize) {
+            this.texture.update(this.canvas);
+        } else if (this._playing) {
+            this.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
+            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.canvas);
+        }
+
+        for (const w in this.tiles) {
+            const tile = this.tiles[w];
+            if (tile.state !== 'loaded') {
+                tile.state = 'loaded';
+                tile.texture = this.texture;
+            }
+        }
     }
 
     serialize(): Object {
@@ -135,6 +184,10 @@ class CanvasSource extends ImageSource {
         };
     }
 
+    hasTransition() {
+        return this._playing;
+    }
+
     _hasInvalidDimensions() {
         for (const x of [this.canvas.width, this.canvas.height]) {
             if (isNaN(x) || x <= 0) return true;
@@ -143,4 +196,4 @@ class CanvasSource extends ImageSource {
     }
 }
 
-module.exports = CanvasSource;
+export default CanvasSource;

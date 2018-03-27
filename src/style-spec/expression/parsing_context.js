@@ -1,11 +1,20 @@
 // @flow
 
-const Scope = require('./scope');
-const {checkSubtype} = require('./types');
-const ParsingError = require('./parsing_error');
-const Literal = require('./definitions/literal');
+import Scope from './scope';
 
-import type {Expression} from './expression';
+import { checkSubtype } from './types';
+import ParsingError from './parsing_error';
+import Literal from './definitions/literal';
+import Assertion from './definitions/assertion';
+import ArrayAssertion from './definitions/array';
+import Coercion from './definitions/coercion';
+import EvaluationContext from './evaluation_context';
+import CompoundExpression from './compound_expression';
+import {isGlobalPropertyConstant, isFeatureConstant} from './is_constant';
+import Var from './definitions/var';
+
+
+import type {Expression, ExpressionRegistry} from './expression';
 import type {Type} from './types';
 
 /**
@@ -13,7 +22,7 @@ import type {Type} from './types';
  * @private
  */
 class ParsingContext {
-    definitions: {[string]: Class<Expression>};
+    registry: ExpressionRegistry;
     path: Array<number>;
     key: string;
     scope: Scope;
@@ -26,13 +35,13 @@ class ParsingContext {
     expectedType: ?Type;
 
     constructor(
-        definitions: *,
+        registry: ExpressionRegistry,
         path: Array<number> = [],
         expectedType: ?Type,
         scope: Scope = new Scope(),
         errors: Array<ParsingError> = []
     ) {
-        this.definitions = definitions;
+        this.registry = registry;
         this.path = path;
         this.key = path.map(part => `[${part}]`).join('');
         this.scope = scope;
@@ -40,7 +49,20 @@ class ParsingContext {
         this.expectedType = expectedType;
     }
 
-    parse(expr: mixed, index?: number, expectedType?: ?Type, bindings?: Array<[string, Expression]>): ?Expression {
+    /**
+     * @param expr the JSON expression to parse
+     * @param index the optional argument index if this expression is an argument of a parent expression that's being parsed
+     * @param options
+     * @param options.omitTypeAnnotations set true to omit inferred type annotations.  Caller beware: with this option set, the parsed expression's type will NOT satisfy `expectedType` if it would normally be wrapped in an inferred annotation.
+     * @private
+     */
+    parse(
+        expr: mixed,
+        index?: number,
+        expectedType?: ?Type,
+        bindings?: Array<[string, Expression]>,
+        options: {omitTypeAnnotations?: boolean} = {}
+    ): ?Expression {
         let context = this;
         if (index) {
             context = context.concat(index, expectedType, bindings);
@@ -61,30 +83,33 @@ class ParsingContext {
                 return null;
             }
 
-            const Expr = context.definitions[op];
+            const Expr = context.registry[op];
             if (Expr) {
                 let parsed = Expr.parse(expr, context);
                 if (!parsed) return null;
-                const expected = context.expectedType;
-                const actual = parsed.type;
-                if (expected) {
-                    // When we expect a number, string, or boolean but have a
-                    // Value, wrap it in a refining assertion, and when we expect
-                    // a Color but have a String or Value, wrap it in "to-color"
-                    // coercion.
-                    const canAssert = expected.kind === 'string' ||
-                        expected.kind === 'number' ||
-                        expected.kind === 'boolean';
 
-                    if (canAssert && actual.kind === 'value') {
-                        const Assertion = require('./definitions/assertion');
-                        parsed = new Assertion(parsed.key, expected, [parsed]);
+                if (context.expectedType) {
+                    const expected = context.expectedType;
+                    const actual = parsed.type;
+
+                    // When we expect a number, string, boolean, or array but
+                    // have a Value, we can wrap it in a refining assertion.
+                    // When we expect a Color but have a String or Value, we
+                    // can wrap it in "to-color" coercion.
+                    // Otherwise, we do static type-checking.
+                    if ((expected.kind === 'string' || expected.kind === 'number' || expected.kind === 'boolean' || expected.kind === 'object') && actual.kind === 'value') {
+                        if (!options.omitTypeAnnotations) {
+                            parsed = new Assertion(expected, [parsed]);
+                        }
+                    } else if (expected.kind === 'array' && actual.kind === 'value') {
+                        if (!options.omitTypeAnnotations) {
+                            parsed = new ArrayAssertion(expected, parsed);
+                        }
                     } else if (expected.kind === 'color' && (actual.kind === 'value' || actual.kind === 'string')) {
-                        const Coercion = require('./definitions/coercion');
-                        parsed = new Coercion(parsed.key, expected, [parsed]);
-                    }
-
-                    if (context.checkSubtype(expected, parsed.type)) {
+                        if (!options.omitTypeAnnotations) {
+                            parsed = new Coercion(expected, [parsed]);
+                        }
+                    } else if (context.checkSubtype(context.expectedType, parsed.type)) {
                         return null;
                     }
                 }
@@ -93,9 +118,9 @@ class ParsingContext {
                 // it immediately and replace it with a literal value in the
                 // parsed/compiled result.
                 if (!(parsed instanceof Literal) && isConstant(parsed)) {
-                    const ec = new (require('./evaluation_context'))();
+                    const ec = new EvaluationContext();
                     try {
-                        parsed = new Literal(parsed.key, parsed.type, parsed.evaluate(ec));
+                        parsed = new Literal(parsed.type, parsed.evaluate(ec));
                     } catch (e) {
                         context.error(e.message);
                         return null;
@@ -127,7 +152,7 @@ class ParsingContext {
         const path = typeof index === 'number' ? this.path.concat(index) : this.path;
         const scope = bindings ? this.scope.concat(bindings) : this.scope;
         return new ParsingContext(
-            this.definitions,
+            this.registry,
             path,
             expectedType || null,
             scope,
@@ -158,14 +183,9 @@ class ParsingContext {
     }
 }
 
-module.exports = ParsingContext;
+export default ParsingContext;
 
 function isConstant(expression: Expression) {
-    // requires within function body to workaround circular dependency
-    const {CompoundExpression} = require('./compound_expression');
-    const {isGlobalPropertyConstant, isFeatureConstant} = require('./is_constant');
-    const Var = require('./definitions/var');
-
     if (expression instanceof Var) {
         return false;
     } else if (expression instanceof CompoundExpression && expression.name === 'error') {

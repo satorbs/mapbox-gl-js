@@ -1,17 +1,18 @@
 // @flow
 
-const assert = require('assert');
-const {
+import assert from 'assert';
+
+import {
     ObjectType,
     ValueType,
     StringType,
     NumberType,
-    BooleanType
-} = require('../types');
-
-const RuntimeError = require('../runtime_error');
-const {checkSubtype, toString} = require('../types');
-const {typeOf} = require('../values');
+    BooleanType,
+    checkSubtype,
+    toString
+} from '../types';
+import RuntimeError from '../runtime_error';
+import { typeOf } from '../values';
 
 import type { Expression } from '../expression';
 import type ParsingContext from '../parsing_context';
@@ -26,12 +27,10 @@ const types = {
 };
 
 class Assertion implements Expression {
-    key: string;
     type: Type;
     args: Array<Expression>;
 
-    constructor(key: string, type: Type, args: Array<Expression>) {
-        this.key = key;
+    constructor(type: Type, args: Array<Expression>) {
         this.type = type;
         this.args = args;
     }
@@ -52,7 +51,7 @@ class Assertion implements Expression {
             parsed.push(input);
         }
 
-        return new Assertion(context.key, type, parsed);
+        return new Assertion(type, parsed);
     }
 
     evaluate(ctx: EvaluationContext) {
@@ -73,6 +72,10 @@ class Assertion implements Expression {
     eachChild(fn: (Expression) => void) {
         this.args.forEach(fn);
     }
+
+    possibleOutputs() {
+        return [].concat(...this.args.map((arg) => arg.possibleOutputs()));
+    }
 }
 
-module.exports = Assertion;
+export default Assertion;

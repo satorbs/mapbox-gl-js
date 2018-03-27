@@ -1,11 +1,12 @@
 
-const colorSpaces = require('../util/color_spaces');
-const parseColor = require('../util/parse_color');
-const extend = require('../util/extend');
-const getType = require('../util/get_type');
-const interpolate = require('../util/interpolate');
+import * as colorSpaces from '../util/color_spaces';
+import Color from '../util/color';
+import extend from '../util/extend';
+import getType from '../util/get_type';
+import * as interpolate from '../util/interpolate';
+import Interpolate from '../expression/definitions/interpolate';
 
-function isFunction(value) {
+export function isFunction(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -13,7 +14,7 @@ function identityFunction(x) {
     return x;
 }
 
-function createFunction(parameters, propertySpec, name) {
+export function createFunction(parameters, propertySpec) {
     const isColor = propertySpec.type === 'color';
     const zoomAndFeatureDependent = parameters.stops && typeof parameters.stops[0][0] === 'object';
     const featureDependent = zoomAndFeatureDependent || parameters.property !== undefined;
@@ -25,15 +26,19 @@ function createFunction(parameters, propertySpec, name) {
 
         if (parameters.stops) {
             parameters.stops = parameters.stops.map((stop) => {
-                return [stop[0], parseColor(stop[1])];
+                return [stop[0], Color.parse(stop[1])];
             });
         }
 
         if (parameters.default) {
-            parameters.default = parseColor(parameters.default);
+            parameters.default = Color.parse(parameters.default);
         } else {
-            parameters.default = parseColor(propertySpec.default);
+            parameters.default = Color.parse(propertySpec.default);
         }
+    }
+
+    if (parameters.colorSpace && parameters.colorSpace !== 'rgb' && !colorSpaces[parameters.colorSpace]) { // eslint-disable-line import/namespace
+        throw new Error(`Unknown color space: ${parameters.colorSpace}`);
     }
 
     let innerFun;
@@ -61,31 +66,6 @@ function createFunction(parameters, propertySpec, name) {
         throw new Error(`Unknown function type "${type}"`);
     }
 
-    let outputFunction;
-
-    // If we're interpolating colors in a color system other than RGBA,
-    // first translate all stop values to that color system, then interpolate
-    // arrays as usual. The `outputFunction` option lets us then translate
-    // the result of that interpolation back into RGBA.
-    if (parameters.colorSpace && parameters.colorSpace !== 'rgb') {
-        if (colorSpaces[parameters.colorSpace]) {
-            const colorspace = colorSpaces[parameters.colorSpace];
-            // Avoid mutating the parameters value
-            parameters = JSON.parse(JSON.stringify(parameters));
-            for (let s = 0; s < parameters.stops.length; s++) {
-                parameters.stops[s] = [
-                    parameters.stops[s][0],
-                    colorspace.forward(parameters.stops[s][1])
-                ];
-            }
-            outputFunction = colorspace.reverse;
-        } else {
-            throw new Error(`Unknown color space: ${parameters.colorSpace}`);
-        }
-    } else {
-        outputFunction = identityFunction;
-    }
-
     if (zoomAndFeatureDependent) {
         const featureFunctions = {};
         const zoomStops = [];
@@ -111,42 +91,34 @@ function createFunction(parameters, propertySpec, name) {
         }
 
         return {
-            isFeatureConstant: false,
-            interpolation: {name: 'linear'},
+            kind: 'composite',
+            interpolationFactor: Interpolate.interpolationFactor.bind(undefined, {name: 'linear'}),
             zoomStops: featureFunctionStops.map(s => s[0]),
             evaluate({zoom}, properties) {
-                return outputFunction(evaluateExponentialFunction({
+                return evaluateExponentialFunction({
                     stops: featureFunctionStops,
                     base: parameters.base
-                }, propertySpec, zoom).evaluate(zoom, properties));
+                }, propertySpec, zoom).evaluate(zoom, properties);
             }
         };
     } else if (zoomDependent) {
-        let evaluate;
-        if (name === 'heatmap-color') {
-            evaluate = ({heatmapDensity}) => outputFunction(innerFun(parameters, propertySpec, heatmapDensity, hashedStops, categoricalKeyType));
-        } else {
-            evaluate = ({zoom}) => outputFunction(innerFun(parameters, propertySpec, zoom, hashedStops, categoricalKeyType));
-        }
         return {
-            isFeatureConstant: true,
-            isZoomConstant: false,
-            interpolation: type === 'exponential' ?
-                {name: 'exponential', base: parameters.base !== undefined ? parameters.base : 1} :
-                {name: 'step'},
+            kind: 'camera',
+            interpolationFactor: type === 'exponential' ?
+                Interpolate.interpolationFactor.bind(undefined, {name: 'exponential', base: parameters.base !== undefined ? parameters.base : 1}) :
+                () => 0,
             zoomStops: parameters.stops.map(s => s[0]),
-            evaluate
+            evaluate: ({zoom}) => innerFun(parameters, propertySpec, zoom, hashedStops, categoricalKeyType)
         };
     } else {
         return {
-            isFeatureConstant: false,
-            isZoomConstant: true,
+            kind: 'source',
             evaluate(_, feature) {
                 const value = feature && feature.properties ? feature.properties[parameters.property] : undefined;
                 if (value === undefined) {
                     return coalesce(parameters.default, propertySpec.default);
                 }
-                return outputFunction(innerFun(parameters, propertySpec, value, hashedStops, categoricalKeyType));
+                return innerFun(parameters, propertySpec, value, hashedStops, categoricalKeyType);
             }
         };
     }
@@ -194,7 +166,12 @@ function evaluateExponentialFunction(parameters, propertySpec, input) {
 
     const outputLower = parameters.stops[index][1];
     const outputUpper = parameters.stops[index + 1][1];
-    const interp = interpolate[propertySpec.type] || identityFunction;
+    let interp = interpolate[propertySpec.type] || identityFunction; // eslint-disable-line import/namespace
+
+    if (parameters.colorSpace && parameters.colorSpace !== 'rgb') {
+        const colorspace = colorSpaces[parameters.colorSpace]; // eslint-disable-line import/namespace
+        interp = (a, b) => colorspace.reverse(colorspace.interpolate(colorspace.forward(a), colorspace.forward(b), t));
+    }
 
     if (typeof outputLower.evaluate === 'function') {
         return {
@@ -215,7 +192,7 @@ function evaluateExponentialFunction(parameters, propertySpec, input) {
 
 function evaluateIdentityFunction(parameters, propertySpec, input) {
     if (propertySpec.type === 'color') {
-        input = parseColor(input);
+        input = Color.parse(input);
     } else if (getType(input) !== propertySpec.type && (propertySpec.type !== 'enum' || !propertySpec.values[input])) {
         input = undefined;
     }
@@ -300,8 +277,3 @@ function interpolationFactor(input, base, lowerValue, upperValue) {
         return (Math.pow(base, progress) - 1) / (Math.pow(base, difference) - 1);
     }
 }
-
-module.exports = {
-    createFunction,
-    isFunction
-};

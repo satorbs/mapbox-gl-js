@@ -1,13 +1,13 @@
-'use strict';
-
-const test = require('mapbox-gl-js-test').test;
-const Hash = require('../../../src/ui/hash');
-const window = require('../../../src/util/window');
-const Map = require('../../../src/ui/map');
+import { test } from 'mapbox-gl-js-test';
+import Hash from '../../../src/ui/hash';
+import window from '../../../src/util/window';
+import Map from '../../../src/ui/map';
 
 test('hash', (t) => {
     function createHash() {
-        return new Hash();
+        const hash = new Hash();
+        hash._updateHash = hash._updateHashUnthrottled.bind(hash);
+        return hash;
     }
 
     function createMap() {

@@ -1,8 +1,10 @@
 // @flow
 
-const Map = require('../../src/ui/map');
+import Map from '../../src/ui/map';
 
-module.exports = function (options: any): Promise<Map> {
+import browser from '../../src/util/browser';
+
+export default function (options: any): Promise<Map> {
     return new Promise((resolve, reject) => {
         const container = document.createElement('div');
         container.style.width = `${options.width || 512}px`;
@@ -17,8 +19,19 @@ module.exports = function (options: any): Promise<Map> {
         }, options));
 
         map
-            .on('load', () => resolve(map))
+            .on('load', () => {
+                // Stub out `_rerender`; benchmarks need to be the only trigger of `_render` from here on out.
+                map._rerender = () => {};
+
+                // If there's a pending rerender, cancel it.
+                if (map._frameId) {
+                    browser.cancelFrame(map._frameId);
+                    map._frameId = null;
+                }
+
+                resolve(map);
+            })
             .on('error', (e) => reject(e.error))
             .on('remove', () => container.remove());
     });
-};
+}

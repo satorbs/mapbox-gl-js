@@ -1,61 +1,60 @@
 // @flow
 
-const StyleLayer = require('../style_layer');
-const FillExtrusionBucket = require('../../data/bucket/fill_extrusion_bucket');
-const {multiPolygonIntersectsMultiPolygon} = require('../../util/intersection_tests');
-const {translateDistance, translate} = require('../query_utils');
+import StyleLayer from '../style_layer';
 
-import type {Feature, GlobalProperties} from '../../style-spec/expression';
+import FillExtrusionBucket from '../../data/bucket/fill_extrusion_bucket';
+import { multiPolygonIntersectsMultiPolygon } from '../../util/intersection_tests';
+import { translateDistance, translate } from '../query_utils';
+import properties from './fill_extrusion_style_layer_properties';
+import { Transitionable, Transitioning, PossiblyEvaluated } from '../properties';
+
 import type {BucketParameters} from '../../data/bucket';
 import type Point from '@mapbox/point-geometry';
+import type {PaintProps} from './fill_extrusion_style_layer_properties';
+import type Framebuffer from '../../gl/framebuffer';
+import type Transform from '../../geo/transform';
 
 class FillExtrusionStyleLayer extends StyleLayer {
+    _transitionablePaint: Transitionable<PaintProps>;
+    _transitioningPaint: Transitioning<PaintProps>;
+    paint: PossiblyEvaluated<PaintProps>;
+    viewportFrame: ?Framebuffer;
 
-    getPaintValue(name: string, globals: GlobalProperties, feature?: Feature) {
-        const value = super.getPaintValue(name, globals, feature);
-        if (name === 'fill-extrusion-color' && value) {
-            value[3] = 1;
-        }
-        return value;
+    constructor(layer: LayerSpecification) {
+        super(layer, properties);
     }
 
-    createBucket(parameters: BucketParameters) {
+    createBucket(parameters: BucketParameters<FillExtrusionStyleLayer>) {
         return new FillExtrusionBucket(parameters);
     }
 
-    isOpacityZero(zoom: number) {
-        return this.getPaintValue('fill-extrusion-opacity', { zoom: zoom }) === 0;
-    }
-
     queryRadius(): number {
-        return translateDistance(this.paint['fill-extrusion-translate']);
+        return translateDistance(this.paint.get('fill-extrusion-translate'));
     }
 
     queryIntersectsFeature(queryGeometry: Array<Array<Point>>,
                            feature: VectorTileFeature,
                            geometry: Array<Array<Point>>,
                            zoom: number,
-                           bearing: number,
+                           transform: Transform,
                            pixelsToTileUnits: number): boolean {
         const translatedPolygon = translate(queryGeometry,
-            this.getPaintValue('fill-extrusion-translate', {zoom}, feature),
-            this.getPaintValue('fill-extrusion-translate-anchor', {zoom}, feature),
-            bearing, pixelsToTileUnits);
+            this.paint.get('fill-extrusion-translate'),
+            this.paint.get('fill-extrusion-translate-anchor'),
+            transform.angle, pixelsToTileUnits);
         return multiPolygonIntersectsMultiPolygon(translatedPolygon, geometry);
     }
 
-    has3DPass() {
-        return this.paint['fill-extrusion-opacity'] !== 0 && this.layout['visibility'] !== 'none';
+    hasOffscreenPass() {
+        return this.paint.get('fill-extrusion-opacity') !== 0 && this.visibility !== 'none';
     }
 
-    resize(gl: WebGLRenderingContext) {
+    resize() {
         if (this.viewportFrame) {
-            const {texture, fbo} = this.viewportFrame;
-            gl.deleteTexture(texture);
-            gl.deleteFramebuffer(fbo);
+            this.viewportFrame.destroy();
             this.viewportFrame = null;
         }
     }
 }
 
-module.exports = FillExtrusionStyleLayer;
+export default FillExtrusionStyleLayer;

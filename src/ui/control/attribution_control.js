@@ -1,10 +1,14 @@
 // @flow
 
-const DOM = require('../../util/dom');
-const util = require('../../util/util');
-const config = require('../../util/config');
+import DOM from '../../util/dom';
+import { bindAll } from '../../util/util';
+import config from '../../util/config';
 
 import type Map from '../map';
+
+type Options = {
+    compact?: boolean
+};
 
 /**
  * An `AttributionControl` control presents the map's [attribution information](https://www.mapbox.com/help/attribution/).
@@ -19,17 +23,17 @@ import type Map from '../map';
  *     }));
  */
 class AttributionControl {
-    options: any;
+    options: Options;
     _map: Map;
     _container: HTMLElement;
     _editLink: ?HTMLAnchorElement;
     styleId: string;
     styleOwner: string;
 
-    constructor(options: any) {
+    constructor(options: Options = {}) {
         this.options = options;
 
-        util.bindAll([
+        bindAll([
             '_updateEditLink',
             '_updateData',
             '_updateCompact'
@@ -131,7 +135,12 @@ class AttributionControl {
             }
             return true;
         });
-        this._container.innerHTML = attributions.join(' | ');
+        if (attributions.length) {
+            this._container.innerHTML = attributions.join(' | ');
+            this._container.classList.remove('mapboxgl-attrib-empty');
+        } else {
+            this._container.classList.add('mapboxgl-attrib-empty');
+        }
         // remove old DOM node from _editLink
         this._editLink = null;
     }
@@ -146,4 +155,4 @@ class AttributionControl {
 
 }
 
-module.exports = AttributionControl;
+export default AttributionControl;

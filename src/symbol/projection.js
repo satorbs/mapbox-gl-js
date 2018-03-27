@@ -1,24 +1,24 @@
 // @flow
 
-const Point = require('@mapbox/point-geometry');
-const {mat4, vec4} = require('@mapbox/gl-matrix');
-const symbolSize = require('./symbol_size');
-const {addDynamicAttributes} = require('../data/bucket/symbol_bucket');
+import Point from '@mapbox/point-geometry';
+
+import { mat4, vec4 } from '@mapbox/gl-matrix';
+import * as symbolSize from './symbol_size';
+import { addDynamicAttributes } from '../data/bucket/symbol_bucket';
+import properties from '../style/style_layer/symbol_style_layer_properties';
+const symbolLayoutProperties = properties.layout;
 
 import type Painter from '../render/painter';
-import type SymbolStyleLayer from '../style/style_layer/symbol_style_layer';
 import type Transform from '../geo/transform';
 import type SymbolBucket from '../data/bucket/symbol_bucket';
-const WritingMode = require('../symbol/shaping').WritingMode;
+import type {
+    GlyphOffsetArray,
+    SymbolLineVertexArray,
+    SymbolDynamicLayoutArray
+} from '../data/array_types';
+import { WritingMode } from '../symbol/shaping';
 
-module.exports = {
-    updateLineLabels,
-    getLabelPlaneMatrix,
-    getGlCoordMatrix,
-    project,
-    placeFirstAndLastGlyph,
-    xyTransformMat4
-};
+export { updateLineLabels, getLabelPlaneMatrix, getGlCoordMatrix, project, placeFirstAndLastGlyph, xyTransformMat4 };
 
 /*
  * # Overview of coordinate spaces
@@ -144,12 +144,11 @@ function updateLineLabels(bucket: SymbolBucket,
                           labelPlaneMatrix: mat4,
                           glCoordMatrix: mat4,
                           pitchWithMap: boolean,
-                          keepUpright: boolean,
-                          pixelsToTileUnits: number,
-                          layer: SymbolStyleLayer) {
+                          keepUpright: boolean) {
 
     const sizeData = isText ? bucket.textSizeData : bucket.iconSizeData;
-    const partiallyEvaluatedSize = symbolSize.evaluateSizeForZoom(sizeData, painter.transform, layer, isText);
+    const partiallyEvaluatedSize = symbolSize.evaluateSizeForZoom(sizeData, painter.transform.zoom,
+        symbolLayoutProperties.properties[isText ? 'text-size' : 'icon-size']);
 
     const clippingBuffer = [256 / painter.width * 2 + 1, 256 / painter.height * 2 + 1];
 
@@ -159,7 +158,9 @@ function updateLineLabels(bucket: SymbolBucket,
     dynamicLayoutVertexArray.clear();
 
     const lineVertexArray = bucket.lineVertexArray;
-    const placedSymbols = isText ? bucket.placedGlyphArray : bucket.placedIconArray;
+    const placedSymbols = isText ? bucket.text.placedSymbolArray : bucket.icon.placedSymbolArray;
+
+    const aspectRatio = painter.transform.width / painter.transform.height;
 
     let useVertical = false;
 
@@ -197,26 +198,26 @@ function updateLineLabels(bucket: SymbolBucket,
         const projectionCache = {};
 
         const placeUnflipped: any = placeGlyphsAlongLine(symbol, pitchScaledFontSize, false /*unflipped*/, keepUpright, posMatrix, labelPlaneMatrix, glCoordMatrix,
-            bucket.glyphOffsetArray, lineVertexArray, dynamicLayoutVertexArray, anchorPoint, tileAnchorPoint, projectionCache);
+            bucket.glyphOffsetArray, lineVertexArray, dynamicLayoutVertexArray, anchorPoint, tileAnchorPoint, projectionCache, aspectRatio);
 
         useVertical = placeUnflipped.useVertical;
 
         if (placeUnflipped.notEnoughRoom || useVertical ||
             (placeUnflipped.needsFlipping &&
              placeGlyphsAlongLine(symbol, pitchScaledFontSize, true /*flipped*/, keepUpright, posMatrix, labelPlaneMatrix, glCoordMatrix,
-                 bucket.glyphOffsetArray, lineVertexArray, dynamicLayoutVertexArray, anchorPoint, tileAnchorPoint, projectionCache).notEnoughRoom)) {
+                 bucket.glyphOffsetArray, lineVertexArray, dynamicLayoutVertexArray, anchorPoint, tileAnchorPoint, projectionCache, aspectRatio).notEnoughRoom)) {
             hideGlyphs(symbol.numGlyphs, dynamicLayoutVertexArray);
         }
     }
 
     if (isText) {
-        bucket.text.dynamicLayoutVertexBuffer.updateData(dynamicLayoutVertexArray.serialize());
+        bucket.text.dynamicLayoutVertexBuffer.updateData(dynamicLayoutVertexArray);
     } else {
-        bucket.icon.dynamicLayoutVertexBuffer.updateData(dynamicLayoutVertexArray.serialize());
+        bucket.icon.dynamicLayoutVertexBuffer.updateData(dynamicLayoutVertexArray);
     }
 }
 
-function placeFirstAndLastGlyph(fontScale: number, glyphOffsetArray: any, lineOffsetX: number, lineOffsetY: number, flip: boolean, anchorPoint: Point, tileAnchorPoint: Point, symbol: any, lineVertexArray: any, labelPlaneMatrix: mat4, projectionCache: any, returnTileDistance: boolean) {
+function placeFirstAndLastGlyph(fontScale: number, glyphOffsetArray: GlyphOffsetArray, lineOffsetX: number, lineOffsetY: number, flip: boolean, anchorPoint: Point, tileAnchorPoint: Point, symbol: any, lineVertexArray: SymbolLineVertexArray, labelPlaneMatrix: mat4, projectionCache: any, returnTileDistance: boolean) {
     const glyphEndIndex = symbol.glyphStartIndex + symbol.numGlyphs;
     const lineStartIndex = symbol.lineStartIndex;
     const lineEndIndex = symbol.lineStartIndex + symbol.lineLength;
@@ -237,7 +238,28 @@ function placeFirstAndLastGlyph(fontScale: number, glyphOffsetArray: any, lineOf
     return { first: firstPlacedGlyph, last: lastPlacedGlyph };
 }
 
-function placeGlyphsAlongLine(symbol, fontSize, flip, keepUpright, posMatrix, labelPlaneMatrix, glCoordMatrix, glyphOffsetArray, lineVertexArray, dynamicLayoutVertexArray, anchorPoint, tileAnchorPoint, projectionCache) {
+function requiresOrientationChange(writingMode, firstPoint, lastPoint, aspectRatio) {
+    if (writingMode === WritingMode.horizontal) {
+        // On top of choosing whether to flip, choose whether to render this version of the glyphs or the alternate
+        // vertical glyphs. We can't just filter out vertical glyphs in the horizontal range because the horizontal
+        // and vertical versions can have slightly different projections which could lead to angles where both or
+        // neither showed.
+        const rise = Math.abs(lastPoint.y - firstPoint.y);
+        const run = Math.abs(lastPoint.x - firstPoint.x) * aspectRatio;
+        if (rise > run) {
+            return { useVertical: true };
+        }
+    }
+
+    if (writingMode === WritingMode.vertical ? firstPoint.y < lastPoint.y : firstPoint.x > lastPoint.x) {
+        // Includes "horizontalOnly" case for labels without vertical glyphs
+        return { needsFlipping: true };
+    }
+
+    return null;
+}
+
+function placeGlyphsAlongLine(symbol, fontSize, flip, keepUpright, posMatrix, labelPlaneMatrix, glCoordMatrix, glyphOffsetArray, lineVertexArray, dynamicLayoutVertexArray, anchorPoint, tileAnchorPoint, projectionCache, aspectRatio) {
     const fontScale = fontSize / 24;
     const lineOffsetX = symbol.lineOffsetX * fontSize;
     const lineOffsetY = symbol.lineOffsetY * fontSize;
@@ -258,21 +280,10 @@ function placeGlyphsAlongLine(symbol, fontSize, flip, keepUpright, posMatrix, la
         const lastPoint = project(firstAndLastGlyph.last.point, glCoordMatrix).point;
 
         if (keepUpright && !flip) {
-            if (symbol.writingMode === WritingMode.horizontal) {
-                // On top of choosing whether to flip, choose whether to render this version of the glyphs or the alternate
-                // vertical glyphs. We can't just filter out vertical glyphs in the horizontal range because the horizontal
-                // and vertical versions can have slightly different projections which could lead to angles where both or
-                // neither showed.
-                if (Math.abs(lastPoint.y - firstPoint.y) > Math.abs(lastPoint.x - firstPoint.x)) {
-                    return { useVertical: true };
-                }
+            const orientationChange = requiresOrientationChange(symbol.writingMode, firstPoint, lastPoint, aspectRatio);
+            if (orientationChange) {
+                return orientationChange;
             }
-
-            if (symbol.writingMode === WritingMode.vertical ? firstPoint.y < lastPoint.y : firstPoint.x > lastPoint.x) {
-                // Includes "horizontalOnly" case for labels without vertical glyphs
-                return { needsFlipping: true };
-            }
-
         }
 
         placedGlyphs = [firstAndLastGlyph.first];
@@ -299,8 +310,10 @@ function placeGlyphsAlongLine(symbol, fontSize, flip, keepUpright, posMatrix, la
                 projectedVertex.point :
                 projectTruncatedLineSegment(tileAnchorPoint, tileSegmentEnd, a, 1, posMatrix);
 
-            if (symbol.vertical ? b.y > a.y : b.x < a.x) {
-                return { needsFlipping: true };
+
+            const orientationChange = requiresOrientationChange(symbol.writingMode, a, b, aspectRatio);
+            if (orientationChange) {
+                return orientationChange;
             }
         }
         // $FlowFixMe
@@ -338,7 +351,7 @@ function placeGlyphAlongLine(offsetX: number,
                              anchorSegment: number,
                              lineStartIndex: number,
                              lineEndIndex: number,
-                             lineVertexArray: any,
+                             lineVertexArray: SymbolLineVertexArray,
                              labelPlaneMatrix: mat4,
                              projectionCache: {[number]: Point},
                              returnTileDistance: boolean) {
@@ -426,7 +439,7 @@ const hiddenGlyphAttributes = new Float32Array([-Infinity, -Infinity, 0, -Infini
 
 // Hide them by moving them offscreen. We still need to add them to the buffer
 // because the dynamic buffer is paired with a static buffer that doesn't get updated.
-function hideGlyphs(num: number, dynamicLayoutVertexArray: any) {
+function hideGlyphs(num: number, dynamicLayoutVertexArray: SymbolDynamicLayoutArray) {
     for (let i = 0; i < num; i++) {
         const offset = dynamicLayoutVertexArray.length;
         dynamicLayoutVertexArray.resize(offset + 4);

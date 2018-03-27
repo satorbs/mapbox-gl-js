@@ -1,6 +1,6 @@
 // @flow
 
-import type CollisionBoxArray from './collision_box';
+import type {CollisionBoxArray} from '../data/array_types';
 import type Point from '@mapbox/point-geometry';
 import type Anchor from './anchor';
 
@@ -179,4 +179,4 @@ class CollisionFeature {
     }
 }
 
-module.exports = CollisionFeature;
+export default CollisionFeature;

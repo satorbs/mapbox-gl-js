@@ -64,6 +64,7 @@ type MapOptions = {
     logoPosition?: ControlPosition,
     failIfMajorPerformanceCaveat?: boolean,
     preserveDrawingBuffer?: boolean,
+    premultipliedAlpha: boolean,
     refreshExpiredTiles?: boolean,
     maxBounds?: LngLatBoundsLike,
     scrollZoom?: boolean,
@@ -114,6 +115,7 @@ const defaultOptions = {
 
     failIfMajorPerformanceCaveat: false,
     preserveDrawingBuffer: false,
+    premultipliedAlpha: true,
 
     trackResize: true,
 
@@ -238,6 +240,7 @@ class Map extends Camera {
     _loaded: boolean;
     _trackResize: boolean;
     _preserveDrawingBuffer: boolean;
+    _premultipliedAlpha: boolean;
     _failIfMajorPerformanceCaveat: boolean;
     _refreshExpiredTiles: boolean;
     _hash: Hash;
@@ -269,6 +272,7 @@ class Map extends Camera {
         this._maxTileCacheSize = options.maxTileCacheSize;
         this._failIfMajorPerformanceCaveat = options.failIfMajorPerformanceCaveat;
         this._preserveDrawingBuffer = options.preserveDrawingBuffer;
+        this._premultipliedAlpha = options.premultipliedAlpha;
         this._trackResize = options.trackResize;
         this._bearingSnap = options.bearingSnap;
         this._refreshExpiredTiles = options.refreshExpiredTiles;
@@ -1435,7 +1439,8 @@ class Map extends Camera {
     _setupPainter() {
         const attributes = extend({
             failIfMajorPerformanceCaveat: this._failIfMajorPerformanceCaveat,
-            preserveDrawingBuffer: this._preserveDrawingBuffer
+            preserveDrawingBuffer: this._preserveDrawingBuffer,
+            premultipliedAlpha: this._premultipliedAlpha
         }, isSupported.webGLContextAttributes);
 
         const gl = this._canvas.getContext('webgl', attributes) ||

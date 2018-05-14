@@ -1,58 +1,64 @@
 // @flow
 
+type ExpressionType = 'data-driven' | 'cross-faded' | 'cross-faded-data-driven' | 'color-ramp' | 'data-constant' | 'constant';
+type ExpressionParameters = Array<'zoom' | 'feature' | 'heatmap-density' | 'line-progress'>;
+
+type ExpressionSpecification = {
+    interpolated: boolean,
+    parameters: ExpressionParameters
+}
+
 export type StylePropertySpecification = {
     type: 'number',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: number
 } | {
     type: 'string',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: string,
     tokens?: boolean
 } | {
     type: 'boolean',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: boolean
 } | {
     type: 'enum',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
     values: {[string]: {}},
+    transition: boolean,
     default?: string
 } | {
     type: 'color',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: string
 } | {
     type: 'array',
     value: 'number',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
     length?: number,
+    transition: boolean,
     default?: Array<number>
 } | {
     type: 'array',
     value: 'string',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
     length?: number,
+    transition: boolean,
     default?: Array<string>
 };
 
 import v8 from './reference/v8.json';
-export {v8};
-
 import latest from './reference/latest';
 import format from './format';
 import migrate from './migrate';
@@ -68,7 +74,25 @@ import convertFunction from './function/convert';
 
 import validate from './validate_style';
 
-const exported = {
+const expression = {
+    StyleExpression,
+    isExpression,
+    createExpression,
+    createPropertyExpression,
+    normalizePropertyExpression,
+    ZoomConstantExpression,
+    ZoomDependentExpression,
+    StylePropertyFunction
+};
+
+const styleFunction = {
+    convertFunction,
+    createFunction,
+    isFunction
+};
+
+export {
+    v8,
     latest,
     format,
     migrate,
@@ -76,27 +100,12 @@ const exported = {
     diff,
     ValidationError,
     ParsingError,
-    expression: {
-        StyleExpression,
-        isExpression,
-        createExpression,
-        createPropertyExpression,
-        normalizePropertyExpression,
-        ZoomConstantExpression,
-        ZoomDependentExpression,
-        StylePropertyFunction
-    },
+    expression,
     featureFilter,
     Color,
-    function: {
-        convertFunction,
-        createFunction,
-        isFunction
-    },
+    styleFunction as function,
     validate
 };
-
-export default exported;
 
 validate.parsed = validate;
 validate.latest = validate;

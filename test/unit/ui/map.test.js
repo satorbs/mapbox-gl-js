@@ -868,7 +868,7 @@ test('Map', (t) => {
                 const output = map.queryRenderedFeatures(map.project(new LngLat(0, 0)));
 
                 const args = map.style.queryRenderedFeatures.getCall(0).args;
-                t.deepEqual(args[0].map(c => fixedCoord(c)), [{ column: 0.5, row: 0.5, zoom: 0 }]); // query geometry
+                t.deepEqual(args[0].worldCoordinate.map(c => fixedCoord(c)), [{ column: 0.5, row: 0.5, zoom: 0 }]); // query geometry
                 t.deepEqual(args[1], {}); // params
                 t.deepEqual(args[2], map.transform); // transform
                 t.deepEqual(output, []);
@@ -916,7 +916,7 @@ test('Map', (t) => {
 
                 map.queryRenderedFeatures(map.project(new LngLat(360, 0)));
 
-                const coords = map.style.queryRenderedFeatures.getCall(0).args[0].map(c => fixedCoord(c));
+                const coords = map.style.queryRenderedFeatures.getCall(0).args[0].worldCoordinate.map(c => fixedCoord(c));
                 t.equal(coords[0].column, 1.5);
                 t.equal(coords[0].row, 0.5);
                 t.equal(coords[0].zoom, 0);
@@ -1209,6 +1209,83 @@ test('Map', (t) => {
                     t.end();
                 });
                 map.setPaintProperty('non-existant', 'background-color', 'red');
+            });
+        });
+
+        t.end();
+    });
+
+    t.test('#setFeatureState', (t) => {
+        t.test('sets state', (t) => {
+            const map = createMap({
+                style: {
+                    "version": 8,
+                    "sources": {
+                        "geojson": createStyleSource()
+                    },
+                    "layers": []
+                }
+            });
+            map.on('load', () => {
+                map.setFeatureState({ source: 'geojson', id: '12345'}, {'hover': true});
+                const fState = map.getFeatureState({ source: 'geojson', id: '12345'});
+                t.equal(fState.hover, true);
+                t.end();
+            });
+        });
+        t.test('throw before loaded', (t) => {
+            const map = createMap({
+                style: {
+                    "version": 8,
+                    "sources": {
+                        "geojson": createStyleSource()
+                    },
+                    "layers": []
+                }
+            });
+            t.throws(() => {
+                map.setFeatureState({ source: 'geojson', id: '12345'}, {'hover': true});
+            }, Error, /load/i);
+
+            t.end();
+        });
+        t.test('fires an error if source not found', (t) => {
+            const map = createMap({
+                style: {
+                    "version": 8,
+                    "sources": {
+                        "geojson": createStyleSource()
+                    },
+                    "layers": []
+                }
+            });
+            map.on('load', () => {
+                map.on('error', ({ error }) => {
+                    t.match(error.message, /source/);
+                    t.end();
+                });
+                map.setFeatureState({ source: 'vector', id: '12345'}, {'hover': true});
+            });
+        });
+        t.test('fires an error if sourceLayer not provided for a vector source', (t) => {
+            const map = createMap({
+                style: {
+                    "version": 8,
+                    "sources": {
+                        "vector": {
+                            "type": "vector",
+                            "tiles": ["http://example.com/{z}/{x}/{y}.png"]
+                        }
+                    },
+                    "layers": []
+                }
+            });
+            map.on('load', () => {
+                map.on('error', ({ error }) => {
+                    t.match(error.message, /sourceLayer/);
+                    t.end();
+                });
+                map.setFeatureState({ source: 'vector', sourceLayer: 0, id: '12345'}, {'hover': true});
             });
         });
 

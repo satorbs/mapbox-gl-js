@@ -55,7 +55,7 @@ class VideoSource extends ImageSource {
      */
     constructor(id: string, options: VideoSourceSpecification, dispatcher: Dispatcher, eventedParent: Evented) {
         super(id, options, dispatcher, eventedParent);
-        this.roundZoom = true;
+        this.roundZoom = options.roundZoom || false;
         this.type = 'video';
         this.options = options;
     }

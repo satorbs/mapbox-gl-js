@@ -44,7 +44,7 @@ class RasterTileSource extends Evented implements Source {
         this.type = 'raster';
         this.minzoom = 0;
         this.maxzoom = 22;
-        this.roundZoom = true;
+        this.roundZoom = options.roundZoom || false;
         this.scheme = 'xyz';
         this.tileSize = 512;
         this._loaded = false;

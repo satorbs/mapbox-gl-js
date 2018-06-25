@@ -44,17 +44,19 @@ class Transform {
     _renderWorldCopies: boolean;
     _minZoom: number;
     _maxZoom: number;
+    _zoomOffsetStops: Array<Array<number>>;
     _center: LngLat;
     _constraining: boolean;
     _posMatrixCache: {[number]: Float32Array};
     _alignedPosMatrixCache: {[number]: Float32Array};
 
-    constructor(minZoom: ?number, maxZoom: ?number, renderWorldCopies: boolean | void) {
+    constructor(minZoom: ?number, maxZoom: ?number, renderWorldCopies: boolean | void, zoomStops: Array<Array<number>> | void) {
         this.tileSize = 512; // constant
 
         this._renderWorldCopies = renderWorldCopies === undefined ? true : renderWorldCopies;
         this._minZoom = minZoom || 0;
         this._maxZoom = maxZoom || 22;
+        this._zoomOffsetStops = zoomStops === undefined ? [] : zoomStops;
 
         this.latRange = [-85.05113, 85.05113];
 
@@ -71,7 +73,7 @@ class Transform {
     }
 
     clone(): Transform {
-        const clone = new Transform(this._minZoom, this._maxZoom, this._renderWorldCopies);
+        const clone = new Transform(this._minZoom, this._maxZoom, this._renderWorldCopies, this._zoomOffsetStops);
         clone.tileSize = this.tileSize;
         clone.latRange = this.latRange;
         clone.width = this.width;
@@ -190,9 +192,12 @@ class Transform {
      * @returns {number} zoom level
      */
     coveringZoomLevel(options: {roundZoom?: boolean, tileSize: number}) {
-        return (options.roundZoom ? Math.round : Math.floor)(
-            this.zoom + this.scaleZoom(this.tileSize / options.tileSize)
-        );
+        const level = this.zoom + this.scaleZoom(this.tileSize / options.tileSize);
+        const stop = this._zoomOffsetStops.find((offsetStop) => {
+            return (this.zoom < offsetStop[0]);
+        });
+        const offset = (stop) ? stop[1] : 0;
+        return (options.roundZoom ? Math.round : Math.floor)(level + offset);
     }
 
     /**

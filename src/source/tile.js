@@ -319,7 +319,6 @@ class Tile {
 
         const maskedBoundsArray = new RasterBoundsArray();
         const indexArray = new TriangleIndexArray();
-        const divNum = (highResolution) ? 32 : 8;
 
         this.segments = new SegmentVector();
         // Create a new segment so that we will upload (empty) buffers even when there is nothing to
@@ -330,7 +329,9 @@ class Tile {
         if (maskArray.length) {
             const maskCoord = mask[maskArray[0]];
             const vertexExtent = EXTENT >> maskCoord.z;
-            const step = vertexExtent / divNum;
+            const divNum = (highResolution) ? 32 : 16; // must be multiple of 4
+            const pointStep = vertexExtent / divNum;
+            const demStep = this.tileSize / divNum;
             const level = this.dem.level;
             let tlIdx = 0,
                 trIdx = 0,
@@ -339,32 +340,32 @@ class Tile {
             for (let t = 0; t < divNum; t++) { // t-axis
                 for (let s = 0; s < divNum; s++) { // s-axis
                     const segment =  (this.segments: any).prepareSegment(5, maskedBoundsArray, indexArray);
-                    const ns = Math.min(256, (s + 1) * 8);
-                    const nt = Math.min(256, (t + 1) * 8);
+                    const ns = Math.min(this.tileSize, (s + 1) * demStep);
+                    const nt = Math.min(this.tileSize, (t + 1) * demStep);
 
                     // top left
                     if (s === 0 && t === 0) {
-                        const tl = new Point(s * step, t * step);
-                        const tle = level.get(s * 8, t * 8);
+                        const tl = new Point(s * pointStep, t * pointStep);
+                        const tle = level.get(s * demStep, t * demStep);
                         maskedBoundsArray.emplaceBack(tl.x, tl.y, tle, tl.x, tl.y);
                         tlIdx = segment.vertexLength++;
                     }
                     // top right
                     if (t === 0) {
-                        const tr = new Point((s + 1) * step, t * step);
-                        const tre = level.get(ns, t * 8);
+                        const tr = new Point((s + 1) * pointStep, t * pointStep);
+                        const tre = level.get(ns, t * demStep);
                         maskedBoundsArray.emplaceBack(tr.x, tr.y, tre, tr.x, tr.y);
                         trIdx = segment.vertexLength++;
                     }
                     // bottom left
                     if (s === 0) {
-                        const bl = new Point(s * step, (t + 1) * step);
-                        const ble = level.get(s * 8, nt);
+                        const bl = new Point(s * pointStep, (t + 1) * pointStep);
+                        const ble = level.get(s * demStep, nt);
                         maskedBoundsArray.emplaceBack(bl.x, bl.y, ble, bl.x, bl.y);
                         blIdx = segment.vertexLength++;
                     }
                     // bottom right
-                    const br = new Point((s + 1) * step, (t + 1) * step);
+                    const br = new Point((s + 1) * pointStep, (t + 1) * pointStep);
                     const bre = level.get(ns, nt);
                     maskedBoundsArray.emplaceBack(br.x, br.y, bre, br.x, br.y);
                     brIdx = segment.vertexLength++;

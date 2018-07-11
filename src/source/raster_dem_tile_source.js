@@ -22,7 +22,7 @@ class RasterDEMTileSource extends RasterTileSource implements Source {
     constructor(id: string, options: RasterDEMSourceSpecification, dispatcher: Dispatcher, eventedParent: Evented) {
         super(id, options, dispatcher, eventedParent);
         this.type = 'raster-dem';
-        this.maxzoom = 22;
+        this.maxzoom = options.maxzoom;
         this._options = extend({}, options);
         this.encoding = options.encoding || "mapbox";
     }
@@ -45,29 +45,39 @@ class RasterDEMTileSource extends RasterTileSource implements Source {
         tile.neighboringTiles = this._getNeighboringTiles(tile.tileID);
         function imageLoaded(err, img) {
             delete tile.request;
+            let rawImageData = null;
             if (tile.aborted) {
                 tile.state = 'unloaded';
                 callback(null);
+                return;
             } else if (err) {
-                tile.state = 'errored';
-                callback(err);
+                if (err.status === 404) {
+                    // TODO:
+                    const color = (this.encoding === 'mapbox') ? 'rgb(1, 134, 255)' : 'rgb(1, 134, 255)';
+                    rawImageData = browser.createImageData(this.tileSize, this.tileSize, color);
+                } else {
+                    tile.state = 'errored';
+                    callback(err);
+                    return;
+                }
             } else if (img) {
                 if (this.map._refreshExpiredTiles) tile.setExpiryData(img);
                 delete (img: any).cacheControl;
                 delete (img: any).expires;
 
-                const rawImageData = browser.getImageData(img);
-                const params = {
-                    uid: tile.uid,
-                    coord: tile.tileID,
-                    source: this.id,
-                    rawImageData: rawImageData,
-                    encoding: this.encoding
-                };
+                rawImageData = browser.getImageData(img);
+            }
 
-                if (!tile.workerID || tile.state === 'expired') {
-                    tile.workerID = this.dispatcher.send('loadDEMTile', params, done.bind(this));
-                }
+            const params = {
+                uid: tile.uid,
+                coord: tile.tileID,
+                source: this.id,
+                rawImageData: rawImageData,
+                encoding: this.encoding
+            };
+
+            if (!tile.workerID || tile.state === 'expired') {
+                tile.workerID = this.dispatcher.send('loadDEMTile', params, done.bind(this));
             }
         }
 

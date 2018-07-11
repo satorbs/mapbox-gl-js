@@ -71,6 +71,10 @@ class SourceCache extends Evented {
             // source data has loaded (i.e geojson has been tiled on the worker and is ready)
             if (e.dataType === 'source' && e.sourceDataType === 'metadata') this._sourceLoaded = true;
 
+            if (options.maxzoom && this._source.type === 'raster-dem') {
+                this._source.maxzoom = options.maxzoom;
+            }
+
             // for sources with mutable data, this event fires when the underlying data
             // to a source is changed. (i.e. GeoJSONSource#setData and ImageSource#serCoordinates)
             if (this._sourceLoaded && !this._paused && e.dataType === "source" && e.sourceDataType === 'content') {

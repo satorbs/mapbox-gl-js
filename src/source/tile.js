@@ -405,6 +405,15 @@ class Tile {
         return this.state === 'loaded' || this.state === 'reloading' || this.state === 'expired';
     }
 
+    didFullfiled(): boolean {
+        let didFilled = true;
+        Object.keys(this.neighboringTiles).some((key) => {
+            didFilled = this.neighboringTiles[key].backfilled;
+            return !didFilled;
+        });
+        return didFilled;
+    }
+
     setExpiryData(data: any) {
         const prior = this.expirationTime;
 

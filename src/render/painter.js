@@ -242,6 +242,12 @@ class Painter {
         }
     }
 
+    _shouldAttachDem(sourceKey: string, rasterSources: Array<SourceCache>): boolean {
+        return sourceKey === 'mapbox://mapbox.satellite' &&
+            rasterSources['dem'] &&
+            rasterSources['dem'].getVisibleCoordinates().length > 0;
+    }
+
     stencilModeForClipping(tileID: OverscaledTileID): StencilMode {
         const gl = this.context.gl;
         return new StencilMode({ func: gl.EQUAL, mask: 0xFF }, this._tileClippingMaskIDs[tileID.key], 0x00, gl.KEEP, gl.KEEP, gl.REPLACE);
@@ -293,7 +299,21 @@ class Painter {
         for (const key in rasterSources) {
             const sourceCache = rasterSources[key];
             const coords = sourceCache.getVisibleCoordinates();
-            const visibleTiles = coords.map((c)=>{ return sourceCache.getTile(c); });
+            let visibleTiles = null;
+            if (this._shouldAttachDem(key, rasterSources)) {
+                const demSource = rasterSources['dem'];
+                visibleTiles = coords.map((c) => {
+                    const tile = sourceCache.getTile(c);
+                    const demTile = demSource.getTileByID(c.key);
+                    if (demTile) {
+                    // if (demTile && demTile.didFullfilled()) {
+                        tile.dem = demTile.dem;
+                    }
+                    return tile;
+                });
+            } else {
+                visibleTiles = coords.map((c)=>{ return sourceCache.getTile(c); });
+            }
             updateTileMasks(visibleTiles, this.context, this.options.highResolution);
         }
 

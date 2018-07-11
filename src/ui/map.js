@@ -1642,7 +1642,7 @@ class Map extends Camera {
             rotating: this.isRotating(),
             zooming: this.isZooming(),
             fadeDuration: this._fadeDuration,
-            highResolution: this.this._highResolution
+            highResolution: this._highResolution
         });
 
         this.fire(new Event('render'));

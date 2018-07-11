@@ -58,28 +58,30 @@ class StructArrayLayout4i8 extends StructArray {
         this.int16 = new Int16Array(this.arrayBuffer);
     }
 
-    emplaceBack(v0: number, v1: number, v2: number, v3: number) {
+    emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number) {
         const i = this.length;
         this.resize(i + 1);
-        const o2 = i * 4;
+        const o2 = i * 5;
         this.int16[o2 + 0] = v0;
         this.int16[o2 + 1] = v1;
         this.int16[o2 + 2] = v2;
         this.int16[o2 + 3] = v3;
+        this.int16[o2 + 4] = v4;
         return i;
     }
 
-    emplace(i: number, v0: number, v1: number, v2: number, v3: number) {
-        const o2 = i * 4;
+    emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number) {
+        const o2 = i * 5;
         this.int16[o2 + 0] = v0;
         this.int16[o2 + 1] = v1;
         this.int16[o2 + 2] = v2;
         this.int16[o2 + 3] = v3;
+        this.int16[o2 + 4] = v4;
         return i;
     }
 }
 
-StructArrayLayout4i8.prototype.bytesPerElement = 8;
+StructArrayLayout4i8.prototype.bytesPerElement = 10;
 register('StructArrayLayout4i8', StructArrayLayout4i8);
 
 

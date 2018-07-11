@@ -64,7 +64,8 @@ type PainterOptions = {
     showTileBoundaries: boolean,
     rotating: boolean,
     zooming: boolean,
-    fadeDuration: number
+    fadeDuration: number,
+    highResolution: boolean
 }
 
 /**
@@ -293,7 +294,7 @@ class Painter {
             const sourceCache = rasterSources[key];
             const coords = sourceCache.getVisibleCoordinates();
             const visibleTiles = coords.map((c)=>{ return sourceCache.getTile(c); });
-            updateTileMasks(visibleTiles, this.context);
+            updateTileMasks(visibleTiles, this.context, this.options.highResolution);
         }
 
         // Offscreen pass

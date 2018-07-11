@@ -46,6 +46,19 @@ const exported = {
         return context.getImageData(0, 0, img.width, img.height);
     },
 
+    createImageData(width: number, height: number, color: string): ImageData {
+        const canvas = window.document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new Error('failed to create canvas 2d context');
+        }
+        canvas.width = width;
+        canvas.height = height;
+        context.fillStyle = color;
+        context.fillRect(0, 0, width, height);
+        return context.getImageData(0, 0, width, height);
+    },
+
     hardwareConcurrency: window.navigator.hardwareConcurrency || 4,
     get devicePixelRatio() { return window.devicePixelRatio; },
     supportsWebp: false

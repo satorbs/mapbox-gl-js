@@ -301,20 +301,25 @@ class Tile {
         }
     }
 
-    setMask(mask: Mask, context: Context) {
+    setMask(mask: Mask, context: Context, highResolution: boolean) {
 
         // don't redo buffer work if the mask is the same;
-        if (deepEqual(this.mask, mask)) return;
+        // if (deepEqual(this.mask, mask)) return; // TODO:
+        if (!this.dem) {
+            // do nothing
+            return;
+        }
 
         this.mask = mask;
         this.clearMask();
 
         // We want to render the full tile, and keeping the segments/vertices/indices empty means
         // using the global shared buffers for covering the entire tile.
-        if (deepEqual(mask, {'0': true})) return;
+        if (deepEqual(mask, {'0': true})) return; // TODO:
 
         const maskedBoundsArray = new RasterBoundsArray();
         const indexArray = new TriangleIndexArray();
+        const divNum = (highResolution) ? 32 : 8;
 
         this.segments = new SegmentVector();
         // Create a new segment so that we will upload (empty) buffers even when there is nothing to
@@ -322,28 +327,74 @@ class Tile {
         this.segments.prepareSegment(0, maskedBoundsArray, indexArray);
 
         const maskArray = Object.keys(mask);
-        for (let i = 0; i < maskArray.length; i++) {
-            const maskCoord = mask[maskArray[i]];
+        if (maskArray.length) {
+            const maskCoord = mask[maskArray[0]];
             const vertexExtent = EXTENT >> maskCoord.z;
-            const tlVertex = new Point(maskCoord.x * vertexExtent, maskCoord.y * vertexExtent);
-            const brVertex = new Point(tlVertex.x + vertexExtent, tlVertex.y + vertexExtent);
+            const step = vertexExtent / divNum;
+            const level = this.dem.level;
+            let tlIdx = 0,
+                trIdx = 0,
+                blIdx = 0,
+                brIdx = 0;
+            for (let t = 0; t < divNum; t++) { // t-axis
+                for (let s = 0; s < divNum; s++) { // s-axis
+                    const segment =  (this.segments: any).prepareSegment(5, maskedBoundsArray, indexArray);
+                    const ns = Math.min(256, (s + 1) * 8);
+                    const nt = Math.min(256, (t + 1) * 8);
 
-            // not sure why flow is complaining here because it doesn't complain at L401
-            const segment = (this.segments: any).prepareSegment(4, maskedBoundsArray, indexArray);
+                    // top left
+                    if (s === 0 && t === 0) {
+                        const tl = new Point(s * step, t * step);
+                        const tle = level.get(s * 8, t * 8);
+                        maskedBoundsArray.emplaceBack(tl.x, tl.y, tle, tl.x, tl.y);
+                        tlIdx = segment.vertexLength++;
+                    }
+                    // top right
+                    if (t === 0) {
+                        const tr = new Point((s + 1) * step, t * step);
+                        const tre = level.get(ns, t * 8);
+                        maskedBoundsArray.emplaceBack(tr.x, tr.y, tre, tr.x, tr.y);
+                        trIdx = segment.vertexLength++;
+                    }
+                    // bottom left
+                    if (s === 0) {
+                        const bl = new Point(s * step, (t + 1) * step);
+                        const ble = level.get(s * 8, nt);
+                        maskedBoundsArray.emplaceBack(bl.x, bl.y, ble, bl.x, bl.y);
+                        blIdx = segment.vertexLength++;
+                    }
+                    // bottom right
+                    const br = new Point((s + 1) * step, (t + 1) * step);
+                    const bre = level.get(ns, nt);
+                    maskedBoundsArray.emplaceBack(br.x, br.y, bre, br.x, br.y);
+                    brIdx = segment.vertexLength++;
 
-            maskedBoundsArray.emplaceBack(tlVertex.x, tlVertex.y, tlVertex.x, tlVertex.y);
-            maskedBoundsArray.emplaceBack(brVertex.x, tlVertex.y, brVertex.x, tlVertex.y);
-            maskedBoundsArray.emplaceBack(tlVertex.x, brVertex.y, tlVertex.x, brVertex.y);
-            maskedBoundsArray.emplaceBack(brVertex.x, brVertex.y, brVertex.x, brVertex.y);
+                    // index
+                    indexArray.emplaceBack(tlIdx, trIdx, blIdx);
+                    indexArray.emplaceBack(trIdx, blIdx, brIdx); // TODO:
+                    segment.primitiveLength += 2;
 
-            const offset = segment.vertexLength;
-            // 0, 1, 2
-            // 1, 2, 3
-            indexArray.emplaceBack(offset, offset + 1, offset + 2);
-            indexArray.emplaceBack(offset + 1, offset + 2, offset + 3);
+                    // next s division
+                    tlIdx = trIdx;
+                    if (t === 1) {
+                        trIdx += 2;
+                    } else if (t !== 0) {
+                        trIdx++;
+                    }
+                    blIdx = brIdx;
+                }
 
-            segment.vertexLength += 4;
-            segment.primitiveLength += 2;
+                // next t division
+                if (t === 0) {
+                    tlIdx = 2;
+                    trIdx = 3;
+                } else if (t === 1) {
+                    tlIdx++;
+                } else {
+                    tlIdx++;
+                    trIdx++;
+                }
+            }
         }
 
         this.maskedBoundsBuffer = context.createVertexBuffer(maskedBoundsArray, rasterBoundsAttributes.members);

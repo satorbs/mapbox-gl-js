@@ -307,7 +307,9 @@ class Painter {
                     const demTile = demSource.getTileByID(c.key);
                     if (demTile) {
                     // if (demTile && demTile.didFullfilled()) {
-                        tile.dem = demTile.dem;
+                        if (tile.dem !== demTile.dem) {
+                            tile.dem = demTile.dem;
+                        }
                     }
                     return tile;
                 });

@@ -255,10 +255,10 @@ class Transform {
         const centerPoint = new Point(centerCoord.column - 0.5, centerCoord.row - 0.5);
         const offset = (options.tileSize) ? options.tileSize : 0;
         const cornerCoords = [
-            this.pointCoordinate(new Point(-offset, 0), z),
-            this.pointCoordinate(new Point(this.width + offset, 0), z),
-            this.pointCoordinate(new Point(this.width + offset, this.height + offset * 2), z),
-            this.pointCoordinate(new Point(-offset, this.height + offset * 2), z)
+            this.pointCoordinate(new Point(0, 0), z),
+            this.pointCoordinate(new Point(this.width, 0), z),
+            this.pointCoordinate(new Point(this.width, this.height + offset * 2), z),
+            this.pointCoordinate(new Point(0, this.height + offset * 2), z)
         ];
         return tileCover(z, cornerCoords, options.reparseOverscaled ? actualZ : z, this._renderWorldCopies)
             .sort((a, b) => centerPoint.dist(a.canonical) - centerPoint.dist(b.canonical));

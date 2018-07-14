@@ -304,7 +304,7 @@ class Tile {
     setMask(mask: Mask, context: Context, highResolution: boolean) {
 
         // don't redo buffer work if the mask is the same;
-        if (deepEqual(this.mask, mask)) return;
+        if (deepEqual(this.mask, mask)) return; // TODO:
         if (!this.dem) {
             // do nothing
             return;
@@ -315,10 +315,10 @@ class Tile {
 
         // We want to render the full tile, and keeping the segments/vertices/indices empty means
         // using the global shared buffers for covering the entire tile.
-        if (deepEqual(mask, {'0': true})) return; // TODO:
+        if (deepEqual(mask, {'0': true})) return;
 
-        let maskedBoundsArray = new RasterBoundsArray();
-        let indexArray = new TriangleIndexArray();
+        const maskedBoundsArray = new RasterBoundsArray();
+        const indexArray = new TriangleIndexArray();
 
         this.segments = new SegmentVector();
         // Create a new segment so that we will upload (empty) buffers even when there is nothing to
@@ -372,7 +372,7 @@ class Tile {
 
                     // index
                     indexArray.emplaceBack(tlIdx, trIdx, blIdx);
-                    indexArray.emplaceBack(trIdx, blIdx, brIdx); // TODO:
+                    indexArray.emplaceBack(trIdx, blIdx, brIdx);
                     segment.primitiveLength += 2;
 
                     // next s division
@@ -401,8 +401,6 @@ class Tile {
         this.maskedBoundsBuffer = context.createVertexBuffer(maskedBoundsArray, rasterBoundsAttributes.members);
         this.maskedIndexBuffer = context.createIndexBuffer(indexArray);
 
-        maskedBoundsArray = null;
-        indexArray = null;
     }
 
     hasData() {

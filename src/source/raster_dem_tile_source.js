@@ -17,7 +17,7 @@ import type {Callback} from '../types/callback';
 
 
 class RasterDEMTileSource extends RasterTileSource implements Source {
-    encoding: "mapbox" | "terrarium";
+    encoding: "mapbox" | "terrarium" | "gsi";
 
     constructor(id: string, options: RasterDEMSourceSpecification, dispatcher: Dispatcher, eventedParent: Evented) {
         super(id, options, dispatcher, eventedParent);
@@ -52,8 +52,7 @@ class RasterDEMTileSource extends RasterTileSource implements Source {
                 return;
             } else if (err) {
                 if (err.status === 404) {
-                    // TODO:
-                    const color = (this.encoding === 'mapbox') ? 'rgb(1, 134, 255)' : 'rgb(1, 134, 255)';
+                    const color = (this.encoding === 'mapbox') ? 'rgb(1, 134, 255)' : 'rgb(128, 0, 0)';
                     rawImageData = browser.createImageData(this.tileSize, this.tileSize, color);
                 } else {
                     tile.state = 'errored';

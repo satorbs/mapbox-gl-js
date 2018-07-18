@@ -58,10 +58,10 @@ export default class DEMData {
         this.loaded = !!data;
     }
 
-    loadFromImage(data: RGBAImage, encoding: "mapbox" | "terrarium") {
+    loadFromImage(data: RGBAImage, encoding: "mapbox" | "terrarium" | "gsi") {
         if (data.height !== data.width) throw new RangeError('DEM tiles must be square');
-        if (encoding && encoding !== "mapbox" && encoding !== "terrarium") return warnOnce(
-            `"${encoding}" is not a valid encoding type. Valid types include "mapbox" and "terrarium".`
+        if (encoding && encoding !== "mapbox" && encoding !== "terrarium" && encoding !== "gsi") return warnOnce(
+            `"${encoding}" is not a valid encoding type. Valid types include "mapbox", "terrarium" and "gsi".`
         );
         // Build level 0
         const level = this.level = new Level(data.width, data.width / 2);
@@ -102,8 +102,16 @@ export default class DEMData {
         return ((r * 256 + g + b / 256) - 32768.0);
     }
 
+    _unpackGsi(r: number, g: number, b: number) {
+        // unpacking formula for GSI Japan DEM tile
+        // http://maps.gsi.go.jp/development/demtile.html
+        // sea surface = NA:(2 ^ 23), RGB = (128, 0, 0)
+        const h = r * 256 * 256 + g * 256 + b;
+        return (h === Math.pow(2, 23)) ? 0 : 0.01 * ((h << 8) | 0) >> 8;
+    }
+
     _unpackData(level: Level, pixels: Uint8Array | Uint8ClampedArray, encoding: string) {
-        const unpackFunctions = {"mapbox": this._unpackMapbox, "terrarium": this._unpackTerrarium};
+        const unpackFunctions = {"mapbox": this._unpackMapbox, "terrarium": this._unpackTerrarium, "gsi": this._unpackGsi};
         const unpack = unpackFunctions[encoding];
         for (let y = 0; y < level.dim; y++) {
             for (let x = 0; x < level.dim; x++) {

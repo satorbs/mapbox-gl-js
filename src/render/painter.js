@@ -242,7 +242,7 @@ class Painter {
         }
     }
 
-    _shouldAttachDem(sourceKey: string, rasterSources: Array<SourceCache>): boolean {
+    _shouldAttachDEMData(sourceKey: string, rasterSources: Array<SourceCache>): boolean {
         return sourceKey === 'mapbox://mapbox.satellite' &&
             rasterSources['dem'] &&
             rasterSources['dem'].getVisibleCoordinates().length > 0;
@@ -300,13 +300,17 @@ class Painter {
             const sourceCache = rasterSources[key];
             const coords = sourceCache.getVisibleCoordinates();
             let visibleTiles = null;
-            if (this._shouldAttachDem(key, rasterSources)) {
+            if (this._shouldAttachDEMData(key, rasterSources)) {
                 const demSource = rasterSources['dem'];
+                // tile keys should be rendered
+                const tilesInViewport = {};
+                coords.forEach((c) => {
+                    tilesInViewport[c] = true;
+                });
                 visibleTiles = coords.map((c) => {
                     const tile = sourceCache.getTile(c);
                     const demTile = demSource.getTileByID(c.key);
-                    if (demTile) {
-                    // if (demTile && demTile.didFullfilled()) {
+                    if (demTile && demTile.didFullfilled(tilesInViewport)) {
                         if (tile.dem !== demTile.dem) {
                             tile.dem = demTile.dem;
                         }

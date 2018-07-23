@@ -304,7 +304,7 @@ class Tile {
     setMask(mask: Mask, context: Context, highResolution: boolean) {
 
         // don't redo buffer work if the mask is the same;
-        if (deepEqual(this.mask, mask)) return; // TODO:
+        if (deepEqual(this.mask, mask)) return;
         if (!this.dem) {
             // do nothing
             return;
@@ -407,10 +407,10 @@ class Tile {
         return this.state === 'loaded' || this.state === 'reloading' || this.state === 'expired';
     }
 
-    didFullfiled(): boolean {
+    didFullfilled(visibleTiles: Object<boolean>): boolean {
         let didFilled = true;
         Object.keys(this.neighboringTiles).some((key) => {
-            didFilled = this.neighboringTiles[key].backfilled;
+            didFilled = this.neighboringTiles[key].backfilled || !visibleTiles[key];
             return !didFilled;
         });
         return didFilled;

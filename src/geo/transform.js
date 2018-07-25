@@ -63,6 +63,7 @@ class Transform {
         this.width = 0;
         this.height = 0;
         this._center = new LngLat(0, 0);
+        this._elevation = 0;
         this.zoom = 0;
         this.angle = 0;
         this._fov = 0.6435011087932844;
@@ -79,6 +80,7 @@ class Transform {
         clone.width = this.width;
         clone.height = this.height;
         clone._center = this._center;
+        clone._elevation = this._elevation;
         clone.zoom = this.zoom;
         clone.angle = this.angle;
         clone._fov = this._fov;
@@ -144,7 +146,7 @@ class Transform {
         return this._pitch / Math.PI * 180;
     }
     set pitch(pitch: number) {
-        const p = clamp(pitch, 0, 60) / 180 * Math.PI;
+        const p = clamp(pitch, 0, 70) / 180 * Math.PI;
         if (this._pitch === p) return;
         this._unmodified = false;
         this._pitch = p;
@@ -251,11 +253,12 @@ class Transform {
 
         const centerCoord = this.pointCoordinate(this.centerPoint, z);
         const centerPoint = new Point(centerCoord.column - 0.5, centerCoord.row - 0.5);
+        const offset = (options.tileSize) ? options.tileSize : 0;
         const cornerCoords = [
             this.pointCoordinate(new Point(0, 0), z),
             this.pointCoordinate(new Point(this.width, 0), z),
-            this.pointCoordinate(new Point(this.width, this.height), z),
-            this.pointCoordinate(new Point(0, this.height), z)
+            this.pointCoordinate(new Point(this.width, this.height + offset * 2), z),
+            this.pointCoordinate(new Point(0, this.height + offset * 2), z)
         ];
         return tileCover(z, cornerCoords, options.reparseOverscaled ? actualZ : z, this._renderWorldCopies)
             .sort((a, b) => centerPoint.dist(a.canonical) - centerPoint.dist(b.canonical));
@@ -423,11 +426,12 @@ class Transform {
 
         const canonical = unwrappedTileID.canonical;
         const scale = this.worldSize / this.zoomScale(canonical.z);
+        const norm = scale / EXTENT;
         const unwrappedX = canonical.x + Math.pow(2, canonical.z) * unwrappedTileID.wrap;
 
         const posMatrix = mat4.identity(new Float64Array(16));
         mat4.translate(posMatrix, posMatrix, [unwrappedX * scale, canonical.y * scale, 0]);
-        mat4.scale(posMatrix, posMatrix, [scale / EXTENT, scale / EXTENT, 1]);
+        mat4.scale(posMatrix, posMatrix, [norm, norm, 1]);
         mat4.multiply(posMatrix, aligned ? this.alignedProjMatrix : this.projMatrix, posMatrix);
 
         cache[posMatrixKey] = new Float32Array(posMatrix);

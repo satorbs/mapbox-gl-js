@@ -15,26 +15,28 @@ import type {OverscaledTileID} from '../source/tile_id';
 export default drawHillshade;
 
 function drawHillshade(painter: Painter, sourceCache: SourceCache, layer: HillshadeStyleLayer, tileIDs: Array<OverscaledTileID>) {
-    if (painter.renderPass !== 'offscreen' && painter.renderPass !== 'translucent') return;
+    return;
 
-    const context = painter.context;
-    const sourceMaxZoom = sourceCache.getSource().maxzoom;
+    // if (painter.renderPass !== 'offscreen' && painter.renderPass !== 'translucent') return;
 
-    context.setDepthMode(painter.depthModeForSublayer(0, DepthMode.ReadOnly));
-    context.setStencilMode(StencilMode.disabled);
-    context.setColorMode(painter.colorModeForRenderPass());
+    // const context = painter.context;
+    // const sourceMaxZoom = sourceCache.getSource().maxzoom;
 
-    for (const tileID of tileIDs) {
-        const tile = sourceCache.getTile(tileID);
-        if (tile.needsHillshadePrepare && painter.renderPass === 'offscreen') {
-            prepareHillshade(painter, tile, sourceMaxZoom);
-            continue;
-        } else if (painter.renderPass === 'translucent') {
-            renderHillshade(painter, tile, layer);
-        }
-    }
+    // context.setDepthMode(painter.depthModeForSublayer(0, DepthMode.ReadOnly));
+    // context.setStencilMode(StencilMode.disabled);
+    // context.setColorMode(painter.colorModeForRenderPass());
 
-    context.viewport.set([0, 0, painter.width, painter.height]);
+    // for (const tileID of tileIDs) {
+    //     const tile = sourceCache.getTile(tileID);
+    //     if (tile.needsHillshadePrepare && painter.renderPass === 'offscreen') {
+    //         prepareHillshade(painter, tile, sourceMaxZoom);
+    //         continue;
+    //     } else if (painter.renderPass === 'translucent') {
+    //         renderHillshade(painter, tile, layer);
+    //     }
+    // }
+
+    // context.viewport.set([0, 0, painter.width, painter.height]);
 }
 
 function setLight(program, painter, layer) {

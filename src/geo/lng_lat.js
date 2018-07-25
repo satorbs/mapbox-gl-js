@@ -24,13 +24,15 @@ import LngLatBounds from './lng_lat_bounds';
 class LngLat {
     lng: number;
     lat: number;
+    ele: number;
 
-    constructor(lng: number, lat: number) {
+    constructor(lng: number, lat: number, ele?: number = 0) {
         if (isNaN(lng) || isNaN(lat)) {
             throw new Error(`Invalid LngLat object: (${lng}, ${lat})`);
         }
         this.lng = +lng;
         this.lat = +lat;
+        this.ele = +ele;
         if (this.lat > 90 || this.lat < -90) {
             throw new Error('Invalid LngLat latitude value: must be between -90 and 90');
         }
@@ -108,10 +110,10 @@ class LngLat {
             return input;
         }
         if (Array.isArray(input) && (input.length === 2 || input.length === 3)) {
-            return new LngLat(Number(input[0]), Number(input[1]));
+            return new LngLat(Number(input[0]), Number(input[1]), Number(input[2]));
         }
         if (!Array.isArray(input) && typeof input === 'object' && input !== null) {
-            return new LngLat(Number(input.lng), Number(input.lat));
+            return new LngLat(Number(input.lng), Number(input.lat), Number(input.ele));
         }
         throw new Error("`LngLatLike` argument must be specified as a LngLat instance, an object {lng: <lng>, lat: <lat>}, or an array of [<lng>, <lat>]");
     }

@@ -299,6 +299,9 @@
         },
         "mapbox": {
           "doc": "Mapbox Terrain RGB tiles. See https://www.mapbox.com/help/access-elevation-data/#mapbox-terrain-rgb for more info."
+        },
+        "gsi": {
+          "doc": "GSI format PNG tiles. See https://maps.gsi.go.jp/development/demtile.html for more info."
         }
       },
       "default": "mapbox",

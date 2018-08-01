@@ -13,12 +13,17 @@ import { Evented } from '../util/evented';
 import { Layout, Transitionable, Transitioning, Properties, PossiblyEvaluatedPropertyValue } from './properties';
 import { supportsPropertyExpression } from '../style-spec/util/properties';
 
+import type { FeatureState } from '../style-spec/expression';
 import type {Bucket} from '../data/bucket';
 import type Point from '@mapbox/point-geometry';
 import type {FeatureFilter} from '../style-spec/feature_filter';
 import type {TransitionParameters} from './properties';
 import type EvaluationParameters from './evaluation_parameters';
 import type Transform from '../geo/transform';
+import type {
+    LayerSpecification,
+    FilterSpecification
+} from '../style-spec/types';
 
 const TRANSITION_SUFFIX = '-transition';
 
@@ -45,6 +50,7 @@ class StyleLayer extends Evented {
     +queryRadius: (bucket: Bucket) => number;
     +queryIntersectsFeature: (queryGeometry: Array<Array<Point>>,
                               feature: VectorTileFeature,
+                              featureState: FeatureState,
                               geometry: Array<Array<Point>>,
                               zoom: number,
                               transform: Transform,
@@ -121,15 +127,24 @@ class StyleLayer extends Evented {
         if (value !== null && value !== undefined) {
             const key = `layers.${this.id}.paint.${name}`;
             if (this._validate(validatePaintProperty, key, name, value, options)) {
-                return;
+                return false;
             }
         }
 
         if (endsWith(name, TRANSITION_SUFFIX)) {
             this._transitionablePaint.setTransition(name.slice(0, -TRANSITION_SUFFIX.length), (value: any) || undefined);
+            return false;
         } else {
+            const wasDataDriven = this._transitionablePaint._values[name].value.isDataDriven();
             this._transitionablePaint.setValue(name, value);
+            const isDataDriven = this._transitionablePaint._values[name].value.isDataDriven();
+            this._handleSpecialPaintPropertyUpdate(name);
+            return isDataDriven || wasDataDriven;
         }
+    }
+
+    _handleSpecialPaintPropertyUpdate(_: string) {
+        // No-op; can be overridden by derived classes.
     }
 
     isHidden(zoom: number) {

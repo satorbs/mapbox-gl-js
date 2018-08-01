@@ -33,6 +33,8 @@ import type Framebuffer from '../gl/framebuffer';
 import type {PerformanceResourceTiming} from '../types/performance_resource_timing';
 import type Transform from '../geo/transform';
 import type {LayerFeatureStates} from './source_state';
+import type {Cancelable} from '../types/cancelable';
+import type {FilterSpecification} from '../style-spec/types';
 
 export type TileState =
     | 'loading'   // Tile data is in the process of loading.
@@ -80,8 +82,8 @@ class Tile {
     maskedBoundsBuffer: ?VertexBuffer;
     maskedIndexBuffer: ?IndexBuffer;
     segments: ?SegmentVector;
-    needsHillshadePrepare: ?boolean
-    request: any;
+    needsHillshadePrepare: ?boolean;
+    request: ?Cancelable;
     texture: any;
     fbo: ?Framebuffer;
     demTexture: ?Texture;
@@ -89,6 +91,9 @@ class Tile {
     reloadCallback: any;
     resourceTiming: ?Array<PerformanceResourceTiming>;
     queryPadding: number;
+
+    symbolFadeHoldUntil: ?number;
+    hasSymbolBuckets: boolean;
 
     /**
      * @param {OverscaledTileID} tileID
@@ -102,6 +107,7 @@ class Tile {
         this.buckets = {};
         this.expirationTime = null;
         this.queryPadding = 0;
+        this.hasSymbolBuckets = false;
 
         // Counts the number of times a response was already expired when
         // received. We're using this to add a delay when making a new request
@@ -163,11 +169,15 @@ class Tile {
         this.collisionBoxArray = data.collisionBoxArray;
         this.buckets = deserializeBucket(data.buckets, painter.style);
 
-        if (justReloaded) {
-            for (const id in this.buckets) {
-                const bucket = this.buckets[id];
-                if (bucket instanceof SymbolBucket) {
+        this.hasSymbolBuckets = false;
+        for (const id in this.buckets) {
+            const bucket = this.buckets[id];
+            if (bucket instanceof SymbolBucket) {
+                this.hasSymbolBuckets = true;
+                if (justReloaded) {
                     bucket.justReloaded = true;
+                } else {
+                    break;
                 }
             }
         }
@@ -332,7 +342,6 @@ class Tile {
             const divNum = (highResolution) ? 32 : 16; // must be multiple of 4
             const pointStep = vertexExtent / divNum;
             const demStep = this.tileSize / divNum;
-            const level = this.dem.level;
             let tlIdx = 0,
                 trIdx = 0,
                 blIdx = 0,
@@ -346,27 +355,27 @@ class Tile {
                     // top left
                     if (s === 0 && t === 0) {
                         const tl = new Point(s * pointStep, t * pointStep);
-                        const tle = level.get(s * demStep, t * demStep);
+                        const tle = this.dem.get(s * demStep, t * demStep);
                         maskedBoundsArray.emplaceBack(tl.x, tl.y, tle, tl.x, tl.y);
                         tlIdx = segment.vertexLength++;
                     }
                     // top right
                     if (t === 0) {
                         const tr = new Point((s + 1) * pointStep, t * pointStep);
-                        const tre = level.get(ns, t * demStep);
+                        const tre = this.dem.get(ns, t * demStep);
                         maskedBoundsArray.emplaceBack(tr.x, tr.y, tre, tr.x, tr.y);
                         trIdx = segment.vertexLength++;
                     }
                     // bottom left
                     if (s === 0) {
                         const bl = new Point(s * pointStep, (t + 1) * pointStep);
-                        const ble = level.get(s * demStep, nt);
+                        const ble = this.dem.get(s * demStep, nt);
                         maskedBoundsArray.emplaceBack(bl.x, bl.y, ble, bl.x, bl.y);
                         blIdx = segment.vertexLength++;
                     }
                     // bottom right
                     const br = new Point((s + 1) * pointStep, (t + 1) * pointStep);
-                    const bre = level.get(ns, nt);
+                    const bre = this.dem.get(ns, nt);
                     maskedBoundsArray.emplaceBack(br.x, br.y, bre, br.x, br.y);
                     brIdx = segment.vertexLength++;
 
@@ -498,6 +507,22 @@ class Tile {
                 this.queryPadding = Math.max(this.queryPadding, painter.style.getLayer(bucket.layerIds[0]).queryRadius(bucket));
             }
         }
+    }
+
+    holdingForFade(): boolean {
+        return this.symbolFadeHoldUntil !== undefined;
+    }
+
+    symbolFadeFinished(): boolean {
+        return !this.symbolFadeHoldUntil || this.symbolFadeHoldUntil < browser.now();
+    }
+
+    clearFadeHold() {
+        this.symbolFadeHoldUntil = undefined;
+    }
+
+    setHoldDuration(duration: number) {
+        this.symbolFadeHoldUntil = browser.now() + duration;
     }
 }
 

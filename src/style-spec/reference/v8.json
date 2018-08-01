@@ -80,7 +80,7 @@
     },
     "transition": {
       "type": "transition",
-      "doc": "A global transition definition to use as a default across properties.",
+      "doc": "A global transition definition to use as a default across properties, to be used for timing transitions between one value and the next when no property-specific transition is set. Collision-based symbol fading is controlled independently of the style's `transition` property.",
       "example": {
         "duration": 300,
         "delay": 0
@@ -149,6 +149,19 @@
         85.0511
       ],
       "doc": "An array containing the longitude and latitude of the southwest and northeast corners of the source's bounding box in the following order: `[sw.lng, sw.lat, ne.lng, ne.lat]`. When this property is included in a source, no tiles outside of the given bounds are requested by Mapbox GL."
+    },
+    "scheme": {
+      "type": "enum",
+      "values": {
+        "xyz": {
+          "doc": "Slippy map tilenames scheme."
+        },
+        "tms": {
+          "doc": "OSGeo spec scheme."
+        }
+      },
+      "default": "xyz",
+      "doc": "Influences the y direction of the tile coordinates. The global-mercator (aka Spherical Mercator) profile is assumed."
     },
     "minzoom": {
       "type": "number",
@@ -331,6 +344,10 @@
       "type": "number",
       "default": 18,
       "doc": "Maximum zoom level at which to create vector tiles (higher means greater detail at high zoom levels)."
+    },
+    "attribution": {
+      "type": "string",
+      "doc": "Contains an attribution to be displayed when the map is shown to a user."
     },
     "buffer": {
       "type": "number",
@@ -562,7 +579,7 @@
     },
     "filter": {
       "type": "filter",
-      "doc": "A expression specifying conditions on source features. Only features that match the filter are displayed."
+      "doc": "A expression specifying conditions on source features. Only features that match the filter are displayed. The `feature-state` expression is not supported in filter expressions."
     },
     "layout": {
       "type": "layout",
@@ -860,6 +877,9 @@
         },
         "line": {
           "doc": "The label is placed along the line of the geometry. Can only be used on `LineString` and `Polygon` geometries."
+        },
+        "line-center": {
+          "doc": "The label is placed at the center of the line of the geometry. Can only be used on `LineString` and `Polygon` geometries. Note that a single feature in a vector tile may contain multiple line geometries."
         }
       },
       "default": "point",
@@ -870,6 +890,9 @@
           "android": "2.0.1",
           "ios": "2.0.0",
           "macos": "0.1.0"
+        },
+        "`line-center` value": {
+          "js": "0.47.0"
         },
         "data-driven styling": {}
       },
@@ -1007,13 +1030,13 @@
       "type": "enum",
       "values": {
         "map": {
-          "doc": "When `symbol-placement` is set to `point`, aligns icons east-west. When `symbol-placement` is set to `line`, aligns icon x-axes with the line."
+          "doc": "When `symbol-placement` is set to `point`, aligns icons east-west. When `symbol-placement` is set to `line` or `line-center`, aligns icon x-axes with the line."
         },
         "viewport": {
           "doc": "Produces icons whose x-axes are aligned with the x-axis of the viewport, regardless of the value of `symbol-placement`."
         },
         "auto": {
-          "doc": "When `symbol-placement` is set to `point`, this is equivalent to `viewport`. When `symbol-placement` is set to `line`, this is equivalent to `map`."
+          "doc": "When `symbol-placement` is set to `point`, this is equivalent to `viewport`. When `symbol-placement` is set to `line` or `line-center`, this is equivalent to `map`."
         }
       },
       "default": "auto",
@@ -1250,7 +1273,10 @@
           "icon-rotation-alignment": "map"
         },
         {
-          "symbol-placement": "line"
+          "symbol-placement": [
+              "line",
+              "line-center"
+          ]
         }
       ],
       "sdk-support": {
@@ -1444,13 +1470,13 @@
       "type": "enum",
       "values": {
         "map": {
-          "doc": "When `symbol-placement` is set to `point`, aligns text east-west. When `symbol-placement` is set to `line`, aligns text x-axes with the line."
+          "doc": "When `symbol-placement` is set to `point`, aligns text east-west. When `symbol-placement` is set to `line` or `line-center`, aligns text x-axes with the line."
         },
         "viewport": {
           "doc": "Produces glyphs whose x-axes are aligned with the x-axis of the viewport, regardless of the value of `symbol-placement`."
         },
         "auto": {
-          "doc": "When `symbol-placement` is set to `point`, this is equivalent to `viewport`. When `symbol-placement` is set to `line`, this is equivalent to `map`."
+          "doc": "When `symbol-placement` is set to `point`, this is equivalent to `viewport`. When `symbol-placement` is set to `line` or `line-center`, this is equivalent to `map`."
         }
       },
       "default": "auto",
@@ -1771,7 +1797,10 @@
       "requires": [
         "text-field",
         {
-          "symbol-placement": "line"
+            "symbol-placement": [
+                "line",
+                "line-center"
+            ]
         }
       ],
       "sdk-support": {
@@ -1859,7 +1888,10 @@
           "text-rotation-alignment": "map"
         },
         {
-          "symbol-placement": "line"
+            "symbol-placement": [
+                "line",
+                "line-center"
+            ]
         }
       ],
       "sdk-support": {
@@ -2324,7 +2356,7 @@
         }
       },
       "match": {
-        "doc": "Selects the output whose label value matches the input value, or the fallback value if no match is found. The `input` can be any string or number expression (e.g. `[\"get\", \"building_type\"]`). Each label can either be a single literal value or an array of values.",
+        "doc": "Selects the output whose label value matches the input value, or the fallback value if no match is found. The input can be any expression (e.g. `[\"get\", \"building_type\"]`). Each label must either be a single literal value or an array of literal values (e.g. `\"a\"` or `[\"c\", \"b\"]`), and those values must be all strings or all numbers. (The values `\"1\"` and `1` cannot both be labels in the same match expression.) If the input type does not match the type of the labels, the result will be the fallback value.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
@@ -2609,7 +2641,7 @@
         }
       },
       "feature-state": {
-        "doc": "Retrieves a property value from the current feature's state. Returns null if the requested property is not present on the feature's state object.",
+        "doc": "Retrieves a property value from the current feature's state. Returns null if the requested property is not present on the feature's state. A feature's state is not part of the GeoJSON or vector tile data, and must be set programmatically on each feature. Note that [\"feature-state\"] can only be used with paint properties that support data-driven styling.",
         "group": "Feature data",
         "sdk-support": {
           "basic functionality": {
@@ -2934,7 +2966,7 @@
         }
       },
       "==": {
-        "doc": "Returns `true` if the input values are equal, `false` otherwise. Equality is strictly typed: values of different types are always considered not equal. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
+        "doc": "Returns `true` if the input values are equal, `false` otherwise. The comparison is strictly typed: values of different runtime types are always considered unequal. Cases where the types are known to be different at parse time are considered invalid and will produce a parse error. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
@@ -2946,7 +2978,7 @@
         }
       },
       "!=": {
-        "doc": "Returns `true` if the input values are not equal, `false` otherwise. Equality is strictly typed: values of different types are always considered not equal. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
+        "doc": "Returns `true` if the input values are not equal, `false` otherwise. The comparison is strictly typed: values of different runtime types are always considered unequal. Cases where the types are known to be different at parse time are considered invalid and will produce a parse error. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
@@ -2958,7 +2990,7 @@
         }
       },
       ">": {
-        "doc": "Returns `true` if the first input is strictly greater than the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
+        "doc": "Returns `true` if the first input is strictly greater than the second, `false` otherwise. The arguments are required to be either both strings or both numbers; if during evaluation they are not, expression evaluation produces an error. Cases where this constraint is known not to hold at parse time are considered in valid and will produce a parse error. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
@@ -2970,7 +3002,7 @@
         }
       },
       "<": {
-        "doc": "Returns `true` if the first input is strictly less than the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
+        "doc": "Returns `true` if the first input is strictly less than the second, `false` otherwise. The arguments are required to be either both strings or both numbers; if during evaluation they are not, expression evaluation produces an error. Cases where this constraint is known not to hold at parse time are considered in valid and will produce a parse error. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
@@ -2982,7 +3014,7 @@
         }
       },
       ">=": {
-        "doc": "Returns `true` if the first input is greater than or equal to the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
+        "doc": "Returns `true` if the first input is greater than or equal to the second, `false` otherwise. The arguments are required to be either both strings or both numbers; if during evaluation they are not, expression evaluation produces an error. Cases where this constraint is known not to hold at parse time are considered in valid and will produce a parse error. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
@@ -2994,7 +3026,7 @@
         }
       },
       "<=": {
-        "doc": "Returns `true` if the first input is less than or equal to the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
+        "doc": "Returns `true` if the first input is less than or equal to the second, `false` otherwise. The arguments are required to be either both strings or both numbers; if during evaluation they are not, expression evaluation produces an error. Cases where this constraint is known not to hold at parse time are considered in valid and will produce a parse error. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
@@ -3258,7 +3290,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3291,7 +3324,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3326,7 +3360,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3465,7 +3500,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3576,7 +3612,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3609,7 +3646,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3641,7 +3679,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3674,7 +3713,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3754,14 +3794,18 @@
           "macos": "0.1.0"
         },
         "data-driven styling": {
-          "js": "0.39.0"
+          "js": "0.39.0",
+          "android": "5.2.0",
+          "ios": "3.7.0",
+          "macos": "0.6.0"
         }
       },
       "expression": {
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3791,7 +3835,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3820,7 +3865,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3850,7 +3896,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3964,7 +4011,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -3992,7 +4040,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4020,7 +4069,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4050,7 +4100,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4198,7 +4249,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4226,7 +4278,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4256,7 +4309,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4288,7 +4342,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4317,7 +4372,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4441,7 +4497,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4472,7 +4529,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4503,7 +4561,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4536,7 +4595,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4569,7 +4629,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4666,7 +4727,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4697,7 +4759,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4728,7 +4791,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4761,7 +4825,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -4794,7 +4859,8 @@
         "interpolated": true,
         "parameters": [
           "zoom",
-          "feature"
+          "feature",
+          "feature-state"
         ]
       },
       "property-type": "data-driven"
@@ -5003,6 +5069,32 @@
       },
       "expression": {
         "interpolated": true,
+        "parameters": [
+          "zoom"
+        ]
+      },
+      "property-type": "data-constant"
+    },
+    "raster-resampling": {
+      "type": "enum",
+      "doc": "The resampling/interpolation method to use for overscaling, also known as texture magnification filter",
+      "values": {
+        "linear": {
+          "doc": "(Bi)linear filtering interpolates pixel values using the weighted average of the four closest original source pixels creating a smooth but blurry look when overscaled"
+        },
+        "nearest": {
+          "doc": "Nearest neighbor filtering interpolates pixel values using the nearest original source pixel creating a sharp but pixelated look when overscaled"
+        }
+      },
+      "default": "linear",
+      "sdk-support": {
+        "basic functionality": {
+          "js": "0.47.0"
+        },
+        "data-driven styling": {}
+      },
+      "expression": {
+        "interpolated": false,
         "parameters": [
           "zoom"
         ]

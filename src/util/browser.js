@@ -1,6 +1,7 @@
 // @flow
 
 import window from './window';
+import type { Cancelable } from '../types/cancelable';
 
 const now = window.performance && window.performance.now ?
     window.performance.now.bind(window.performance) :
@@ -26,12 +27,9 @@ const exported = {
      */
     now,
 
-    frame(fn: Function) {
-        return raf(fn);
-    },
-
-    cancelFrame(id: number) {
-        return cancel(id);
+    frame(fn: Function): Cancelable {
+        const frame = raf(fn);
+        return { cancel: () => cancel(frame) };
     },
 
     getImageData(img: CanvasImageSource): ImageData {
@@ -57,6 +55,12 @@ const exported = {
         context.fillStyle = color;
         context.fillRect(0, 0, width, height);
         return context.getImageData(0, 0, width, height);
+    },
+
+    resolveURL(path: string) {
+        const a = window.document.createElement('a');
+        a.href = path;
+        return a.href;
     },
 
     hardwareConcurrency: window.navigator.hardwareConcurrency || 4,

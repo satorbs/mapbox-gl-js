@@ -74,7 +74,6 @@ export type SymbolInstance = {
     anchor: Anchor,
     line: Array<Point>,
     featureIndex: number,
-    feature: SymbolFeature,
     textCollisionFeature?: {boxStartIndex: number, boxEndIndex: number},
     iconCollisionFeature?: {boxStartIndex: number, boxEndIndex: number},
     placedTextSymbolIndices: Array<number>;
@@ -293,6 +292,7 @@ class SymbolBucket implements Bucket {
     collisionCircle: CollisionBuffers;
     uploaded: boolean;
     sourceLayerIndex: number;
+    sourceID: string;
 
     constructor(options: BucketParameters<SymbolStyleLayer>) {
         this.collisionBoxArray = options.collisionBoxArray;
@@ -313,6 +313,8 @@ class SymbolBucket implements Bucket {
         const layout = this.layers[0].layout;
         this.sortFeaturesByY = layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') ||
             layout.get('text-ignore-placement') || layout.get('icon-ignore-placement');
+
+        this.sourceID = options.sourceID;
     }
 
     createArrays() {
@@ -387,9 +389,9 @@ class SymbolBucket implements Bucket {
             }
 
             if (text) {
-                const fontStack = textFont.evaluate(feature).join(',');
+                const fontStack = textFont.evaluate(feature, {}).join(',');
                 const stack = stacks[fontStack] = stacks[fontStack] || {};
-                const textAlongLine = layout.get('text-rotation-alignment') === 'map' && layout.get('symbol-placement') === 'line';
+                const textAlongLine = layout.get('text-rotation-alignment') === 'map' && layout.get('symbol-placement') !== 'point';
                 const doesAllowVerticalWritingMode = allowsVerticalWritingMode(text);
                 for (let i = 0; i < text.length; i++) {
                     stack[text.charCodeAt(i)] = true;
@@ -668,8 +670,8 @@ class SymbolBucket implements Bucket {
         symbolInstanceIndexes.sort((aIndex, bIndex) => {
             const a = this.symbolInstances[aIndex];
             const b = this.symbolInstances[bIndex];
-            const aRotated = (sin * a.anchor.x + cos * a.anchor.y) | 0;
-            const bRotated = (sin * b.anchor.x + cos * b.anchor.y) | 0;
+            const aRotated = Math.round(sin * a.anchor.x + cos * a.anchor.y) | 0;
+            const bRotated = Math.round(sin * b.anchor.x + cos * b.anchor.y) | 0;
             return (aRotated - bRotated) || (b.featureIndex - a.featureIndex);
         });
 

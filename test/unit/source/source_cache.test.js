@@ -401,6 +401,35 @@ test('SourceCache / Source lifecycle', (t) => {
         sourceCache.onAdd();
     });
 
+    t.test('does not reload errored tiles', (t) => {
+        const transform = new Transform();
+        transform.resize(511, 511);
+        transform.zoom = 1;
+
+        const sourceCache = createSourceCache({
+            loadTile: function (tile, callback) {
+                // this transform will try to load the four tiles at z1 and a single z0 tile
+                // we only expect _reloadTile to be called with the 'loaded' z0 tile
+                tile.state = tile.tileID.canonical.z === 1 ? 'errored' : 'loaded';
+                callback();
+            }
+        });
+
+        const reloadTileSpy = t.spy(sourceCache, '_reloadTile');
+        sourceCache.on('data', (e) => {
+            if (e.dataType === 'source' && e.sourceDataType === 'metadata') {
+                sourceCache.update(transform);
+                sourceCache.getSource().fire(new Event('data', {dataType: 'source', sourceDataType: 'content'}));
+            }
+        });
+        sourceCache.onAdd();
+        // we expect the source cache to have five tiles, but only to have reloaded one
+        t.equal(Object.keys(sourceCache._tiles).length, 5);
+        t.ok(reloadTileSpy.calledOnce);
+
+        t.end();
+    });
+
     t.end();
 });
 
@@ -943,8 +972,8 @@ test('SourceCache#_updateRetainedTiles', (t)=> {
             '65' : new OverscaledTileID(1, 0, 1, 0, 1)
         }, 'retain ideal and parent tile when ideal tiles aren\'t loaded');
 
-        addTileSpy.reset();
-        getTileSpy.reset();
+        addTileSpy.resetHistory();
+        getTileSpy.resetHistory();
 
         // now make sure we don't retain the parent tile when the ideal tile is loaded
         sourceCache._tiles[idealTile.key].state = 'loaded';
@@ -1116,7 +1145,7 @@ test('SourceCache#_updateRetainedTiles', (t)=> {
             new OverscaledTileID(0, 0, 0, 0, 0),
         ], 'only ascends up a tile pyramid once');
 
-        getTileSpy.reset();
+        getTileSpy.resetHistory();
 
         const loadedTiles = [new OverscaledTileID(4, 0, 4, 0, 0)];
         loadedTiles.forEach((t)=>{
@@ -1414,13 +1443,8 @@ test('SourceCache#findLoadedParent', (t) => {
 
         sourceCache._tiles[tile.tileID.key] = tile;
 
-        const retain = {};
-        const expectedRetain = {};
-        expectedRetain[tile.tileID.key] = tile.tileID;
-
-        t.equal(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 3, 3), 0, retain), undefined);
-        t.deepEqual(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 0, 0), 0, retain), tile);
-        t.deepEqual(retain, expectedRetain);
+        t.equal(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 3, 3), 0), undefined);
+        t.deepEqual(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 0, 0), 0), tile);
         t.end();
     });
 
@@ -1435,13 +1459,8 @@ test('SourceCache#findLoadedParent', (t) => {
         const tile = new Tile(new OverscaledTileID(1, 0, 1, 0, 0), 512, 22);
         sourceCache._cache.add(tile.tileID, tile);
 
-        const retain = {};
-        const expectedRetain = {};
-        expectedRetain[tile.tileID.key] = tile.tileID;
-
-        t.equal(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 3, 3), 0, retain), undefined);
-        t.equal(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 0, 0), 0, retain), tile);
-        t.deepEqual(retain, expectedRetain);
+        t.equal(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 3, 3), 0), undefined);
+        t.equal(sourceCache.findLoadedParent(new OverscaledTileID(2, 0, 2, 0, 0), 0), tile);
         t.equal(sourceCache._cache.order.length, 1);
 
         t.end();

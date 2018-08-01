@@ -11,6 +11,7 @@ import { type Anchor, anchorTranslate, applyAnchorClass } from './anchor';
 
 import type Map from './map';
 import type {LngLatLike} from '../geo/lng_lat';
+import type {PointLike} from '@mapbox/point-geometry';
 
 const defaultOptions = {
     closeButton: true,
@@ -21,11 +22,11 @@ const defaultOptions = {
 export type Offset = number | PointLike | {[Anchor]: PointLike};
 
 export type PopupOptions = {
-    closeButton: boolean,
-    closeOnClick: boolean,
-    anchor: Anchor,
-    offset: Offset,
-    className: string
+    closeButton?: boolean,
+    closeOnClick?: boolean,
+    anchor?: Anchor,
+    offset?: Offset,
+    className?: string
 };
 
 /**
@@ -38,7 +39,7 @@ export type PopupOptions = {
  *   map is clicked.
  * @param {string} [options.anchor] - A string indicating the part of the Popup that should
  *   be positioned closest to the coordinate set via {@link Popup#setLngLat}.
- *   Options are `'top'`, `'bottom'`, `'left'`, `'right'`, `'top-left'`,
+ *   Options are `'center'`, `'top'`, `'bottom'`, `'left'`, `'right'`, `'top-left'`,
  *   `'top-right'`, `'bottom-left'`, and `'bottom-right'`. If unset the anchor will be
  *   dynamically set to ensure the popup falls within the map container with a preference
  *   for `'bottom'`.
@@ -68,6 +69,7 @@ export type PopupOptions = {
  * @see [Display a popup](https://www.mapbox.com/mapbox-gl-js/example/popup/)
  * @see [Display a popup on hover](https://www.mapbox.com/mapbox-gl-js/example/popup-on-hover/)
  * @see [Display a popup on click](https://www.mapbox.com/mapbox-gl-js/example/popup-on-click/)
+ * @see [Attach a popup to a marker instance](https://www.mapbox.com/mapbox-gl-js/example/set-popup/)
  */
 export default class Popup extends Evented {
     _map: Map;
@@ -284,7 +286,7 @@ export default class Popup extends Evented {
 
         const pos = this._pos = this._map.project(this._lngLat);
 
-        let anchor: Anchor = this.options.anchor;
+        let anchor: ?Anchor = this.options.anchor;
         const offset = normalizeOffset(this.options.offset);
 
         if (!anchor) {

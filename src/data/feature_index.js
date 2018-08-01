@@ -19,6 +19,7 @@ import SourceFeatureState from '../source/source_state';
 import type StyleLayer from '../style/style_layer';
 import type {FeatureFilter} from '../style-spec/feature_filter';
 import type Transform from '../geo/transform';
+import type {FilterSpecification} from '../style-spec/types';
 
 import { FeatureIndexArray } from './array_types';
 
@@ -144,11 +145,12 @@ class FeatureIndex {
                     if (!featureGeometry) {
                         featureGeometry = loadGeometry(feature);
                     }
+                    let featureState = {};
                     if (feature.id) {
                         // `feature-state` expression evaluation requires feature state to be available
-                        (feature: any).state = sourceFeatureState.getState(styleLayer.sourceLayer || '_geojsonTileLayer', String(feature.id));
+                        featureState = sourceFeatureState.getState(styleLayer.sourceLayer || '_geojsonTileLayer', String(feature.id));
                     }
-                    return styleLayer.queryIntersectsFeature(queryGeometry, feature, featureGeometry, this.z, args.transform, pixelsToTileUnits, args.posMatrix);
+                    return styleLayer.queryIntersectsFeature(queryGeometry, feature, featureState, featureGeometry, this.z, args.transform, pixelsToTileUnits, args.posMatrix);
                 }
             );
         }

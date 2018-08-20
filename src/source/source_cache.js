@@ -184,7 +184,7 @@ class SourceCache extends Evented {
         return Object.keys(this._tiles).map(Number).sort(compareKeyZoom);
     }
 
-    getRenderableIds(symbolLayer?: boolean) {
+    getRenderableIds(symbolLayer?: boolean): Array<number> {
         const ids = [];
         for (const id in this._tiles) {
             if (this._isIdRenderable(+id, symbolLayer)) ids.push(+id);
@@ -262,9 +262,6 @@ class SourceCache extends Evented {
         this._state.initializeTileState(tile, this.map ? this.map.painter : null);
 
         this._source.fire(new Event('data', {dataType: 'source', tile: tile, coord: tile.tileID}));
-
-        // HACK this is necessary to fix https://github.com/mapbox/mapbox-gl-js/issues/2986
-        if (this.map) this.map.painter.tileExtentVAO.vao = null;
     }
 
     /**
@@ -796,7 +793,7 @@ class SourceCache extends Evented {
         return tileResults;
     }
 
-    getVisibleCoordinates(symbolLayer?: boolean) {
+    getVisibleCoordinates(symbolLayer?: boolean): Array<OverscaledTileID> {
         const coords = this.getRenderableIds(symbolLayer).map((id) => this._tiles[id].tileID);
         for (const coord of coords) {
             coord.posMatrix = this.transform.calculatePosMatrix(coord.toUnwrapped());
@@ -825,7 +822,7 @@ class SourceCache extends Evented {
      * Set the value of a particular state for a feature
      * @private
      */
-    setFeatureState(sourceLayer?: string, feature: string, state: Object) {
+    setFeatureState(sourceLayer?: string, feature: number, state: Object) {
         sourceLayer = sourceLayer || '_geojsonTileLayer';
         this._state.updateState(sourceLayer, feature, state);
     }
@@ -834,7 +831,7 @@ class SourceCache extends Evented {
      * Get the entire state object for a feature
      * @private
      */
-    getFeatureState(sourceLayer?: string, feature: string) {
+    getFeatureState(sourceLayer?: string, feature: number) {
         sourceLayer = sourceLayer || '_geojsonTileLayer';
         return this._state.getState(sourceLayer, feature);
     }

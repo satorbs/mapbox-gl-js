@@ -57,7 +57,7 @@ class StyleLayer extends Evented {
                               pixelsToTileUnits: number,
                               posMatrix: Float32Array) => boolean;
 
-    constructor(layer: LayerSpecification, properties: {layout?: Properties<*>, paint: Properties<*>}) {
+    constructor(layer: LayerSpecification, properties: $ReadOnly<{layout?: Properties<*>, paint: Properties<*>}>) {
         super();
 
         this.id = layer.id;
@@ -170,7 +170,7 @@ class StyleLayer extends Evented {
     }
 
     serialize() {
-        const output : any = {
+        const output: any = {
             'id': this.id,
             'type': this.type,
             'source': this.source,

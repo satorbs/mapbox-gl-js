@@ -185,7 +185,7 @@ class Tile {
         this.queryPadding = 0;
         for (const id in this.buckets) {
             const bucket = this.buckets[id];
-            this.queryPadding = Math.max(this.queryPadding, painter.style.getLayer(bucket.layerIds[0]).queryRadius(bucket));
+            this.queryPadding = Math.max(this.queryPadding, painter.style.getLayer(id).queryRadius(bucket));
         }
 
         if (data.iconAtlasImage) {
@@ -284,12 +284,13 @@ class Tile {
         if (!layer) return;
 
         const filter = featureFilter(params && params.filter);
-        const coord = { z: this.tileID.overscaledZ, x: this.tileID.canonical.x, y: this.tileID.canonical.y };
+        const {z, x, y} = this.tileID.canonical;
+        const coord = {z, x, y};
 
         for (let i = 0; i < layer.length; i++) {
             const feature = layer.feature(i);
             if (filter(new EvaluationParameters(this.tileID.overscaledZ), feature)) {
-                const geojsonFeature = new GeoJSONFeature(feature, coord.z, coord.x, coord.y);
+                const geojsonFeature = new GeoJSONFeature(feature, z, x, y);
                 (geojsonFeature: any).tile = coord;
                 result.push(geojsonFeature);
             }
@@ -494,8 +495,8 @@ class Tile {
 
         const vtLayers = this.latestFeatureIndex.loadVTLayers();
 
-        for (const i in this.buckets) {
-            const bucket = this.buckets[i];
+        for (const id in this.buckets) {
+            const bucket = this.buckets[id];
             // Buckets are grouped by common source-layer
             const sourceLayerId = bucket.layers[0]['sourceLayer'] || '_geojsonTileLayer';
             const sourceLayer = vtLayers[sourceLayerId];
@@ -504,7 +505,7 @@ class Tile {
 
             bucket.update(sourceLayerStates, sourceLayer);
             if (painter && painter.style) {
-                this.queryPadding = Math.max(this.queryPadding, painter.style.getLayer(bucket.layerIds[0]).queryRadius(bucket));
+                this.queryPadding = Math.max(this.queryPadding, painter.style.getLayer(id).queryRadius(bucket));
             }
         }
     }

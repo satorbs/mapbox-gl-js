@@ -5,8 +5,7 @@ import CollisionIndex from './collision_index';
 import EXTENT from '../data/extent';
 import * as symbolSize from './symbol_size';
 import * as projection from './projection';
-import properties from '../style/style_layer/symbol_style_layer_properties';
-const symbolLayoutProperties = properties.layout;
+import symbolLayerProperties from '../style/style_layer/symbol_style_layer_properties';
 import assert from 'assert';
 import pixelsToTileUnits from '../source/pixels_to_tile_units';
 
@@ -184,7 +183,7 @@ export class Placement {
             collisionBoxArray: ?CollisionBoxArray) {
         const layout = bucket.layers[0].layout;
 
-        const partiallyEvaluatedTextSize = symbolSize.evaluateSizeForZoom(bucket.textSizeData, this.transform.zoom, symbolLayoutProperties.properties['text-size']);
+        const partiallyEvaluatedTextSize = symbolSize.evaluateSizeForZoom(bucket.textSizeData, this.transform.zoom, symbolLayerProperties.layout.properties['text-size']);
 
         const textOptional = layout.get('text-optional');
         const iconOptional = layout.get('icon-optional');
@@ -366,9 +365,16 @@ export class Placement {
 
         const layout = bucket.layers[0].layout;
         const duplicateOpacityState = new JointOpacityState(null, 0, false, false, true);
+        const textAllowOverlap = layout.get('text-allow-overlap');
+        const iconAllowOverlap = layout.get('icon-allow-overlap');
+        // If allow-overlap is true, we can show symbols before placement runs on them
+        // But we have to wait for placement if we potentially depend on a paired icon/text
+        // with allow-overlap: false.
+        // See https://github.com/mapbox/mapbox-gl-js/issues/7032
         const defaultOpacityState = new JointOpacityState(null, 0,
-                layout.get('text-allow-overlap'),
-                layout.get('icon-allow-overlap'), true);
+                textAllowOverlap && (iconAllowOverlap || !bucket.hasIconData() || layout.get('icon-optional')),
+                iconAllowOverlap && (textAllowOverlap || !bucket.hasTextData() || layout.get('text-optional')),
+                true);
 
         for (let s = 0; s < bucket.symbolInstances.length; s++) {
             const symbolInstance = bucket.symbolInstances[s];

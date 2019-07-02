@@ -1,5 +1,6 @@
 // @flow
 
+import type {StyleSpecification} from '../../src/style-spec/types';
 import Benchmark from '../lib/benchmark';
 import fetchStyle from '../lib/fetch_style';
 import TileParser from '../lib/tile_parser';
@@ -12,6 +13,12 @@ export default class WorkerTransfer extends Benchmark {
     payloadTiles: Array<any>;
     payloadJSON: Array<any>;
     worker: Worker;
+    style: string | StyleSpecification;
+
+    constructor(style: string | StyleSpecification) {
+        super();
+        this.style = style;
+    }
 
     setup(): Promise<void> {
         const src = `
@@ -29,7 +36,7 @@ export default class WorkerTransfer extends Benchmark {
             new OverscaledTileID(13, 0, 13, 2412, 3079)
         ];
 
-        return fetchStyle(`mapbox://styles/mapbox/streets-v9`)
+        return fetchStyle(this.style)
             .then((styleJSON) => {
                 this.parser = new TileParser(styleJSON, 'composite');
                 return this.parser.setup();
@@ -48,7 +55,7 @@ export default class WorkerTransfer extends Benchmark {
             });
     }
 
-    sendPayload(obj: any) {
+    sendPayload(obj: any): Promise<void> {
         return new Promise((resolve) => {
             this.worker.onmessage = () => resolve();
             this.worker.postMessage(obj);
@@ -77,5 +84,5 @@ export default class WorkerTransfer extends Benchmark {
 function barePayload(obj) {
     // strip all transferables from a worker payload, because we can't transfer them repeatedly in the bench:
     // as soon as it's transfered once, it's no longer available on the main thread
-    return JSON.parse(JSON.stringify(obj, (key, value) => ArrayBuffer.isView(value) ? {} : value));
+    return JSON.parse(JSON.stringify(obj, (key, value) => ArrayBuffer.isView(value) ? {} : value) || '{}');
 }

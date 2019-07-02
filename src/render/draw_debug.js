@@ -8,6 +8,7 @@ import posAttributes from '../data/pos_attributes';
 import SegmentVector from '../data/segment';
 import DepthMode from '../gl/depth_mode';
 import StencilMode from '../gl/stencil_mode';
+import CullFaceMode from '../gl/cull_face_mode';
 import { debugUniformValues } from './program/debug_program';
 import Color from '../style-spec/util/color';
 
@@ -35,11 +36,14 @@ function drawDebugTile(painter, sourceCache, coord) {
     const colorMode = painter.colorModeForRenderPass();
     const id = '$debug';
 
-    program.draw(context, gl.LINE_STRIP, depthMode, stencilMode, colorMode,
+    program.draw(context, gl.LINE_STRIP, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
         debugUniformValues(posMatrix, Color.red), id,
         painter.debugBuffer, painter.tileBorderIndexBuffer, painter.debugSegments);
 
-    const vertices = createTextVertices(coord.toString(), 50, 200, 5);
+    const tileRawData = sourceCache.getTileByID(coord.key).latestRawTileData;
+    const tileByteLength = (tileRawData && tileRawData.byteLength) || 0;
+    const tileSizeKb = Math.floor(tileByteLength / 1024);
+    const vertices = createTextVertices(`${coord.toString()} ${tileSizeKb}kb`, 50, 200, 5);
     const debugTextArray = new PosArray();
     const debugTextIndices = new LineIndexArray();
     for (let v = 0; v < vertices.length; v += 2) {
@@ -58,7 +62,7 @@ function drawDebugTile(painter, sourceCache, coord) {
     for (let i = 0; i < translations.length; i++) {
         const translation = translations[i];
 
-        program.draw(context, gl.LINES, depthMode, stencilMode, colorMode,
+        program.draw(context, gl.LINES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
             debugUniformValues(
                 mat4.translate([], posMatrix, [
                     onePixel * translation[0],
@@ -67,7 +71,7 @@ function drawDebugTile(painter, sourceCache, coord) {
             id, debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
     }
 
-    program.draw(context, gl.LINES, depthMode, stencilMode, colorMode,
+    program.draw(context, gl.LINES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
         debugUniformValues(posMatrix, Color.black), id,
         debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
 }
@@ -193,7 +197,7 @@ function createTextVertices(text, left, baseline, scale) {
                 if (prev) {
                     strokes.push(prev.x, prev.y, x, y);
                 }
-                prev = {x: x, y: y};
+                prev = {x, y};
             }
         }
         left += glyph[0] * scale;

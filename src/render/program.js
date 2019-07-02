@@ -2,7 +2,7 @@
 
 import browser from '../util/browser';
 
-import shaders from '../shaders';
+import {prelude} from '../shaders';
 import assert from 'assert';
 import ProgramConfiguration from '../data/program_configuration';
 import VertexArrayObject from './vertex_array_object';
@@ -14,7 +14,9 @@ import type IndexBuffer from '../gl/index_buffer';
 import type DepthMode from '../gl/depth_mode';
 import type StencilMode from '../gl/stencil_mode';
 import type ColorMode from '../gl/color_mode';
+import type CullFaceMode from '../gl/cull_face_mode';
 import type {UniformBindings, UniformValues, UniformLocations} from './uniform_binding';
+import type {BinderUniform} from '../data/program_configuration';
 
 export type DrawMode =
     | $PropertyType<WebGLRenderingContext, 'LINES'>
@@ -26,7 +28,7 @@ class Program<Us: UniformBindings> {
     attributes: {[string]: number};
     numAttributes: number;
     fixedUniforms: Us;
-    binderUniforms: UniformBindings;
+    binderUniforms: Array<BinderUniform>;
 
     constructor(context: Context,
                 source: {fragmentSource: string, vertexSource: string},
@@ -42,9 +44,8 @@ class Program<Us: UniformBindings> {
             defines.push('#define OVERDRAW_INSPECTOR;');
         }
 
-        const fragmentSource = defines.concat(shaders.prelude.fragmentSource, source.fragmentSource).join('\n');
-        const vertexSource = defines.concat(shaders.prelude.vertexSource, source.vertexSource).join('\n');
-
+        const fragmentSource = defines.concat(prelude.fragmentSource, source.fragmentSource).join('\n');
+        const vertexSource = defines.concat(prelude.vertexSource, source.vertexSource).join('\n');
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader, fragmentSource);
         gl.compileShader(fragmentShader);
@@ -98,6 +99,7 @@ class Program<Us: UniformBindings> {
          depthMode: $ReadOnly<DepthMode>,
          stencilMode: $ReadOnly<StencilMode>,
          colorMode: $ReadOnly<ColorMode>,
+         cullFaceMode: $ReadOnly<CullFaceMode>,
          uniformValues: UniformValues<Us>,
          layerID: string,
          layoutVertexBuffer: VertexBuffer,
@@ -115,6 +117,7 @@ class Program<Us: UniformBindings> {
         context.setDepthMode(depthMode);
         context.setStencilMode(stencilMode);
         context.setColorMode(colorMode);
+        context.setCullFace(cullFaceMode);
 
         for (const name in this.fixedUniforms) {
             this.fixedUniforms[name].set(uniformValues[name]);

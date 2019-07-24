@@ -3,7 +3,7 @@
 /dist/
 /docs/pages/dist/
 /docs/img/dist/
-*.js.map
+# *.js.map
 node_modules
 package-lock.json
 *.sublime-*

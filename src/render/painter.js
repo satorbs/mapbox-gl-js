@@ -368,9 +368,10 @@ class Painter {
                 const demSource = sourceCaches['dem'];
                 // tile keys should be rendered
                 const tilesInViewport: {[string]: boolean} = {};
-                coordsAscending['dem'].forEach((c) => {
-                    tilesInViewport[c] = true;
-                });
+
+                for (const demc of coordsAscending['dem']) {
+                    tilesInViewport[demc] = true;
+                }
                 for (const coord of coordsAscending[id]) {
                     const tile = sourceCache.getTile(coord);
                     const demTile = demSource.getTileByID(coord.key);

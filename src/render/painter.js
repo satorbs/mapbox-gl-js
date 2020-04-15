@@ -315,6 +315,11 @@ class Painter {
         return new DepthMode(func || this.context.gl.LEQUAL, mask, [depth, depth]);
     }
 
+    depthModeFor3D(n: number, mask: DepthMaskType, func: ?DepthFuncType): $ReadOnly<DepthMode> {
+        const depth = 1 - ((1 + this.currentLayer) * this.numSublayers + n) * this.depthEpsilon;
+        return new DepthMode(func || this.context.gl.LEQUAL, mask, [0, depth]);
+    }
+
     /*
      * The opaque pass and 3D layers both use the depth buffer.
      * Layers drawn above 3D layers need to be drawn using the

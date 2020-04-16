@@ -22,9 +22,26 @@ var map = window.map = new mapboxgl.Map({
     container: 'map',
     zoom: 12.5,
     center: [-77.01866, 38.888],
-    style: 'mapbox://styles/mapbox/streets-v10',
+    style: 'mapbox://styles/rbs-netadmin/cj9ntmqv53ok92rocxekv8djv',
     hash: true
 });
+
+map.on('load', function() {
+    console.log('loaded');
+
+    map.addSource('dem', {
+        'type': 'raster-dem',
+        'tileSize': 256,
+        'maxzoom': 18,
+        'encoding': 'mapbox', // or 'gsi',
+        'url': 'mapbox://mapbox.terrain-rgb' // or 'GSI_SOURCE_DEM_URL' when use gsi tiles
+    });
+    map.addLayer({
+        'id': 'hillshade',
+        'source': 'dem',
+        'type': 'hillshade'
+    });
+})
 
 </script>
 </body>

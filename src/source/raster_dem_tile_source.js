@@ -135,6 +135,7 @@ class RasterDEMTileSource extends RasterTileSource implements Source {
         }
         if (tile.dem) delete tile.dem;
         delete tile.neighboringTiles;
+        tile.clearMask();
 
         tile.state = 'unloaded';
         this.dispatcher.send('removeDEMTile', { uid: tile.uid, source: this.id }, undefined, tile.workerID);

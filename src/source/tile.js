@@ -324,6 +324,8 @@ class Tile {
             this.maskedIndexBuffer.destroy();
             delete this.maskedIndexBuffer;
         }
+
+        delete this.mask;
     }
 
     setMask(mask: Mask, context: Context, highResolution: boolean) {
@@ -335,8 +337,8 @@ class Tile {
             return;
         }
 
-        this.mask = mask;
         this.clearMask();
+        this.mask = mask;
 
         // We want to render the full tile, and keeping the segments/vertices/indices empty means
         // using the global shared buffers for covering the entire tile.

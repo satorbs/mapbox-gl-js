@@ -37,6 +37,7 @@ class Transform {
     alignedProjMatrix: Float64Array;
     pixelMatrix: Float64Array;
     pixelMatrixInverse: Float64Array;
+    pixelPointMatrixInverse: Float64Array;
     glCoordMatrix: Float32Array;
     labelPlaneMatrix: Float32Array;
     _fov: number;
@@ -149,7 +150,7 @@ class Transform {
         return this._pitch / Math.PI * 180;
     }
     set pitch(pitch: number) {
-        const p = clamp(pitch, 0, 70) / 180 * Math.PI;
+        const p = clamp(pitch, 0, 80) / 180 * Math.PI;
         if (this._pitch === p) return;
         this._unmodified = false;
         this._pitch = p;
@@ -267,10 +268,10 @@ class Transform {
         const centerPoint = new Point(numTiles * centerCoord.x - 0.5, numTiles * centerCoord.y - 0.5);
         const offset = (options.tileSize) ? options.tileSize : 0;
         const cornerCoords = [
-            this.pointCoordinate(new Point(0, 0)),
-            this.pointCoordinate(new Point(this.width, 0)),
-            this.pointCoordinate(new Point(this.width, this.height + offset * 2)),
-            this.pointCoordinate(new Point(0, this.height + offset * 2))
+            this.pointCoordinate(new Point(0, 0), true),
+            this.pointCoordinate(new Point(this.width, 0), true),
+            this.pointCoordinate(new Point(this.width, this.height + offset * 2), true),
+            this.pointCoordinate(new Point(0, this.height + offset * 2), true)
         ];
         return tileCover(z, cornerCoords, options.reparseOverscaled ? actualZ : z, this._renderWorldCopies)
             .sort((a, b) => centerPoint.dist(a.canonical) - centerPoint.dist(b.canonical));
@@ -353,7 +354,7 @@ class Transform {
         return coord.toLngLat();
     }
 
-    pointCoordinate(p: Point) {
+    pointCoordinate(p: Point, asTile: Boolean = false) {
         const targetZ = 0;
         // since we don't know the correct projected z value for the point,
         // unproject two points to get a line and then find the point on that
@@ -362,8 +363,13 @@ class Transform {
         const coord0 = [p.x, p.y, 0, 1];
         const coord1 = [p.x, p.y, 1, 1];
 
-        vec4.transformMat4(coord0, coord0, this.pixelMatrixInverse);
-        vec4.transformMat4(coord1, coord1, this.pixelMatrixInverse);
+        if (asTile) {
+            vec4.transformMat4(coord0, coord0, this.pixelPointMatrixInverse);
+            vec4.transformMat4(coord1, coord1, this.pixelPointMatrixInverse);
+        } else {
+            vec4.transformMat4(coord0, coord0, this.pixelMatrixInverse);
+            vec4.transformMat4(coord1, coord1, this.pixelMatrixInverse);
+        }
 
         const w0 = coord0[3];
         const w1 = coord1[3];
@@ -556,12 +562,23 @@ class Transform {
         mat4.rotateZ(m, m, this.angle);
         mat4.translate(m, m, [-x, -y, 0]);
 
+        let m2 = new Float64Array(16);
+        mat4.perspective(m2, this._fov, this.width / this.height, 1, farZ);
+
+        mat4.scale(m2, m2, [1, -1, 1]);
+        mat4.translate(m2, m2, [0, 0, -this.cameraToCenterDistance]);
+        mat4.rotateX(m2, m2, clamp(this.pitch, 0, 67) * Math.PI / 180); // or 68
+        mat4.rotateZ(m2, m2, this.angle);
+        mat4.translate(m2, m2, [-x, -y, 0]);
+
         // The mercatorMatrix can be used to transform points from mercator coordinates
         // ([0, 0] nw, [1, 1] se) to GL coordinates.
         this.mercatorMatrix = mat4.scale([], m, [this.worldSize, this.worldSize, this.worldSize]);
 
         // scale vertically to meters per pixel (inverse of ground resolution):
-        mat4.scale(m, m, [1, 1, mercatorZfromAltitude(1, this.center.lat) * this.worldSize, 1]);
+        const verticalScale = mercatorZfromAltitude(1, this.center.lat) * this.worldSize;
+        mat4.scale(m, m, [1, 1, verticalScale, 1]);
+        mat4.scale(m2, m2, [1, 1, verticalScale, 1]);
 
         this.projMatrix = m;
 
@@ -597,6 +614,10 @@ class Transform {
         m = mat4.invert(new Float64Array(16), this.pixelMatrix);
         if (!m) throw new Error("failed to invert matrix");
         this.pixelMatrixInverse = m;
+
+        m = mat4.invert(new Float64Array(16), mat4.multiply(new Float64Array(16), this.labelPlaneMatrix, m2));
+        if (!m) throw new Error("failed to invert matrix");
+        this.pixelPointMatrixInverse = m;
 
         this._posMatrixCache = {};
         this._alignedPosMatrixCache = {};

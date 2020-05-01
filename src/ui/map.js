@@ -317,7 +317,11 @@ class Map extends Camera {
             throw new Error(`maxZoom must be greater than minZoom`);
         }
 
-        const transform = new Transform(options.minZoom, options.maxZoom, options.renderWorldCopies, options.tileStops);
+        if (options.minPitch != null && options.maxPitch != null && options.minPitch > options.maxPitch) {
+            throw new Error(`maxPitch must be greater than minPitch`);
+        }
+
+        const transform = new Transform(options.minZoom, options.maxZoom, options.minPitch, options.maxPitch, options.renderWorldCopies, options.tileStops);
         super(transform, options);
 
         this._interactive = options.interactive;

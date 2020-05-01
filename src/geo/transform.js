@@ -47,19 +47,23 @@ class Transform {
     _renderWorldCopies: boolean;
     _minZoom: number;
     _maxZoom: number;
+    _minPitch: number;
+    _maxPitch: number;
     _zoomOffsetStops: Array<Array<number>>;
     _center: LngLat;
     _constraining: boolean;
     _posMatrixCache: {[number]: Float32Array};
     _alignedPosMatrixCache: {[number]: Float32Array};
 
-    constructor(minZoom: ?number, maxZoom: ?number, renderWorldCopies: boolean | void, zoomStops: Array<Array<number>> | void) {
+    constructor(minZoom: ?number, maxZoom: ?number, minPitch: ?number, maxPitch: ?number, renderWorldCopies: boolean | void, zoomStops: Array<Array<number>> | void) {
         this.tileSize = 512; // constant
         this.maxValidLatitude = 85.051129; // constant
 
         this._renderWorldCopies = renderWorldCopies === undefined ? true : renderWorldCopies;
         this._minZoom = minZoom || 0;
         this._maxZoom = maxZoom || 22;
+        this._minPitch = minPitch || 0;
+        this._maxPitch = maxPitch || 68; // or 67
         this._zoomOffsetStops = zoomStops === undefined ? [] : zoomStops;
 
         this.setMaxBounds();
@@ -78,7 +82,7 @@ class Transform {
     }
 
     clone(): Transform {
-        const clone = new Transform(this._minZoom, this._maxZoom, this._renderWorldCopies, this._zoomOffsetStops);
+        const clone = new Transform(this._minZoom, this._maxZoom, this._minPitch, this._maxPitch, this._renderWorldCopies, this._zoomOffsetStops);
         clone.tileSize = this.tileSize;
         clone.latRange = this.latRange;
         clone.width = this.width;
@@ -567,7 +571,7 @@ class Transform {
 
         mat4.scale(m2, m2, [1, -1, 1]);
         mat4.translate(m2, m2, [0, 0, -this.cameraToCenterDistance]);
-        mat4.rotateX(m2, m2, clamp(this.pitch, 0, 67) * Math.PI / 180); // or 68
+        mat4.rotateX(m2, m2, clamp(this.pitch, 0, this._maxPitch) * Math.PI / 180);
         mat4.rotateZ(m2, m2, this.angle);
         mat4.translate(m2, m2, [-x, -y, 0]);
 

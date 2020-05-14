@@ -1,9 +1,7 @@
-uniform lowp float u_ground_height;
-
 varying vec4 v_color;
 
 void main() {
-    if (u_ground_height * DEVICE_PIXEL_RATIO < gl_FragCoord.y) {
+    if (v_color.a < 0.1) {
         discard;
     }
     gl_FragColor = v_color;

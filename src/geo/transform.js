@@ -59,6 +59,7 @@ class Transform {
         this.tileSize = 512; // constant
         this.maxValidLatitude = 85.051129; // constant
         this.maxValidPitch = 80; // constant
+        this.maxSkyPixelRatio = 0.4; // constant
 
         this._renderWorldCopies = renderWorldCopies === undefined ? true : renderWorldCopies;
         this._minZoom = minZoom || 0;
@@ -137,8 +138,8 @@ class Transform {
     }
 
     get groundPixel(): number {
-        return Math.min((this.height - this.minGroundPixel) / (this.maxValidPitch - this._maxPitch) *
-            (this.maxValidPitch - this.pitch) + this.minGroundPixel, this.height);
+        return Math.min(this.maxSkyPixelRatio / (this.maxValidPitch - this._maxPitch) *
+            (this.maxValidPitch - this.pitch) + (1 - this.maxSkyPixelRatio), 1);
     }
 
     get bearing(): number {
@@ -292,7 +293,6 @@ class Transform {
         this.height = height;
 
         this.pixelsToGLUnits = [2 / width, -2 / height];
-        this.minGroundPixel = height * 0.65;
         this._constrain();
         this._calcMatrices();
     }

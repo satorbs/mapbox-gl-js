@@ -58,6 +58,7 @@ class Transform {
     constructor(minZoom: ?number, maxZoom: ?number, minPitch: ?number, maxPitch: ?number, renderWorldCopies: boolean | void, zoomStops: Array<Array<number>> | void) {
         this.tileSize = 512; // constant
         this.maxValidLatitude = 85.051129; // constant
+        this.maxValidPitch = 80; // constant
 
         this._renderWorldCopies = renderWorldCopies === undefined ? true : renderWorldCopies;
         this._minZoom = minZoom || 0;
@@ -135,6 +136,11 @@ class Transform {
         return new Point(this.width, this.height);
     }
 
+    get groundPixel(): number {
+        return Math.min((this.height - this.minGroundPixel) / (this.maxValidPitch - this._maxPitch) *
+            (this.maxValidPitch - this.pitch) + this.minGroundPixel, this.height);
+    }
+
     get bearing(): number {
         return -this.angle / Math.PI * 180;
     }
@@ -154,7 +160,7 @@ class Transform {
         return this._pitch / Math.PI * 180;
     }
     set pitch(pitch: number) {
-        const p = clamp(pitch, 0, 80) / 180 * Math.PI;
+        const p = clamp(pitch, 0, this.maxValidPitch) / 180 * Math.PI;
         if (this._pitch === p) return;
         this._unmodified = false;
         this._pitch = p;
@@ -286,6 +292,7 @@ class Transform {
         this.height = height;
 
         this.pixelsToGLUnits = [2 / width, -2 / height];
+        this.minGroundPixel = height * 0.65;
         this._constrain();
         this._calcMatrices();
     }

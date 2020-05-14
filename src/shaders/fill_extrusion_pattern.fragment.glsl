@@ -1,5 +1,6 @@
 uniform vec2 u_texsize;
 uniform float u_fade;
+uniform lowp float u_ground_height;
 
 uniform sampler2D u_image;
 

@@ -17,6 +17,7 @@ export type RasterUniformsType = {|
     'u_tl_parent': Uniform2f,
     'u_scale_parent': Uniform1f,
     'u_buffer_scale': Uniform1f,
+    'u_ground_ratio': Uniform1f,
     'u_fade_t': Uniform1f,
     'u_opacity': Uniform1f,
     'u_image0': Uniform1i,
@@ -33,6 +34,7 @@ const rasterUniforms = (context: Context, locations: UniformLocations): RasterUn
     'u_tl_parent': new Uniform2f(context, locations.u_tl_parent),
     'u_scale_parent': new Uniform1f(context, locations.u_scale_parent),
     'u_buffer_scale': new Uniform1f(context, locations.u_buffer_scale),
+    'u_ground_ratio': new Uniform1f(context, locations.u_ground_ratio),
     'u_fade_t': new Uniform1f(context, locations.u_fade_t),
     'u_opacity': new Uniform1f(context, locations.u_opacity),
     'u_image0': new Uniform1i(context, locations.u_image0),
@@ -49,12 +51,14 @@ const rasterUniformValues = (
     parentTL: [number, number],
     parentScaleBy: number,
     fade: {mix: number, opacity: number},
-    layer: RasterStyleLayer
+    layer: RasterStyleLayer,
+    groundRatio: number
 ): UniformValues<RasterUniformsType> => ({
     'u_matrix': matrix,
     'u_tl_parent': parentTL,
     'u_scale_parent': parentScaleBy,
     'u_buffer_scale': 1,
+    'u_ground_ratio': groundRatio,
     'u_fade_t': fade.mix,
     'u_opacity': fade.opacity * layer.paint.get('raster-opacity'),
     'u_image0': 0,

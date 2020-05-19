@@ -27,6 +27,7 @@ export type FillExtrusionUniformsType = {|
     'u_lightcolor': Uniform3f,
     'u_vertical_gradient': Uniform1f,
     'u_opacity': Uniform1f,
+    'u_scale': Uniform1f,
     'u_ground_ratio': Uniform1f
 |};
 
@@ -45,6 +46,7 @@ export type FillExtrusionPatternUniformsType = {|
     'u_scale': Uniform4f,
     'u_fade': Uniform1f,
     'u_opacity': Uniform1f,
+    'u_scale': Uniform1f,
     'u_ground_ratio': Uniform1f
 |};
 
@@ -55,6 +57,7 @@ const fillExtrusionUniforms = (context: Context, locations: UniformLocations): F
     'u_lightcolor': new Uniform3f(context, locations.u_lightcolor),
     'u_vertical_gradient': new Uniform1f(context, locations.u_vertical_gradient),
     'u_opacity': new Uniform1f(context, locations.u_opacity),
+    'u_scale': new Uniform1f(context, locations.u_scale),
     'u_ground_ratio': new Uniform1f(context, locations.u_ground_ratio)
 });
 
@@ -73,6 +76,7 @@ const fillExtrusionPatternUniforms = (context: Context, locations: UniformLocati
     'u_scale': new Uniform4f(context, locations.u_scale),
     'u_fade': new Uniform1f(context, locations.u_fade),
     'u_opacity': new Uniform1f(context, locations.u_opacity),
+    'u_scale': new Uniform1f(context, locations.u_scale),
     'u_ground_ratio': new Uniform1f(context, locations.u_ground_ratio)
 });
 
@@ -81,6 +85,7 @@ const fillExtrusionUniformValues = (
     painter: Painter,
     shouldUseVerticalGradient: boolean,
     opacity: number,
+    scale: number,
     groundRatio: number
 ): UniformValues<FillExtrusionUniformsType> => {
     const light = painter.style.light;
@@ -101,6 +106,7 @@ const fillExtrusionUniformValues = (
         'u_lightcolor': [lightColor.r, lightColor.g, lightColor.b],
         'u_vertical_gradient': +shouldUseVerticalGradient,
         'u_opacity': opacity,
+        'u_scale': scale,
         'u_ground_ratio': groundRatio
     };
 };
@@ -110,12 +116,13 @@ const fillExtrusionPatternUniformValues = (
     painter: Painter,
     shouldUseVerticalGradient: boolean,
     opacity: number,
+    scale: number,
     groundRatio: number,
     coord: OverscaledTileID,
     crossfade: CrossfadeParameters,
     tile: Tile
 ): UniformValues<FillExtrusionPatternUniformsType> => {
-    return extend(fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, groundRatio),
+    return extend(fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale, groundRatio),
         patternUniformValues(crossfade, painter, tile),
         {
             'u_height_factor': -Math.pow(2, coord.overscaledZ) / tile.tileSize / 8

@@ -22,6 +22,10 @@ function draw(painter: Painter, source: SourceCache, layer: FillExtrusionStyleLa
     if (opacity === 0) {
         return;
     }
+    const scale = layer.paint.get('fill-extrusion-scale');
+    if (scale === 0) {
+        return;
+    }
 
     if (painter.renderPass === 'translucent') {
         const depthMode = new DepthMode(painter.context.gl.LEQUAL, DepthMode.ReadWrite, painter.depthRangeFor3D);
@@ -54,6 +58,7 @@ function drawExtrusionTiles(painter, source, layer, coords, depthMode, stencilMo
     const image = patternProperty.constantOr((1: any));
     const crossfade = layer.getCrossfadeParameters();
     const opacity = layer.paint.get('fill-extrusion-opacity');
+    const scale = layer.paint.get('fill-extrusion-scale');
 
     for (const coord of coords) {
         const tile = source.getTile(coord);
@@ -85,8 +90,8 @@ function drawExtrusionTiles(painter, source, layer, coords, depthMode, stencilMo
         const shouldUseVerticalGradient = layer.paint.get('fill-extrusion-vertical-gradient');
         const groundRatio = painter.transform.groundPixel;
         const uniformValues = image ?
-            fillExtrusionPatternUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, groundRatio, coord, crossfade, tile) :
-            fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, groundRatio);
+            fillExtrusionPatternUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale, groundRatio, coord, crossfade, tile) :
+            fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale, groundRatio);
 
 
         program.draw(context, context.gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.backCCW,

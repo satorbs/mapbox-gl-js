@@ -4,6 +4,7 @@ uniform lowp vec3 u_lightpos;
 uniform lowp float u_lightintensity;
 uniform float u_vertical_gradient;
 uniform lowp float u_opacity;
+uniform lowp float u_scale;
 uniform lowp float u_ground_ratio;
 
 attribute vec2 a_pos;
@@ -28,7 +29,7 @@ void main() {
 
     float t = mod(normal.x, 2.0);
 
-    gl_Position = u_matrix * vec4(a_pos, t > 0.0 ? height : base, 1);
+    gl_Position = u_matrix * vec4(a_pos, t > 0.0 ? height * u_scale : base * u_scale, 1);
 
     // Relative luminance (how dark/bright is the surface color?)
     float colorvalue = color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;

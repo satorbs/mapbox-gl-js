@@ -20,6 +20,7 @@ import type Formatted from '../../style-spec/expression/types/formatted';
 
 export type PaintProps = {|
     "fill-extrusion-opacity": DataConstantProperty<number>,
+    "fill-extrusion-scale": DataConstantProperty<number>,
     "fill-extrusion-color": DataDrivenProperty<Color>,
     "fill-extrusion-translate": DataConstantProperty<[number, number]>,
     "fill-extrusion-translate-anchor": DataConstantProperty<"map" | "viewport">,
@@ -31,6 +32,7 @@ export type PaintProps = {|
 
 const paint: Properties<PaintProps> = new Properties({
     "fill-extrusion-opacity": new DataConstantProperty(styleSpec["paint_fill-extrusion"]["fill-extrusion-opacity"]),
+    "fill-extrusion-scale": new DataConstantProperty(styleSpec["paint_fill-extrusion"]["fill-extrusion-scale"]),
     "fill-extrusion-color": new DataDrivenProperty(styleSpec["paint_fill-extrusion"]["fill-extrusion-color"]),
     "fill-extrusion-translate": new DataConstantProperty(styleSpec["paint_fill-extrusion"]["fill-extrusion-translate"]),
     "fill-extrusion-translate-anchor": new DataConstantProperty(styleSpec["paint_fill-extrusion"]["fill-extrusion-translate-anchor"]),

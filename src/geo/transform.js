@@ -554,7 +554,7 @@ class Transform {
         // (the distance between[width/2, height/2] and [width/2 + 1, height/2])
         const halfFov = this._fov / 2;
         const groundAngle = Math.PI / 2 + this._pitch;
-        const topHalfSurfaceDistance = Math.sin(halfFov) * this.cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
+        const topHalfSurfaceDistance = Math.sin(halfFov) * this.cameraToCenterDistance / Math.sin(clamp(Math.PI - groundAngle - halfFov, 0.01, Math.PI - 0.01));
         const point = this.point;
         const x = point.x, y = point.y;
 

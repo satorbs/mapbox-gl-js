@@ -34,10 +34,11 @@ void main() {
     // Relative luminance (how dark/bright is the surface color?)
     float colorvalue = color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;
 
-    vec3 ndc = gl_Position.xyz / gl_Position.w;
+    vec3 ndc = vec3(gl_Position.xy, 0.0) / gl_Position.w;
     float pixheight = ndc.y * 0.5 + 0.5;
+    float alpha = (u_ground_ratio >= 1.0) ? 1.0 : (u_ground_ratio >= pixheight) ? 1.0 : 0.0;
 
-    v_color = vec4(0.0, 0.0, 0.0, 1.0 - step(u_ground_ratio, pixheight));
+    v_color = vec4(0.0, 0.0, 0.0, alpha);
 
     // Add slight ambient lighting so no extrusions are totally black
     vec4 ambientlight = vec4(0.03, 0.03, 0.03, 1.0);

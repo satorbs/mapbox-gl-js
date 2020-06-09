@@ -15,7 +15,7 @@ void main() {
 
     vec3 ndc = gl_Position.xyz / gl_Position.w;
     float pixheight = ndc.y * 0.5 + 0.5;
-    gl_Position.y = (1.0 - step(u_ground_ratio + 0.1, pixheight) * step(gl_Position.z, 0.9)) * gl_Position.y;
+    // gl_Position.y = (1.0 - step(u_ground_ratio + 0.1, pixheight) * step(gl_Position.z, 0.9)) * gl_Position.y;
 
     // We are using Int16 for texture position coordinates to give us enough precision for
     // fractional coordinates. We use 8192 to scale the texture coordinates in the buffer

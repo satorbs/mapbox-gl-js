@@ -4269,6 +4269,20 @@ var spec = {
 		},
 		"property-type": "data-constant"
 	},
+	"fill-extrusion-scale": {
+		type: "number",
+		"default": 1,
+		minimum: 0,
+		maximum: 3,
+		transition: true,
+		expression: {
+			interpolated: true,
+			parameters: [
+				"zoom"
+			]
+		},
+		"property-type": "data-constant"
+	},
 	"fill-extrusion-color": {
 		type: "color",
 		"default": "#000000",
@@ -15997,6 +16011,7 @@ function isEntirelyOutside(ring) {
 
 var paint$5 = new Properties({
     'fill-extrusion-opacity': new DataConstantProperty(spec['paint_fill-extrusion']['fill-extrusion-opacity']),
+    'fill-extrusion-scale': new DataConstantProperty(spec['paint_fill-extrusion']['fill-extrusion-scale']),
     'fill-extrusion-color': new DataDrivenProperty(spec['paint_fill-extrusion']['fill-extrusion-color']),
     'fill-extrusion-translate': new DataConstantProperty(spec['paint_fill-extrusion']['fill-extrusion-translate']),
     'fill-extrusion-translate-anchor': new DataConstantProperty(spec['paint_fill-extrusion']['fill-extrusion-translate-anchor']),
@@ -16041,27 +16056,40 @@ function dot$1(a, b) {
 }
 function getIntersectionDistance(projectedQueryGeometry, projectedFace) {
     if (projectedQueryGeometry.length === 1) {
-        var a = projectedFace[0];
-        var b = projectedFace[1];
-        var c = projectedFace[3];
-        var p = projectedQueryGeometry[0];
-        var ab = b.sub(a);
-        var ac = c.sub(a);
-        var ap = p.sub(a);
-        var dotABAB = dot$1(ab, ab);
-        var dotABAC = dot$1(ab, ac);
-        var dotACAC = dot$1(ac, ac);
-        var dotAPAB = dot$1(ap, ab);
-        var dotAPAC = dot$1(ap, ac);
-        var denom = dotABAB * dotACAC - dotABAC * dotABAC;
-        var v = (dotACAC * dotAPAB - dotABAC * dotAPAC) / denom;
-        var w = (dotABAB * dotAPAC - dotABAC * dotAPAB) / denom;
-        var u = 1 - v - w;
-        return a.z * u + b.z * v + c.z * w;
+        var i = 0;
+        var a = projectedFace[i++];
+        var b;
+        while (!b || a.equals(b)) {
+            b = projectedFace[i++];
+            if (!b) {
+                return Infinity;
+            }
+        }
+        for (; i < projectedFace.length; i++) {
+            var c = projectedFace[i];
+            var p = projectedQueryGeometry[0];
+            var ab = b.sub(a);
+            var ac = c.sub(a);
+            var ap = p.sub(a);
+            var dotABAB = dot$1(ab, ab);
+            var dotABAC = dot$1(ab, ac);
+            var dotACAC = dot$1(ac, ac);
+            var dotAPAB = dot$1(ap, ab);
+            var dotAPAC = dot$1(ap, ac);
+            var denom = dotABAB * dotACAC - dotABAC * dotABAC;
+            var v = (dotACAC * dotAPAB - dotABAC * dotAPAC) / denom;
+            var w = (dotABAB * dotAPAC - dotABAC * dotAPAB) / denom;
+            var u = 1 - v - w;
+            var distance = a.z * u + b.z * v + c.z * w;
+            if (isFinite(distance)) {
+                return distance;
+            }
+        }
+        return Infinity;
     } else {
         var closestDistance = Infinity;
-        for (var i = 0, list = projectedFace; i < list.length; i += 1) {
-            var p$1 = list[i];
+        for (var i$1 = 0, list = projectedFace; i$1 < list.length; i$1 += 1) {
+            var p$1 = list[i$1];
             closestDistance = Math.min(closestDistance, p$1.z);
         }
         return closestDistance;
@@ -19393,6 +19421,14 @@ OverscaledTileID.prototype.scaledTo = function scaledTo(targetZ) {
         return new OverscaledTileID(targetZ, this.wrap, targetZ, this.canonical.x >> zDifference, this.canonical.y >> zDifference);
     }
 };
+OverscaledTileID.prototype.calculateScaledKey = function calculateScaledKey(targetZ, withWrap) {
+    var zDifference = this.canonical.z - targetZ;
+    if (targetZ > this.canonical.z) {
+        return calculateKey(this.wrap * +withWrap, targetZ, this.canonical.x, this.canonical.y);
+    } else {
+        return calculateKey(this.wrap * +withWrap, targetZ, this.canonical.x >> zDifference, this.canonical.y >> zDifference);
+    }
+};
 OverscaledTileID.prototype.isChildOf = function isChildOf(parent) {
     if (parent.wrap !== this.wrap) {
         return false;
@@ -20135,6 +20171,7 @@ Tile.prototype.clearMask = function clearMask() {
         this.maskedIndexBuffer.destroy();
         delete this.maskedIndexBuffer;
     }
+    delete this.mask;
 };
 Tile.prototype.setMask = function setMask(mask, context, highResolution) {
     if (deepEqual(this.mask, mask)) {
@@ -20143,8 +20180,8 @@ Tile.prototype.setMask = function setMask(mask, context, highResolution) {
     if (!this.dem) {
         return;
     }
-    this.mask = mask;
     this.clearMask();
+    this.mask = mask;
     if (deepEqual(mask, { '0': true })) {
         return;
     }
@@ -25410,6 +25447,7 @@ var VectorTileSource = function (Evented) {
     };
     VectorTileSource.prototype.unloadTile = function unloadTile(tile) {
         tile.unloadVectorData();
+        tile.clearMask();
         this.dispatcher.send('removeTile', {
             uid: tile.uid,
             type: this.type,
@@ -25532,6 +25570,7 @@ var RasterTileSource = function (Evented) {
         if (tile.texture) {
             this.map.painter.saveTileTexture(tile.texture);
         }
+        tile.clearMask();
         callback();
     };
     RasterTileSource.prototype.hasTransition = function hasTransition() {
@@ -25648,6 +25687,7 @@ var RasterDEMTileSource = function (RasterTileSource) {
             delete tile.dem;
         }
         delete tile.neighboringTiles;
+        tile.clearMask();
         tile.state = 'unloaded';
         this.dispatcher.send('removeDEMTile', {
             uid: tile.uid,
@@ -25828,6 +25868,7 @@ var GeoJSONSource = function (Evented) {
     };
     GeoJSONSource.prototype.unloadTile = function unloadTile(tile) {
         tile.unloadVectorData();
+        tile.clearMask();
         this.dispatcher.send('removeTile', {
             uid: tile.uid,
             type: this.type,
@@ -26466,6 +26507,10 @@ TileCache.prototype._getAndRemoveByKey = function _getAndRemoveByKey(key) {
     }
     this.order.splice(this.order.indexOf(key), 1);
     return data.value;
+};
+TileCache.prototype.getByKey = function getByKey(key) {
+    var data = this.data[key];
+    return data ? data[0].value : null;
 };
 TileCache.prototype.get = function get(tileID) {
     if (!this.has(tileID)) {
@@ -27909,17 +27954,15 @@ var SourceCache = function (Evented) {
     };
     SourceCache.prototype.findLoadedParent = function findLoadedParent(tileID, minCoveringZoom) {
         for (var z = tileID.overscaledZ - 1; z >= minCoveringZoom; z--) {
-            var parent = tileID.scaledTo(z);
-            if (!parent) {
-                return;
-            }
-            var id = String(parent.key);
-            var tile = this._tiles[id];
+            var parentKey = tileID.calculateScaledKey(z, true);
+            var tile = this._tiles[parentKey];
             if (tile && tile.hasData()) {
                 return tile;
             }
-            if (this._cache.has(parent)) {
-                return this._cache.get(parent);
+            var parentWrappedKey = tileID.calculateScaledKey(z, false);
+            var cachedTile = this._cache.getByKey(parentWrappedKey);
+            if (cachedTile) {
+                return cachedTile;
             }
         }
     };
@@ -31015,9 +31058,16 @@ var Style = function (Evented) {
             this._spriteRequest = null;
         }
         __chunk_1.evented.off('pluginAvailable', this._rtlTextPluginCallback);
+        for (var layerId in this._layers) {
+            var layer = this._layers[layerId];
+            layer.setEventedParent(null);
+        }
         for (var id in this.sourceCaches) {
             this.sourceCaches[id].clearTiles();
+            this.sourceCaches[id].setEventedParent(null);
         }
+        this.imageManager.setEventedParent(null);
+        this.setEventedParent(null);
         this.dispatcher.remove();
     };
     Style.prototype._clearSource = function _clearSource(id) {
@@ -31173,11 +31223,11 @@ var fillPatternVert = "uniform mat4 u_matrix;uniform vec2 u_pixel_coord_upper;un
 
 var fillExtrusionFrag = "varying vec4 v_color;void main() {gl_FragColor=v_color;\n#ifdef OVERDRAW_INSPECTOR\ngl_FragColor=vec4(1.0);\n#endif\n}";
 
-var fillExtrusionVert = "uniform mat4 u_matrix;uniform vec3 u_lightcolor;uniform lowp vec3 u_lightpos;uniform lowp float u_lightintensity;uniform float u_vertical_gradient;uniform lowp float u_opacity;attribute vec2 a_pos;attribute vec4 a_normal_ed;varying vec4 v_color;\n#pragma mapbox: define highp float base\n#pragma mapbox: define highp float height\n#pragma mapbox: define highp vec4 color\nvoid main() {\n#pragma mapbox: initialize highp float base\n#pragma mapbox: initialize highp float height\n#pragma mapbox: initialize highp vec4 color\nvec3 normal=a_normal_ed.xyz;base=max(0.0,base);height=max(0.0,height);float t=mod(normal.x,2.0);gl_Position=u_matrix*vec4(a_pos,t > 0.0 ? height : base,1);float colorvalue=color.r*0.2126+color.g*0.7152+color.b*0.0722;v_color=vec4(0.0,0.0,0.0,1.0);vec4 ambientlight=vec4(0.03,0.03,0.03,1.0);color+=ambientlight;float directional=clamp(dot(normal/16384.0,u_lightpos),0.0,1.0);directional=mix((1.0-u_lightintensity),max((1.0-colorvalue+u_lightintensity),1.0),directional);if (normal.y !=0.0) {directional*=((1.0-u_vertical_gradient)+(u_vertical_gradient*clamp((t+base)*pow(height/150.0,0.5),mix(0.7,0.98,1.0-u_lightintensity),1.0)));}v_color.r+=clamp(color.r*directional*u_lightcolor.r,mix(0.0,0.3,1.0-u_lightcolor.r),1.0);v_color.g+=clamp(color.g*directional*u_lightcolor.g,mix(0.0,0.3,1.0-u_lightcolor.g),1.0);v_color.b+=clamp(color.b*directional*u_lightcolor.b,mix(0.0,0.3,1.0-u_lightcolor.b),1.0);v_color*=u_opacity;}";
+var fillExtrusionVert = "uniform mat4 u_matrix;uniform vec3 u_lightcolor;uniform lowp vec3 u_lightpos;uniform lowp float u_lightintensity;uniform float u_vertical_gradient;uniform lowp float u_opacity;uniform lowp float u_scale;attribute vec2 a_pos;attribute vec4 a_normal_ed;varying vec4 v_color;\n#pragma mapbox: define highp float base\n#pragma mapbox: define highp float height\n#pragma mapbox: define highp vec4 color\nvoid main() {\n#pragma mapbox: initialize highp float base\n#pragma mapbox: initialize highp float height\n#pragma mapbox: initialize highp vec4 color\nvec3 normal=a_normal_ed.xyz;base=max(0.0,base);height=max(0.0,height);float t=mod(normal.x,2.0);gl_Position=u_matrix*vec4(a_pos,t > 0.0 ? height*u_scale : base*u_scale,1);float colorvalue=color.r*0.2126+color.g*0.7152+color.b*0.0722;v_color=vec4(0.0,0.0,0.0,1.0);vec4 ambientlight=vec4(0.03,0.03,0.03,1.0);color+=ambientlight;float directional=clamp(dot(normal/16384.0,u_lightpos),0.0,1.0);directional=mix((1.0-u_lightintensity),max((1.0-colorvalue+u_lightintensity),1.0),directional);if (normal.y !=0.0) {directional*=((1.0-u_vertical_gradient)+(u_vertical_gradient*clamp((t+base)*pow(height/150.0,0.5),mix(0.7,0.98,1.0-u_lightintensity),1.0)));}v_color.r+=clamp(color.r*directional*u_lightcolor.r,mix(0.0,0.3,1.0-u_lightcolor.r),1.0);v_color.g+=clamp(color.g*directional*u_lightcolor.g,mix(0.0,0.3,1.0-u_lightcolor.g),1.0);v_color.b+=clamp(color.b*directional*u_lightcolor.b,mix(0.0,0.3,1.0-u_lightcolor.b),1.0);v_color*=u_opacity;}";
 
 var fillExtrusionPatternFrag = "uniform vec2 u_texsize;uniform float u_fade;uniform sampler2D u_image;varying vec2 v_pos_a;varying vec2 v_pos_b;varying vec4 v_lighting;\n#pragma mapbox: define lowp float base\n#pragma mapbox: define lowp float height\n#pragma mapbox: define lowp vec4 pattern_from\n#pragma mapbox: define lowp vec4 pattern_to\nvoid main() {\n#pragma mapbox: initialize lowp float base\n#pragma mapbox: initialize lowp float height\n#pragma mapbox: initialize mediump vec4 pattern_from\n#pragma mapbox: initialize mediump vec4 pattern_to\nvec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;vec2 imagecoord=mod(v_pos_a,1.0);vec2 pos=mix(pattern_tl_a/u_texsize,pattern_br_a/u_texsize,imagecoord);vec4 color1=texture2D(u_image,pos);vec2 imagecoord_b=mod(v_pos_b,1.0);vec2 pos2=mix(pattern_tl_b/u_texsize,pattern_br_b/u_texsize,imagecoord_b);vec4 color2=texture2D(u_image,pos2);vec4 mixedColor=mix(color1,color2,u_fade);gl_FragColor=mixedColor*v_lighting;\n#ifdef OVERDRAW_INSPECTOR\ngl_FragColor=vec4(1.0);\n#endif\n}";
 
-var fillExtrusionPatternVert = "uniform mat4 u_matrix;uniform vec2 u_pixel_coord_upper;uniform vec2 u_pixel_coord_lower;uniform float u_height_factor;uniform vec4 u_scale;uniform float u_vertical_gradient;uniform lowp float u_opacity;uniform vec3 u_lightcolor;uniform lowp vec3 u_lightpos;uniform lowp float u_lightintensity;attribute vec2 a_pos;attribute vec4 a_normal_ed;varying vec2 v_pos_a;varying vec2 v_pos_b;varying vec4 v_lighting;\n#pragma mapbox: define lowp float base\n#pragma mapbox: define lowp float height\n#pragma mapbox: define lowp vec4 pattern_from\n#pragma mapbox: define lowp vec4 pattern_to\nvoid main() {\n#pragma mapbox: initialize lowp float base\n#pragma mapbox: initialize lowp float height\n#pragma mapbox: initialize mediump vec4 pattern_from\n#pragma mapbox: initialize mediump vec4 pattern_to\nvec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;float pixelRatio=u_scale.x;float tileRatio=u_scale.y;float fromScale=u_scale.z;float toScale=u_scale.w;vec3 normal=a_normal_ed.xyz;float edgedistance=a_normal_ed.w;vec2 display_size_a=vec2((pattern_br_a.x-pattern_tl_a.x)/pixelRatio,(pattern_br_a.y-pattern_tl_a.y)/pixelRatio);vec2 display_size_b=vec2((pattern_br_b.x-pattern_tl_b.x)/pixelRatio,(pattern_br_b.y-pattern_tl_b.y)/pixelRatio);base=max(0.0,base);height=max(0.0,height);float t=mod(normal.x,2.0);float z=t > 0.0 ? height : base;gl_Position=u_matrix*vec4(a_pos,z,1);vec2 pos=normal.x==1.0 && normal.y==0.0 && normal.z==16384.0\n? a_pos\n: vec2(edgedistance,z*u_height_factor);v_pos_a=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,fromScale*display_size_a,tileRatio,pos);v_pos_b=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,toScale*display_size_b,tileRatio,pos);v_lighting=vec4(0.0,0.0,0.0,1.0);float directional=clamp(dot(normal/16383.0,u_lightpos),0.0,1.0);directional=mix((1.0-u_lightintensity),max((0.5+u_lightintensity),1.0),directional);if (normal.y !=0.0) {directional*=((1.0-u_vertical_gradient)+(u_vertical_gradient*clamp((t+base)*pow(height/150.0,0.5),mix(0.7,0.98,1.0-u_lightintensity),1.0)));}v_lighting.rgb+=clamp(directional*u_lightcolor,mix(vec3(0.0),vec3(0.3),1.0-u_lightcolor),vec3(1.0));v_lighting*=u_opacity;}";
+var fillExtrusionPatternVert = "uniform mat4 u_matrix;uniform vec2 u_pixel_coord_upper;uniform vec2 u_pixel_coord_lower;uniform float u_height_factor;uniform vec4 u_scale;uniform float u_vertical_gradient;uniform lowp float u_opacity;uniform lowp float u_scale;uniform vec3 u_lightcolor;uniform lowp vec3 u_lightpos;uniform lowp float u_lightintensity;attribute vec2 a_pos;attribute vec4 a_normal_ed;varying vec2 v_pos_a;varying vec2 v_pos_b;varying vec4 v_lighting;\n#pragma mapbox: define lowp float base\n#pragma mapbox: define lowp float height\n#pragma mapbox: define lowp vec4 pattern_from\n#pragma mapbox: define lowp vec4 pattern_to\nvoid main() {\n#pragma mapbox: initialize lowp float base\n#pragma mapbox: initialize lowp float height\n#pragma mapbox: initialize mediump vec4 pattern_from\n#pragma mapbox: initialize mediump vec4 pattern_to\nvec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;float pixelRatio=u_scale.x;float tileRatio=u_scale.y;float fromScale=u_scale.z;float toScale=u_scale.w;vec3 normal=a_normal_ed.xyz;float edgedistance=a_normal_ed.w;vec2 display_size_a=vec2((pattern_br_a.x-pattern_tl_a.x)/pixelRatio,(pattern_br_a.y-pattern_tl_a.y)/pixelRatio);vec2 display_size_b=vec2((pattern_br_b.x-pattern_tl_b.x)/pixelRatio,(pattern_br_b.y-pattern_tl_b.y)/pixelRatio);base=max(0.0,base);height=max(0.0,height);float t=mod(normal.x,2.0);float z=t > 0.0 ? height : base;gl_Position=u_matrix*vec4(a_pos,z,1);vec2 pos=normal.x==1.0 && normal.y==0.0 && normal.z==16384.0\n? a_pos\n: vec2(edgedistance,z*u_height_factor);v_pos_a=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,fromScale*display_size_a,tileRatio,pos);v_pos_b=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,toScale*display_size_b,tileRatio,pos);v_lighting=vec4(0.0,0.0,0.0,1.0);float directional=clamp(dot(normal/16383.0,u_lightpos),0.0,1.0);directional=mix((1.0-u_lightintensity),max((0.5+u_lightintensity),1.0),directional);if (normal.y !=0.0) {directional*=((1.0-u_vertical_gradient)+(u_vertical_gradient*clamp((t+base)*pow(height/150.0,0.5),mix(0.7,0.98,1.0-u_lightintensity),1.0)));}v_lighting.rgb+=clamp(directional*u_lightcolor,mix(vec3(0.0),vec3(0.3),1.0-u_lightcolor),vec3(1.0));v_lighting*=u_opacity;}";
 
 var hillshadePrepareFrag = "#ifdef GL_ES\nprecision highp float;\n#endif\nuniform sampler2D u_image;varying vec2 v_pos;uniform vec2 u_dimension;uniform float u_zoom;uniform float u_maxzoom;float getElevation(vec2 coord,float bias) {vec4 data=texture2D(u_image,coord)*255.0;return (data.r+data.g*256.0+data.b*256.0*256.0)/4.0;}void main() {vec2 epsilon=1.0/u_dimension;float a=getElevation(v_pos+vec2(-epsilon.x,-epsilon.y),0.0);float b=getElevation(v_pos+vec2(0,-epsilon.y),0.0);float c=getElevation(v_pos+vec2(epsilon.x,-epsilon.y),0.0);float d=getElevation(v_pos+vec2(-epsilon.x,0),0.0);float e=getElevation(v_pos,0.0);float f=getElevation(v_pos+vec2(epsilon.x,0),0.0);float g=getElevation(v_pos+vec2(-epsilon.x,epsilon.y),0.0);float h=getElevation(v_pos+vec2(0,epsilon.y),0.0);float i=getElevation(v_pos+vec2(epsilon.x,epsilon.y),0.0);float exaggeration=u_zoom < 2.0 ? 0.4 : u_zoom < 4.5 ? 0.35 : 0.3;vec2 deriv=vec2((c+f+f+i)-(a+d+d+g),(g+h+h+i)-(a+b+b+c))/ pow(2.0,(u_zoom-u_maxzoom)*exaggeration+19.2562-u_zoom);gl_FragColor=clamp(vec4(deriv.x/2.0+0.5,deriv.y/2.0+0.5,1.0,1.0),0.0,1.0);\n#ifdef OVERDRAW_INSPECTOR\ngl_FragColor=vec4(1.0);\n#endif\n}";
 
@@ -31205,7 +31255,7 @@ var lineSDFVert = "\n#define scale 0.015873016\n#define LINE_DISTANCE_SCALE 2.0\
 
 var rasterFrag = "uniform float u_fade_t;uniform float u_opacity;uniform sampler2D u_image0;uniform sampler2D u_image1;varying vec2 v_pos0;varying vec2 v_pos1;uniform float u_brightness_low;uniform float u_brightness_high;uniform float u_saturation_factor;uniform float u_contrast_factor;uniform vec3 u_spin_weights;void main() {vec4 color0=texture2D(u_image0,v_pos0);vec4 color1=texture2D(u_image1,v_pos1);if (color0.a > 0.0) {color0.rgb=color0.rgb/color0.a;}if (color1.a > 0.0) {color1.rgb=color1.rgb/color1.a;}vec4 color=mix(color0,color1,u_fade_t);color.a*=u_opacity;vec3 rgb=color.rgb;rgb=vec3(dot(rgb,u_spin_weights.xyz),dot(rgb,u_spin_weights.zxy),dot(rgb,u_spin_weights.yzx));float average=(color.r+color.g+color.b)/3.0;rgb+=(average-rgb)*u_saturation_factor;rgb=(rgb-0.5)*u_contrast_factor+0.5;vec3 u_high_vec=vec3(u_brightness_low,u_brightness_low,u_brightness_low);vec3 u_low_vec=vec3(u_brightness_high,u_brightness_high,u_brightness_high);gl_FragColor=vec4(mix(u_high_vec,u_low_vec,rgb)*color.a,color.a);\n#ifdef OVERDRAW_INSPECTOR\ngl_FragColor=vec4(1.0);\n#endif\n}";
 
-var rasterVert = "uniform mat4 u_matrix;uniform vec2 u_tl_parent;uniform float u_scale_parent;uniform float u_buffer_scale;attribute vec3 a_pos;attribute vec2 a_texture_pos;varying vec2 v_pos0;varying vec2 v_pos1;void main() {gl_Position=u_matrix*vec4(a_pos,1);v_pos0=(((a_texture_pos/8192.0)-0.5)/u_buffer_scale )+0.5;v_pos1=(v_pos0*u_scale_parent)+u_tl_parent;}";
+var rasterVert = "uniform mat4 u_matrix;uniform vec2 u_tl_parent;uniform float u_scale_parent;uniform float u_buffer_scale;uniform lowp float u_ground_ratio;attribute vec3 a_pos;attribute vec2 a_texture_pos;varying vec2 v_pos0;varying vec2 v_pos1;void main() {gl_Position=u_matrix*vec4(a_pos,1);vec3 ndc=gl_Position.xyz/gl_Position.w;float pixheight=ndc.y*0.5+0.5;v_pos0=(((a_texture_pos/8192.0)-0.5)/u_buffer_scale )+0.5;v_pos1=(v_pos0*u_scale_parent)+u_tl_parent;}";
 
 var symbolIconFrag = "uniform sampler2D u_texture;\n#pragma mapbox: define lowp float opacity\nvarying vec2 v_tex;varying float v_fade_opacity;void main() {\n#pragma mapbox: initialize lowp float opacity\nlowp float alpha=opacity*v_fade_opacity;gl_FragColor=texture2D(u_texture,v_tex)*alpha;\n#ifdef OVERDRAW_INSPECTOR\ngl_FragColor=vec4(1.0);\n#endif\n}";
 
@@ -31541,7 +31591,8 @@ var fillExtrusionUniforms = function (context, locations) {
         'u_lightintensity': new __chunk_1.Uniform1f(context, locations.u_lightintensity),
         'u_lightcolor': new __chunk_1.Uniform3f(context, locations.u_lightcolor),
         'u_vertical_gradient': new __chunk_1.Uniform1f(context, locations.u_vertical_gradient),
-        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity)
+        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity),
+        'u_scale': new __chunk_1.Uniform1f(context, locations.u_scale)
     };
 };
 var fillExtrusionPatternUniforms = function (context, locations) {
@@ -31558,10 +31609,11 @@ var fillExtrusionPatternUniforms = function (context, locations) {
         'u_pixel_coord_lower': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_lower),
         'u_scale': new __chunk_1.Uniform4f(context, locations.u_scale),
         'u_fade': new __chunk_1.Uniform1f(context, locations.u_fade),
+        'u_scale': new __chunk_1.Uniform1f(context, locations.u_scale),
         'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity)
     };
 };
-var fillExtrusionUniformValues = function (matrix, painter, shouldUseVerticalGradient, opacity) {
+var fillExtrusionUniformValues = function (matrix, painter, shouldUseVerticalGradient, opacity, scale) {
     var light = painter.style.light;
     var _lp = light.properties.get('position');
     var lightPos = [
@@ -31585,11 +31637,12 @@ var fillExtrusionUniformValues = function (matrix, painter, shouldUseVerticalGra
             lightColor.b
         ],
         'u_vertical_gradient': +shouldUseVerticalGradient,
-        'u_opacity': opacity
+        'u_opacity': opacity,
+        'u_scale': scale
     };
 };
-var fillExtrusionPatternUniformValues = function (matrix, painter, shouldUseVerticalGradient, opacity, coord, crossfade, tile) {
-    return __chunk_1.extend(fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity), patternUniformValues(crossfade, painter, tile), { 'u_height_factor': -Math.pow(2, coord.overscaledZ) / tile.tileSize / 8 });
+var fillExtrusionPatternUniformValues = function (matrix, painter, shouldUseVerticalGradient, opacity, scale, coord, crossfade, tile) {
+    return __chunk_1.extend(fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale), patternUniformValues(crossfade, painter, tile), { 'u_height_factor': -Math.pow(2, coord.overscaledZ) / tile.tileSize / 8 });
 };
 
 var fillUniforms = function (context, locations) {
@@ -31890,6 +31943,7 @@ var rasterUniforms = function (context, locations) {
         'u_tl_parent': new __chunk_1.Uniform2f(context, locations.u_tl_parent),
         'u_scale_parent': new __chunk_1.Uniform1f(context, locations.u_scale_parent),
         'u_buffer_scale': new __chunk_1.Uniform1f(context, locations.u_buffer_scale),
+        'u_ground_ratio': new __chunk_1.Uniform1f(context, locations.u_ground_ratio),
         'u_fade_t': new __chunk_1.Uniform1f(context, locations.u_fade_t),
         'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity),
         'u_image0': new __chunk_1.Uniform1i(context, locations.u_image0),
@@ -31901,12 +31955,13 @@ var rasterUniforms = function (context, locations) {
         'u_spin_weights': new __chunk_1.Uniform3f(context, locations.u_spin_weights)
     };
 };
-var rasterUniformValues = function (matrix, parentTL, parentScaleBy, fade, layer) {
+var rasterUniformValues = function (matrix, parentTL, parentScaleBy, fade, layer, groundRatio) {
     return {
         'u_matrix': matrix,
         'u_tl_parent': parentTL,
         'u_scale_parent': parentScaleBy,
         'u_buffer_scale': 1,
+        'u_ground_ratio': groundRatio,
         'u_fade_t': fade.mix,
         'u_opacity': fade.opacity * layer.paint.get('raster-opacity'),
         'u_image0': 0,
@@ -32577,6 +32632,10 @@ function draw(painter, source, layer, coords) {
     if (opacity === 0) {
         return;
     }
+    var scale = layer.paint.get('fill-extrusion-scale');
+    if (scale === 0) {
+        return;
+    }
     if (painter.renderPass === 'translucent') {
         var depthMode = new DepthMode(painter.context.gl.LEQUAL, DepthMode.ReadWrite, painter.depthRangeFor3D);
         if (opacity === 1 && !layer.paint.get('fill-extrusion-pattern').constantOr(1)) {
@@ -32595,6 +32654,7 @@ function drawExtrusionTiles(painter, source, layer, coords, depthMode, stencilMo
     var image = patternProperty.constantOr(1);
     var crossfade = layer.getCrossfadeParameters();
     var opacity = layer.paint.get('fill-extrusion-opacity');
+    var scale = layer.paint.get('fill-extrusion-scale');
     for (var i = 0, list = coords; i < list.length; i += 1) {
         var coord = list[i];
         var tile = source.getTile(coord);
@@ -32619,7 +32679,7 @@ function drawExtrusionTiles(painter, source, layer, coords, depthMode, stencilMo
         }
         var matrix = painter.translatePosMatrix(coord.posMatrix, tile, layer.paint.get('fill-extrusion-translate'), layer.paint.get('fill-extrusion-translate-anchor'));
         var shouldUseVerticalGradient = layer.paint.get('fill-extrusion-vertical-gradient');
-        var uniformValues = image ? fillExtrusionPatternUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, coord, crossfade, tile) : fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity);
+        var uniformValues = image ? fillExtrusionPatternUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale, coord, crossfade, tile) : fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale);
         program.draw(context, context.gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.backCCW, uniformValues, layer.id, bucket.layoutVertexBuffer, bucket.indexBuffer, bucket.segments, layer.paint, painter.transform.zoom, programConfiguration);
     }
 }
@@ -32645,7 +32705,7 @@ function drawRaster(painter, sourceCache, layer, coords) {
     var align = !painter.options.moving;
     for (var i = 0, list = coords; i < list.length; i += 1) {
         var coord = list[i];
-        var depthMode = painter.depthModeForSublayer(coord.overscaledZ - minTileZ, layer.paint.get('raster-opacity') === 1 ? DepthMode.ReadWrite : DepthMode.ReadOnly, gl.LESS);
+        var depthMode = painter.depthModeFor3D(coord.overscaledZ - minTileZ, layer.paint.get('raster-opacity') === 1 ? DepthMode.ReadWrite : DepthMode.ReadOnly, gl.LESS);
         var tile = sourceCache.getTile(coord);
         if (!tile.maskedBoundsBuffer) {
             continue;
@@ -32668,10 +32728,11 @@ function drawRaster(painter, sourceCache, layer, coords) {
         } else {
             tile.texture.bind(textureFilter, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
         }
+        var groundRatio = painter.transform.groundPixel;
         var uniformValues = rasterUniformValues(posMatrix, parentTL || [
             0,
             0
-        ], parentScaleBy || 1, fade, layer);
+        ], parentScaleBy || 1, fade, layer, groundRatio);
         if (source instanceof ImageSource) {
             program.draw(context, gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.disabled, uniformValues, layer.id, source.boundsBuffer, painter.quadTriangleIndexBuffer, source.boundsSegments);
         } else if (tile.maskedBoundsBuffer && tile.maskedIndexBuffer && tile.segments) {
@@ -32812,6 +32873,9 @@ function drawDebugTile(painter, sourceCache, coord) {
         ]), __chunk_1.Color.white), id, debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
     }
     program.draw(context, gl.LINES, depthMode, stencilMode, colorMode, CullFaceMode.disabled, debugUniformValues(posMatrix, __chunk_1.Color.black), id, debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
+    debugTextBuffer.destroy();
+    debugTextIndexBuffer.destroy();
+    debugTextSegment.destroy();
 }
 var simplexFont = {
     ' ': [
@@ -35912,6 +35976,13 @@ Painter.prototype.depthModeForSublayer = function depthModeForSublayer(n, mask, 
         depth
     ]);
 };
+Painter.prototype.depthModeFor3D = function depthModeFor3D(n, mask, func) {
+    var depth = 1 - ((1 + this.currentLayer) * this.numSublayers + n) * this.depthEpsilon;
+    return new DepthMode(func || this.context.gl.LEQUAL, mask, [
+        0,
+        depth
+    ]);
+};
 Painter.prototype.opaquePassEnabledForLayer = function opaquePassEnabledForLayer() {
     return this.currentLayer < this.opaquePassCutoff;
 };
@@ -36205,12 +36276,16 @@ function scanTriangle(a, b, c, ymin, ymax, scanLine) {
     }
 }
 
-var Transform = function Transform(minZoom, maxZoom, renderWorldCopies, zoomStops) {
+var Transform = function Transform(minZoom, maxZoom, minPitch, maxPitch, renderWorldCopies, zoomStops) {
     this.tileSize = 512;
     this.maxValidLatitude = 85.051129;
+    this.maxValidPitch = 80;
+    this.maxSkyPixelRatio = 0.35;
     this._renderWorldCopies = renderWorldCopies === undefined ? true : renderWorldCopies;
     this._minZoom = minZoom || 0;
     this._maxZoom = maxZoom || 22;
+    this._minPitch = minPitch || 0;
+    this._maxPitch = maxPitch || 68;
     this._zoomOffsetStops = zoomStops === undefined ? [] : zoomStops;
     this.setMaxBounds();
     this.width = 0;
@@ -36232,6 +36307,7 @@ var prototypeAccessors = {
     worldSize: { configurable: true },
     centerPoint: { configurable: true },
     size: { configurable: true },
+    groundPixel: { configurable: true },
     bearing: { configurable: true },
     pitch: { configurable: true },
     fov: { configurable: true },
@@ -36241,7 +36317,7 @@ var prototypeAccessors = {
     point: { configurable: true }
 };
 Transform.prototype.clone = function clone() {
-    var clone = new Transform(this._minZoom, this._maxZoom, this._renderWorldCopies, this._zoomOffsetStops);
+    var clone = new Transform(this._minZoom, this._maxZoom, this._minPitch, this._maxPitch, this._renderWorldCopies, this._zoomOffsetStops);
     clone.tileSize = this.tileSize;
     clone.latRange = this.latRange;
     clone.width = this.width;
@@ -36296,6 +36372,9 @@ prototypeAccessors.centerPoint.get = function () {
 prototypeAccessors.size.get = function () {
     return new __chunk_1.Point(this.width, this.height);
 };
+prototypeAccessors.groundPixel.get = function () {
+    return Math.min(this.maxSkyPixelRatio / (this.maxValidPitch - this._maxPitch) * (this.maxValidPitch - this.pitch) + (1 - this.maxSkyPixelRatio), 1);
+};
 prototypeAccessors.bearing.get = function () {
     return -this.angle / Math.PI * 180;
 };
@@ -36314,7 +36393,7 @@ prototypeAccessors.pitch.get = function () {
     return this._pitch / Math.PI * 180;
 };
 prototypeAccessors.pitch.set = function (pitch) {
-    var p = __chunk_1.clamp(pitch, 0, 70) / 180 * Math.PI;
+    var p = __chunk_1.clamp(pitch, 0, this.maxValidPitch) / 180 * Math.PI;
     if (this._pitch === p) {
         return;
     }
@@ -36404,10 +36483,10 @@ Transform.prototype.coveringTiles = function coveringTiles(options) {
     var centerPoint = new __chunk_1.Point(numTiles * centerCoord.x - 0.5, numTiles * centerCoord.y - 0.5);
     var offset = options.tileSize ? options.tileSize : 0;
     var cornerCoords = [
-        this.pointCoordinate(new __chunk_1.Point(0, 0)),
-        this.pointCoordinate(new __chunk_1.Point(this.width, 0)),
-        this.pointCoordinate(new __chunk_1.Point(this.width, this.height + offset * 2)),
-        this.pointCoordinate(new __chunk_1.Point(0, this.height + offset * 2))
+        this.pointCoordinate(new __chunk_1.Point(0, 0), true),
+        this.pointCoordinate(new __chunk_1.Point(this.width, 0), true),
+        this.pointCoordinate(new __chunk_1.Point(this.width, this.height + offset * 2), true),
+        this.pointCoordinate(new __chunk_1.Point(0, this.height + offset * 2), true)
     ];
     return tileCover(z, cornerCoords, options.reparseOverscaled ? actualZ : z, this._renderWorldCopies).sort(function (a, b) {
         return centerPoint.dist(a.canonical) - centerPoint.dist(b.canonical);
@@ -36464,7 +36543,9 @@ Transform.prototype.locationCoordinate = function locationCoordinate(lnglat) {
 Transform.prototype.coordinateLocation = function coordinateLocation(coord) {
     return coord.toLngLat();
 };
-Transform.prototype.pointCoordinate = function pointCoordinate(p) {
+Transform.prototype.pointCoordinate = function pointCoordinate(p, asTile) {
+    if (asTile === void 0)
+        asTile = false;
     var targetZ = 0;
     var coord0 = [
         p.x,
@@ -36478,8 +36559,13 @@ Transform.prototype.pointCoordinate = function pointCoordinate(p) {
         1,
         1
     ];
-    __chunk_1.transformMat4(coord0, coord0, this.pixelMatrixInverse);
-    __chunk_1.transformMat4(coord1, coord1, this.pixelMatrixInverse);
+    if (asTile) {
+        __chunk_1.transformMat4(coord0, coord0, this.pixelPointMatrixInverse);
+        __chunk_1.transformMat4(coord1, coord1, this.pixelPointMatrixInverse);
+    } else {
+        __chunk_1.transformMat4(coord0, coord0, this.pixelMatrixInverse);
+        __chunk_1.transformMat4(coord1, coord1, this.pixelMatrixInverse);
+    }
     var w0 = coord0[3];
     var w1 = coord1[3];
     var x0 = coord0[0] / w0;
@@ -36628,7 +36714,7 @@ Transform.prototype._calcMatrices = function _calcMatrices() {
     this.cameraToCenterDistance = 0.5 / Math.tan(this._fov / 2) * this.height;
     var halfFov = this._fov / 2;
     var groundAngle = Math.PI / 2 + this._pitch;
-    var topHalfSurfaceDistance = Math.sin(halfFov) * this.cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
+    var topHalfSurfaceDistance = Math.sin(halfFov) * this.cameraToCenterDistance / Math.sin(__chunk_1.clamp(Math.PI - groundAngle - halfFov, 0.01, Math.PI - 0.01));
     var point = this.point;
     var x = point.x, y = point.y;
     var furthestDistance = Math.cos(Math.PI / 2 - this._pitch) * topHalfSurfaceDistance + this.cameraToCenterDistance;
@@ -36652,15 +36738,41 @@ Transform.prototype._calcMatrices = function _calcMatrices() {
         -y,
         0
     ]);
+    var m2 = new Float64Array(16);
+    __chunk_1.perspective(m2, this._fov, this.width / this.height, 1, farZ);
+    __chunk_1.scale(m2, m2, [
+        1,
+        -1,
+        1
+    ]);
+    __chunk_1.translate(m2, m2, [
+        0,
+        0,
+        -this.cameraToCenterDistance
+    ]);
+    __chunk_1.rotateX(m2, m2, __chunk_1.clamp(this.pitch, 0, this._maxPitch) * Math.PI / 180);
+    __chunk_1.rotateZ(m2, m2, this.angle);
+    __chunk_1.translate(m2, m2, [
+        -x,
+        -y,
+        0
+    ]);
     this.mercatorMatrix = __chunk_1.scale([], m, [
         this.worldSize,
         this.worldSize,
         this.worldSize
     ]);
+    var verticalScale = __chunk_1.mercatorZfromAltitude(1, this.center.lat) * this.worldSize;
     __chunk_1.scale(m, m, [
         1,
         1,
-        __chunk_1.mercatorZfromAltitude(1, this.center.lat) * this.worldSize,
+        verticalScale,
+        1
+    ]);
+    __chunk_1.scale(m2, m2, [
+        1,
+        1,
+        verticalScale,
         1
     ]);
     this.projMatrix = m;
@@ -36707,6 +36819,11 @@ Transform.prototype._calcMatrices = function _calcMatrices() {
         throw new Error('failed to invert matrix');
     }
     this.pixelMatrixInverse = m;
+    m = __chunk_1.invert(new Float64Array(16), __chunk_1.multiply(new Float64Array(16), this.labelPlaneMatrix, m2));
+    if (!m) {
+        throw new Error('failed to invert matrix');
+    }
+    this.pixelPointMatrixInverse = m;
     this._posMatrixCache = {};
     this._alignedPosMatrixCache = {};
 };
@@ -38864,7 +38981,10 @@ var Map = function (Camera) {
         if (options.minZoom != null && options.maxZoom != null && options.minZoom > options.maxZoom) {
             throw new Error('maxZoom must be greater than minZoom');
         }
-        var transform = new Transform(options.minZoom, options.maxZoom, options.renderWorldCopies, options.tileStops);
+        if (options.minPitch != null && options.maxPitch != null && options.minPitch > options.maxPitch) {
+            throw new Error('maxPitch must be greater than minPitch');
+        }
+        var transform = new Transform(options.minZoom, options.maxZoom, options.minPitch, options.maxPitch, options.renderWorldCopies, options.tileStops);
         Camera.call(this, transform, options);
         this._interactive = options.interactive;
         this._highResolution = options.highResolution;

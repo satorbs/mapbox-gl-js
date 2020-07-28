@@ -5,7 +5,6 @@ uniform lowp float u_lightintensity;
 uniform float u_vertical_gradient;
 uniform lowp float u_opacity;
 uniform lowp float u_scale;
-uniform lowp float u_ground_ratio;
 
 attribute vec2 a_pos;
 attribute vec4 a_normal_ed;
@@ -34,11 +33,7 @@ void main() {
     // Relative luminance (how dark/bright is the surface color?)
     float colorvalue = color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;
 
-    vec3 ndc = vec3(gl_Position.xy, 0.0) / gl_Position.w;
-    float pixheight = ndc.y * 0.5 + 0.5;
-    float alpha = (u_ground_ratio >= 1.0) ? 1.0 : (u_ground_ratio >= pixheight) ? 1.0 : 0.0;
-
-    v_color = vec4(0.0, 0.0, 0.0, alpha);
+    v_color = vec4(0.0, 0.0, 0.0, 1.0);
 
     // Add slight ambient lighting so no extrusions are totally black
     vec4 ambientlight = vec4(0.03, 0.03, 0.03, 1.0);

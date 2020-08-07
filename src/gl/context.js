@@ -63,6 +63,7 @@ class Context {
     pixelStoreUnpackFlipY: PixelStoreUnpackFlipY;
 
     extTextureFilterAnisotropic: any;
+    extRenderToTextureHalfFloat: any;
     extTextureFilterAnisotropicMax: any;
     extTextureHalfFloat: any;
 
@@ -114,6 +115,7 @@ class Context {
         this.extTextureHalfFloat = gl.getExtension('OES_texture_half_float');
         if (this.extTextureHalfFloat) {
             gl.getExtension('OES_texture_half_float_linear');
+            this.extRenderToTextureHalfFloat = gl.getExtension('EXT_color_buffer_half_float');
         }
 
     }
@@ -173,8 +175,8 @@ class Context {
         return rbo;
     }
 
-    createFramebuffer(width: number, height: number) {
-        return new Framebuffer(this, width, height);
+    createFramebuffer(width: number, height: number, hasDepth: boolean) {
+        return new Framebuffer(this, width, height, hasDepth);
     }
 
     clear({color, depth}: ClearArgs) {

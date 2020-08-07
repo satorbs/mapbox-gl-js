@@ -17,6 +17,7 @@ import { register } from '../../util/web_worker_transfer';
 import {hasPattern, addPatternDependencies} from './pattern_bucket_features';
 import loadGeometry from '../load_geometry';
 import EvaluationParameters from '../../style/evaluation_parameters';
+import { calculateSignedArea } from '../../util/util';
 
 import type {
     Bucket,
@@ -160,6 +161,9 @@ class FillExtrusionBucket implements Bucket {
 
     addFeature(feature: BucketFeature, geometry: Array<Array<Point>>, index: number, imagePositions: {[string]: ImagePosition}) {
         for (const polygon of classifyRings(geometry, EARCUT_MAX_RINGS)) {
+            // Mutates `polygon` in-place
+            // cleanupPolygonWindingOrder(polygon);
+
             let numVertices = 0;
             for (const ring of polygon) {
                 numVertices += ring.length;
@@ -282,4 +286,15 @@ function isEntirelyOutside(ring) {
         ring.every(p => p.x > EXTENT) ||
         ring.every(p => p.y < 0) ||
         ring.every(p => p.y > EXTENT);
+}
+
+function cleanupPolygonWindingOrder(polygon) {
+    // Check if a  ring is using a clockwise winding order, and reverse it if so.
+    if (calculateSignedArea(polygon[0]) < 0) {
+        for (const ring of polygon) {
+            ring.reverse();
+        }
+    }
+
+    return polygon;
 }

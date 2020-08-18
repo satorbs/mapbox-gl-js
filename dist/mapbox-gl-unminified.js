@@ -2,8 +2,8 @@
 (function (global, factory) {
 typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 typeof define === 'function' && define.amd ? define(factory) :
-(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.mapboxgl = factory());
-}(this, (function () { 'use strict';
+(global = global || self, global.mapboxgl = factory());
+}(this, function () { 'use strict';
 
 /* eslint-disable */
 
@@ -243,8 +243,6 @@ Point.convert = function (a) {
     return a;
 };
 
-var window$1 = self;
-
 function deepEqual(a, b) {
     if (Array.isArray(a)) {
         if (!Array.isArray(b) || a.length !== b.length) {
@@ -468,7 +466,7 @@ function parseCacheControl(cacheControl) {
 }
 function storageAvailable(type) {
     try {
-        var storage = window$1[type];
+        var storage = self[type];
         storage.setItem('_mapbox_test_', 1);
         storage.removeItem('_mapbox_test_');
         return true;
@@ -477,19 +475,19 @@ function storageAvailable(type) {
     }
 }
 function b64EncodeUnicode(str) {
-    return window$1.btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+    return self.btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
         return String.fromCharCode(Number('0x' + p1));
     }));
 }
 function b64DecodeUnicode(str) {
-    return decodeURIComponent(window$1.atob(str).split('').map(function (c) {
+    return decodeURIComponent(self.atob(str).split('').map(function (c) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
 }
 
-var now = window$1.performance && window$1.performance.now ? window$1.performance.now.bind(window$1.performance) : Date.now.bind(Date);
-var raf = window$1.requestAnimationFrame || window$1.mozRequestAnimationFrame || window$1.webkitRequestAnimationFrame || window$1.msRequestAnimationFrame;
-var cancel = window$1.cancelAnimationFrame || window$1.mozCancelAnimationFrame || window$1.webkitCancelAnimationFrame || window$1.msCancelAnimationFrame;
+var now = self.performance && self.performance.now ? self.performance.now.bind(self.performance) : Date.now.bind(Date);
+var raf = self.requestAnimationFrame || self.mozRequestAnimationFrame || self.webkitRequestAnimationFrame || self.msRequestAnimationFrame;
+var cancel = self.cancelAnimationFrame || self.mozCancelAnimationFrame || self.webkitCancelAnimationFrame || self.msCancelAnimationFrame;
 var linkEl;
 var exported = {
     now: now,
@@ -502,7 +500,7 @@ var exported = {
         };
     },
     getImageData: function getImageData(img) {
-        var canvas = window$1.document.createElement('canvas');
+        var canvas = self.document.createElement('canvas');
         var context = canvas.getContext('2d');
         if (!context) {
             throw new Error('failed to create canvas 2d context');
@@ -513,7 +511,7 @@ var exported = {
         return context.getImageData(0, 0, img.width, img.height);
     },
     createImageData: function createImageData(width, height, color) {
-        var canvas = window$1.document.createElement('canvas');
+        var canvas = self.document.createElement('canvas');
         var context = canvas.getContext('2d');
         if (!context) {
             throw new Error('failed to create canvas 2d context');
@@ -526,14 +524,14 @@ var exported = {
     },
     resolveURL: function resolveURL(path) {
         if (!linkEl) {
-            linkEl = window$1.document.createElement('a');
+            linkEl = self.document.createElement('a');
         }
         linkEl.href = path;
         return linkEl.href;
     },
-    hardwareConcurrency: window$1.navigator.hardwareConcurrency || 4,
+    hardwareConcurrency: self.navigator.hardwareConcurrency || 4,
     get devicePixelRatio() {
-        return window$1.devicePixelRatio;
+        return self.devicePixelRatio;
     }
 };
 
@@ -565,8 +563,8 @@ var glForTesting;
 var webpCheckComplete = false;
 var webpImgTest;
 var webpImgTestOnloadComplete = false;
-if (window$1.document) {
-    webpImgTest = window$1.document.createElement('img');
+if (self.document) {
+    webpImgTest = self.document.createElement('img');
     webpImgTest.onload = function () {
         if (glForTesting) {
             testWebpTextureUpload(glForTesting);
@@ -830,11 +828,11 @@ TelemetryEvent.prototype.fetchEventData = function fetchEventData() {
     var uuidKey = this.getStorageKey('uuid');
     if (isLocalStorageAvailable) {
         try {
-            var data = window$1.localStorage.getItem(storageKey);
+            var data = self.localStorage.getItem(storageKey);
             if (data) {
                 this.eventData = JSON.parse(data);
             }
-            var uuid = window$1.localStorage.getItem(uuidKey);
+            var uuid = self.localStorage.getItem(uuidKey);
             if (uuid) {
                 this.anonId = uuid;
             }
@@ -849,9 +847,9 @@ TelemetryEvent.prototype.saveEventData = function saveEventData() {
     var uuidKey = this.getStorageKey('uuid');
     if (isLocalStorageAvailable) {
         try {
-            window$1.localStorage.setItem(uuidKey, this.anonId);
+            self.localStorage.setItem(uuidKey, this.anonId);
             if (Object.keys(this.eventData).length >= 1) {
-                window$1.localStorage.setItem(storageKey, JSON.stringify(this.eventData));
+                self.localStorage.setItem(storageKey, JSON.stringify(this.eventData));
             }
         } catch (e) {
             warnOnce('Unable to write to LocalStorage');
@@ -1035,14 +1033,14 @@ function isWorker() {
 var getReferrer = isWorker() ? function () {
     return self.worker && self.worker.referrer;
 } : function () {
-    var origin = window$1.location.origin;
+    var origin = self.location.origin;
     if (origin && origin !== 'null' && origin !== 'file://') {
-        return origin + window$1.location.pathname;
+        return origin + self.location.pathname;
     }
 };
 function makeFetchRequest(requestParameters, callback) {
-    var controller = new window$1.AbortController();
-    var request = new window$1.Request(requestParameters.url, {
+    var controller = new self.AbortController();
+    var request = new self.Request(requestParameters.url, {
         method: requestParameters.method || 'GET',
         body: requestParameters.body,
         credentials: requestParameters.credentials,
@@ -1053,7 +1051,7 @@ function makeFetchRequest(requestParameters, callback) {
     if (requestParameters.type === 'json') {
         request.headers.set('Accept', 'application/json');
     }
-    window$1.fetch(request).then(function (response) {
+    self.fetch(request).then(function (response) {
         if (response.ok) {
             response[requestParameters.type || 'text']().then(function (result) {
                 callback(null, result, response.headers.get('Cache-Control'), response.headers.get('Expires'));
@@ -1076,7 +1074,7 @@ function makeFetchRequest(requestParameters, callback) {
     };
 }
 function makeXMLHttpRequest(requestParameters, callback) {
-    var xhr = new window$1.XMLHttpRequest();
+    var xhr = new self.XMLHttpRequest();
     xhr.open(requestParameters.method || 'GET', requestParameters.url, true);
     if (requestParameters.type === 'arrayBuffer') {
         xhr.responseType = 'arraybuffer';
@@ -1115,7 +1113,7 @@ function makeXMLHttpRequest(requestParameters, callback) {
 }
 var makeRequest = function (requestParameters, callback) {
     if (!/^file:/.test(requestParameters.url)) {
-        if (window$1.fetch && window$1.Request && window$1.AbortController && window$1.Request.prototype.hasOwnProperty('signal')) {
+        if (self.fetch && self.Request && self.AbortController && self.Request.prototype.hasOwnProperty('signal')) {
             return makeFetchRequest(requestParameters, callback);
         }
         if (isWorker() && self.worker && self.worker.actor) {
@@ -1134,9 +1132,9 @@ var postData = function (requestParameters, callback) {
     return makeRequest(extend(requestParameters, { method: 'POST' }), callback);
 };
 function sameOrigin(url) {
-    var a = window$1.document.createElement('a');
+    var a = self.document.createElement('a');
     a.href = url;
-    return a.protocol === window$1.document.location.protocol && a.host === window$1.document.location.host;
+    return a.protocol === self.document.location.protocol && a.host === self.document.location.host;
 }
 var transparentPngUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=';
 var imageQueue, numImageRequests;
@@ -1181,8 +1179,8 @@ var getImage = function (requestParameters, callback) {
         if (err) {
             callback(err);
         } else if (data) {
-            var img = new window$1.Image();
-            var URL = window$1.URL || window$1.webkitURL;
+            var img = new self.Image();
+            var URL = self.URL || self.webkitURL;
             img.onload = function () {
                 callback(null, img);
                 URL.revokeObjectURL(img.src);
@@ -1190,7 +1188,7 @@ var getImage = function (requestParameters, callback) {
             img.onerror = function () {
                 return callback(new Error('Could not load image. Please make sure to use a supported image type such as PNG or JPEG. Note that SVGs are not supported.'));
             };
-            var blob = new window$1.Blob([new Uint8Array(data)], { type: 'image/png' });
+            var blob = new self.Blob([new Uint8Array(data)], { type: 'image/png' });
             img.cacheControl = cacheControl;
             img.expires = expires;
             img.src = data.byteLength ? URL.createObjectURL(blob) : transparentPngUrl;
@@ -1204,13 +1202,13 @@ var getImage = function (requestParameters, callback) {
     };
 };
 var getVideo = function (urls, callback) {
-    var video = window$1.document.createElement('video');
+    var video = self.document.createElement('video');
     video.muted = true;
     video.onloadstart = function () {
         callback(null, video);
     };
     for (var i = 0; i < urls.length; i++) {
-        var s = window$1.document.createElement('source');
+        var s = self.document.createElement('source');
         if (!sameOrigin(urls[i])) {
             video.crossOrigin = 'Anonymous';
         }
@@ -6681,7 +6679,6 @@ function array$1(from, to, t) {
 }
 
 var interpolate = /*#__PURE__*/Object.freeze({
-__proto__: null,
 number: number,
 color: color,
 array: array$1
@@ -6771,7 +6768,6 @@ var hcl = {
 };
 
 var colorSpaces = /*#__PURE__*/Object.freeze({
-__proto__: null,
 lab: lab,
 hcl: hcl
 });
@@ -10016,7 +10012,7 @@ GridIndex.prototype.toArrayBuffer = function () {
     return array.buffer;
 };
 
-var ImageData = window$1.ImageData;
+var ImageData = self.ImageData;
 var registry = {};
 function register(name, klass, options) {
     if (options === void 0)
@@ -13797,19 +13793,453 @@ var paint$1 = new Properties({
 });
 var properties = { paint: paint$1 };
 
+var EPSILON = 0.000001;
 var ARRAY_TYPE = typeof Float32Array !== 'undefined' ? Float32Array : Array;
-if (!Math.hypot) {
-    Math.hypot = function () {
-        var arguments$1 = arguments;
-        var y = 0, i = arguments.length;
-        while (i--) {
-            y += arguments$1[i] * arguments$1[i];
-        }
-        return Math.sqrt(y);
-    };
-}
+var degree = Math.PI / 180;
 
 function create() {
+    var out = new ARRAY_TYPE(4);
+    if (ARRAY_TYPE != Float32Array) {
+        out[1] = 0;
+        out[2] = 0;
+    }
+    out[0] = 1;
+    out[3] = 1;
+    return out;
+}
+function rotate(out, a, rad) {
+    var a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3];
+    var s = Math.sin(rad);
+    var c = Math.cos(rad);
+    out[0] = a0 * c + a2 * s;
+    out[1] = a1 * c + a3 * s;
+    out[2] = a0 * -s + a2 * c;
+    out[3] = a1 * -s + a3 * c;
+    return out;
+}
+
+function create$1() {
+    var out = new ARRAY_TYPE(9);
+    if (ARRAY_TYPE != Float32Array) {
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 0;
+        out[5] = 0;
+        out[6] = 0;
+        out[7] = 0;
+    }
+    out[0] = 1;
+    out[4] = 1;
+    out[8] = 1;
+    return out;
+}
+function fromRotation(out, rad) {
+    var s = Math.sin(rad), c = Math.cos(rad);
+    out[0] = c;
+    out[1] = s;
+    out[2] = 0;
+    out[3] = -s;
+    out[4] = c;
+    out[5] = 0;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 1;
+    return out;
+}
+
+function create$2() {
+    var out = new ARRAY_TYPE(16);
+    if (ARRAY_TYPE != Float32Array) {
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = 0;
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 0;
+        out[9] = 0;
+        out[11] = 0;
+        out[12] = 0;
+        out[13] = 0;
+        out[14] = 0;
+    }
+    out[0] = 1;
+    out[5] = 1;
+    out[10] = 1;
+    out[15] = 1;
+    return out;
+}
+function clone$1(a) {
+    var out = new ARRAY_TYPE(16);
+    out[0] = a[0];
+    out[1] = a[1];
+    out[2] = a[2];
+    out[3] = a[3];
+    out[4] = a[4];
+    out[5] = a[5];
+    out[6] = a[6];
+    out[7] = a[7];
+    out[8] = a[8];
+    out[9] = a[9];
+    out[10] = a[10];
+    out[11] = a[11];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+    return out;
+}
+function identity(out) {
+    out[0] = 1;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+}
+function invert(out, a) {
+    var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+    var a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+    var a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+    var a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+    var b00 = a00 * a11 - a01 * a10;
+    var b01 = a00 * a12 - a02 * a10;
+    var b02 = a00 * a13 - a03 * a10;
+    var b03 = a01 * a12 - a02 * a11;
+    var b04 = a01 * a13 - a03 * a11;
+    var b05 = a02 * a13 - a03 * a12;
+    var b06 = a20 * a31 - a21 * a30;
+    var b07 = a20 * a32 - a22 * a30;
+    var b08 = a20 * a33 - a23 * a30;
+    var b09 = a21 * a32 - a22 * a31;
+    var b10 = a21 * a33 - a23 * a31;
+    var b11 = a22 * a33 - a23 * a32;
+    var det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+    if (!det) {
+        return null;
+    }
+    det = 1 / det;
+    out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+    out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+    out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+    out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+    out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+    out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+    out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+    out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+    out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+    out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+    out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+    out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+    out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+    out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+    out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+    out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+    return out;
+}
+function multiply(out, a, b) {
+    var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+    var a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+    var a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+    var a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+    var b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+    out[0] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+    out[1] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+    out[2] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+    out[3] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+    b0 = b[4];
+    b1 = b[5];
+    b2 = b[6];
+    b3 = b[7];
+    out[4] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+    out[5] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+    out[6] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+    out[7] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+    b0 = b[8];
+    b1 = b[9];
+    b2 = b[10];
+    b3 = b[11];
+    out[8] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+    out[9] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+    out[10] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+    out[11] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+    b0 = b[12];
+    b1 = b[13];
+    b2 = b[14];
+    b3 = b[15];
+    out[12] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
+    out[13] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
+    out[14] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
+    out[15] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
+    return out;
+}
+function translate$1(out, a, v) {
+    var x = v[0], y = v[1], z = v[2];
+    var a00, a01, a02, a03;
+    var a10, a11, a12, a13;
+    var a20, a21, a22, a23;
+    if (a === out) {
+        out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
+        out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
+        out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
+        out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
+    } else {
+        a00 = a[0];
+        a01 = a[1];
+        a02 = a[2];
+        a03 = a[3];
+        a10 = a[4];
+        a11 = a[5];
+        a12 = a[6];
+        a13 = a[7];
+        a20 = a[8];
+        a21 = a[9];
+        a22 = a[10];
+        a23 = a[11];
+        out[0] = a00;
+        out[1] = a01;
+        out[2] = a02;
+        out[3] = a03;
+        out[4] = a10;
+        out[5] = a11;
+        out[6] = a12;
+        out[7] = a13;
+        out[8] = a20;
+        out[9] = a21;
+        out[10] = a22;
+        out[11] = a23;
+        out[12] = a00 * x + a10 * y + a20 * z + a[12];
+        out[13] = a01 * x + a11 * y + a21 * z + a[13];
+        out[14] = a02 * x + a12 * y + a22 * z + a[14];
+        out[15] = a03 * x + a13 * y + a23 * z + a[15];
+    }
+    return out;
+}
+function scale(out, a, v) {
+    var x = v[0], y = v[1], z = v[2];
+    out[0] = a[0] * x;
+    out[1] = a[1] * x;
+    out[2] = a[2] * x;
+    out[3] = a[3] * x;
+    out[4] = a[4] * y;
+    out[5] = a[5] * y;
+    out[6] = a[6] * y;
+    out[7] = a[7] * y;
+    out[8] = a[8] * z;
+    out[9] = a[9] * z;
+    out[10] = a[10] * z;
+    out[11] = a[11] * z;
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+    return out;
+}
+function rotateX(out, a, rad) {
+    var s = Math.sin(rad);
+    var c = Math.cos(rad);
+    var a10 = a[4];
+    var a11 = a[5];
+    var a12 = a[6];
+    var a13 = a[7];
+    var a20 = a[8];
+    var a21 = a[9];
+    var a22 = a[10];
+    var a23 = a[11];
+    if (a !== out) {
+        out[0] = a[0];
+        out[1] = a[1];
+        out[2] = a[2];
+        out[3] = a[3];
+        out[12] = a[12];
+        out[13] = a[13];
+        out[14] = a[14];
+        out[15] = a[15];
+    }
+    out[4] = a10 * c + a20 * s;
+    out[5] = a11 * c + a21 * s;
+    out[6] = a12 * c + a22 * s;
+    out[7] = a13 * c + a23 * s;
+    out[8] = a20 * c - a10 * s;
+    out[9] = a21 * c - a11 * s;
+    out[10] = a22 * c - a12 * s;
+    out[11] = a23 * c - a13 * s;
+    return out;
+}
+function rotateZ(out, a, rad) {
+    var s = Math.sin(rad);
+    var c = Math.cos(rad);
+    var a00 = a[0];
+    var a01 = a[1];
+    var a02 = a[2];
+    var a03 = a[3];
+    var a10 = a[4];
+    var a11 = a[5];
+    var a12 = a[6];
+    var a13 = a[7];
+    if (a !== out) {
+        out[8] = a[8];
+        out[9] = a[9];
+        out[10] = a[10];
+        out[11] = a[11];
+        out[12] = a[12];
+        out[13] = a[13];
+        out[14] = a[14];
+        out[15] = a[15];
+    }
+    out[0] = a00 * c + a10 * s;
+    out[1] = a01 * c + a11 * s;
+    out[2] = a02 * c + a12 * s;
+    out[3] = a03 * c + a13 * s;
+    out[4] = a10 * c - a00 * s;
+    out[5] = a11 * c - a01 * s;
+    out[6] = a12 * c - a02 * s;
+    out[7] = a13 * c - a03 * s;
+    return out;
+}
+function perspective(out, fovy, aspect, near, far) {
+    var f = 1 / Math.tan(fovy / 2), nf;
+    out[0] = f / aspect;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = f;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[15] = 0;
+    if (far != null && far !== Infinity) {
+        nf = 1 / (near - far);
+        out[10] = (far + near) * nf;
+        out[14] = 2 * far * near * nf;
+    } else {
+        out[10] = -1;
+        out[14] = -2 * near;
+    }
+    return out;
+}
+function ortho(out, left, right, bottom, top, near, far) {
+    var lr = 1 / (left - right);
+    var bt = 1 / (bottom - top);
+    var nf = 1 / (near - far);
+    out[0] = -2 * lr;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = -2 * bt;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 2 * nf;
+    out[11] = 0;
+    out[12] = (left + right) * lr;
+    out[13] = (top + bottom) * bt;
+    out[14] = (far + near) * nf;
+    out[15] = 1;
+    return out;
+}
+
+function create$3() {
+    var out = new ARRAY_TYPE(3);
+    if (ARRAY_TYPE != Float32Array) {
+        out[0] = 0;
+        out[1] = 0;
+        out[2] = 0;
+    }
+    return out;
+}
+function length(a) {
+    var x = a[0];
+    var y = a[1];
+    var z = a[2];
+    return Math.sqrt(x * x + y * y + z * z);
+}
+function fromValues(x, y, z) {
+    var out = new ARRAY_TYPE(3);
+    out[0] = x;
+    out[1] = y;
+    out[2] = z;
+    return out;
+}
+function normalize(out, a) {
+    var x = a[0];
+    var y = a[1];
+    var z = a[2];
+    var len = x * x + y * y + z * z;
+    if (len > 0) {
+        len = 1 / Math.sqrt(len);
+    }
+    out[0] = a[0] * len;
+    out[1] = a[1] * len;
+    out[2] = a[2] * len;
+    return out;
+}
+function dot(a, b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+function cross(out, a, b) {
+    var ax = a[0], ay = a[1], az = a[2];
+    var bx = b[0], by = b[1], bz = b[2];
+    out[0] = ay * bz - az * by;
+    out[1] = az * bx - ax * bz;
+    out[2] = ax * by - ay * bx;
+    return out;
+}
+function transformMat3(out, a, m) {
+    var x = a[0], y = a[1], z = a[2];
+    out[0] = x * m[0] + y * m[3] + z * m[6];
+    out[1] = x * m[1] + y * m[4] + z * m[7];
+    out[2] = x * m[2] + y * m[5] + z * m[8];
+    return out;
+}
+var len = length;
+var forEach = function () {
+    var vec = create$3();
+    return function (a, stride, offset, count, fn, arg) {
+        var i, l;
+        if (!stride) {
+            stride = 3;
+        }
+        if (!offset) {
+            offset = 0;
+        }
+        if (count) {
+            l = Math.min(count * stride + offset, a.length);
+        } else {
+            l = a.length;
+        }
+        for (i = offset; i < l; i += stride) {
+            vec[0] = a[i];
+            vec[1] = a[i + 1];
+            vec[2] = a[i + 2];
+            fn(vec, vec, arg);
+            a[i] = vec[0];
+            a[i + 1] = vec[1];
+            a[i + 2] = vec[2];
+        }
+        return a;
+    };
+}();
+
+function create$4() {
     var out = new ARRAY_TYPE(4);
     if (ARRAY_TYPE != Float32Array) {
         out[0] = 0;
@@ -13817,6 +14247,21 @@ function create() {
         out[2] = 0;
         out[3] = 0;
     }
+    return out;
+}
+function normalize$1(out, a) {
+    var x = a[0];
+    var y = a[1];
+    var z = a[2];
+    var w = a[3];
+    var len = x * x + y * y + z * z + w * w;
+    if (len > 0) {
+        len = 1 / Math.sqrt(len);
+    }
+    out[0] = x * len;
+    out[1] = y * len;
+    out[2] = z * len;
+    out[3] = w * len;
     return out;
 }
 function transformMat4(out, a, m) {
@@ -13827,8 +14272,8 @@ function transformMat4(out, a, m) {
     out[3] = m[3] * x + m[7] * y + m[11] * z + m[15] * w;
     return out;
 }
-var forEach = function () {
-    var vec = create();
+var forEach$1 = function () {
+    var vec = create$4();
     return function (a, stride, offset, count, fn, arg) {
         var i, l;
         if (!stride) {
@@ -13852,6 +14297,172 @@ var forEach = function () {
             a[i + 1] = vec[1];
             a[i + 2] = vec[2];
             a[i + 3] = vec[3];
+        }
+        return a;
+    };
+}();
+
+function create$5() {
+    var out = new ARRAY_TYPE(4);
+    if (ARRAY_TYPE != Float32Array) {
+        out[0] = 0;
+        out[1] = 0;
+        out[2] = 0;
+    }
+    out[3] = 1;
+    return out;
+}
+function setAxisAngle(out, axis, rad) {
+    rad = rad * 0.5;
+    var s = Math.sin(rad);
+    out[0] = s * axis[0];
+    out[1] = s * axis[1];
+    out[2] = s * axis[2];
+    out[3] = Math.cos(rad);
+    return out;
+}
+function slerp(out, a, b, t) {
+    var ax = a[0], ay = a[1], az = a[2], aw = a[3];
+    var bx = b[0], by = b[1], bz = b[2], bw = b[3];
+    var omega, cosom, sinom, scale0, scale1;
+    cosom = ax * bx + ay * by + az * bz + aw * bw;
+    if (cosom < 0) {
+        cosom = -cosom;
+        bx = -bx;
+        by = -by;
+        bz = -bz;
+        bw = -bw;
+    }
+    if (1 - cosom > EPSILON) {
+        omega = Math.acos(cosom);
+        sinom = Math.sin(omega);
+        scale0 = Math.sin((1 - t) * omega) / sinom;
+        scale1 = Math.sin(t * omega) / sinom;
+    } else {
+        scale0 = 1 - t;
+        scale1 = t;
+    }
+    out[0] = scale0 * ax + scale1 * bx;
+    out[1] = scale0 * ay + scale1 * by;
+    out[2] = scale0 * az + scale1 * bz;
+    out[3] = scale0 * aw + scale1 * bw;
+    return out;
+}
+function fromMat3(out, m) {
+    var fTrace = m[0] + m[4] + m[8];
+    var fRoot;
+    if (fTrace > 0) {
+        fRoot = Math.sqrt(fTrace + 1);
+        out[3] = 0.5 * fRoot;
+        fRoot = 0.5 / fRoot;
+        out[0] = (m[5] - m[7]) * fRoot;
+        out[1] = (m[6] - m[2]) * fRoot;
+        out[2] = (m[1] - m[3]) * fRoot;
+    } else {
+        var i = 0;
+        if (m[4] > m[0]) {
+            i = 1;
+        }
+        if (m[8] > m[i * 3 + i]) {
+            i = 2;
+        }
+        var j = (i + 1) % 3;
+        var k = (i + 2) % 3;
+        fRoot = Math.sqrt(m[i * 3 + i] - m[j * 3 + j] - m[k * 3 + k] + 1);
+        out[i] = 0.5 * fRoot;
+        fRoot = 0.5 / fRoot;
+        out[3] = (m[j * 3 + k] - m[k * 3 + j]) * fRoot;
+        out[j] = (m[j * 3 + i] + m[i * 3 + j]) * fRoot;
+        out[k] = (m[k * 3 + i] + m[i * 3 + k]) * fRoot;
+    }
+    return out;
+}
+var normalize$2 = normalize$1;
+var rotationTo = function () {
+    var tmpvec3 = create$3();
+    var xUnitVec3 = fromValues(1, 0, 0);
+    var yUnitVec3 = fromValues(0, 1, 0);
+    return function (out, a, b) {
+        var dot$1 = dot(a, b);
+        if (dot$1 < -0.999999) {
+            cross(tmpvec3, xUnitVec3, a);
+            if (len(tmpvec3) < 0.000001) {
+                cross(tmpvec3, yUnitVec3, a);
+            }
+            normalize(tmpvec3, tmpvec3);
+            setAxisAngle(out, tmpvec3, Math.PI);
+            return out;
+        } else if (dot$1 > 0.999999) {
+            out[0] = 0;
+            out[1] = 0;
+            out[2] = 0;
+            out[3] = 1;
+            return out;
+        } else {
+            cross(tmpvec3, a, b);
+            out[0] = tmpvec3[0];
+            out[1] = tmpvec3[1];
+            out[2] = tmpvec3[2];
+            out[3] = 1 + dot$1;
+            return normalize$2(out, out);
+        }
+    };
+}();
+var sqlerp = function () {
+    var temp1 = create$5();
+    var temp2 = create$5();
+    return function (out, a, b, c, d, t) {
+        slerp(temp1, a, d, t);
+        slerp(temp2, b, c, t);
+        slerp(out, temp1, temp2, 2 * t * (1 - t));
+        return out;
+    };
+}();
+var setAxes = function () {
+    var matr = create$1();
+    return function (out, view, right, up) {
+        matr[0] = right[0];
+        matr[3] = right[1];
+        matr[6] = right[2];
+        matr[1] = up[0];
+        matr[4] = up[1];
+        matr[7] = up[2];
+        matr[2] = -view[0];
+        matr[5] = -view[1];
+        matr[8] = -view[2];
+        return normalize$2(out, fromMat3(out, matr));
+    };
+}();
+
+function create$6() {
+    var out = new ARRAY_TYPE(2);
+    if (ARRAY_TYPE != Float32Array) {
+        out[0] = 0;
+        out[1] = 0;
+    }
+    return out;
+}
+var forEach$2 = function () {
+    var vec = create$6();
+    return function (a, stride, offset, count, fn, arg) {
+        var i, l;
+        if (!stride) {
+            stride = 2;
+        }
+        if (!offset) {
+            offset = 0;
+        }
+        if (count) {
+            l = Math.min(count * stride + offset, a.length);
+        } else {
+            l = a.length;
+        }
+        for (i = offset; i < l; i += stride) {
+            vec[0] = a[i];
+            vec[1] = a[i + 1];
+            fn(vec, vec, arg);
+            a[i] = vec[0];
+            a[i + 1] = vec[1];
         }
         return a;
     };
@@ -14230,7 +14841,7 @@ function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
             if (!pass) {
                 earcutLinked(filterPoints(ear), triangles, dim, minX, minY, invSize, 1);
             } else if (pass === 1) {
-                ear = cureLocalIntersections(filterPoints(ear), triangles, dim);
+                ear = cureLocalIntersections(ear, triangles, dim);
                 earcutLinked(ear, triangles, dim, minX, minY, invSize, 2);
             } else if (pass === 2) {
                 splitEarcut(ear, triangles, dim, minX, minY, invSize);
@@ -14299,7 +14910,7 @@ function cureLocalIntersections(start, triangles, dim) {
         }
         p = p.next;
     } while (p !== start);
-    return filterPoints(p);
+    return p;
 }
 function splitEarcut(start, triangles, dim, minX, minY, invSize) {
     var a = start;
@@ -14344,7 +14955,6 @@ function eliminateHole(hole, outerNode) {
     outerNode = findHoleBridge(hole, outerNode);
     if (outerNode) {
         var b = splitPolygon(outerNode, hole);
-        filterPoints(outerNode, outerNode.next);
         filterPoints(b, b.next);
     }
 }
@@ -14372,24 +14982,21 @@ function findHoleBridge(hole, outerNode) {
         return null;
     }
     if (hx === qx) {
-        return m;
+        return m.prev;
     }
     var stop = m, mx = m.x, my = m.y, tanMin = Infinity, tan;
-    p = m;
-    do {
+    p = m.next;
+    while (p !== stop) {
         if (hx >= p.x && p.x >= mx && hx !== p.x && pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
             tan = Math.abs(hy - p.y) / (hx - p.x);
-            if (locallyInside(p, hole) && (tan < tanMin || tan === tanMin && (p.x > m.x || p.x === m.x && sectorContainsSector(m, p)))) {
+            if ((tan < tanMin || tan === tanMin && p.x > m.x) && locallyInside(p, hole)) {
                 m = p;
                 tanMin = tan;
             }
         }
         p = p.next;
-    } while (p !== stop);
+    }
     return m;
-}
-function sectorContainsSector(m, p) {
-    return area(m.prev, m, p.prev) < 0 && area(p.next, m, m.next) < 0;
 }
 function indexCurve(start, minX, minY, invSize) {
     var p = start;
@@ -14476,7 +15083,7 @@ function pointInTriangle(ax, ay, bx, by, cx, cy, px, py) {
     return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 && (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 && (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
 }
 function isValidDiagonal(a, b) {
-    return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && (area(a.prev, a, b.prev) || area(a, b.prev, b)) || equals(a, b) && area(a.prev, a, a.next) > 0 && area(b.prev, b, b.next) > 0);
+    return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b);
 }
 function area(p, q, r) {
     return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
@@ -14485,32 +15092,10 @@ function equals(p1, p2) {
     return p1.x === p2.x && p1.y === p2.y;
 }
 function intersects(p1, q1, p2, q2) {
-    var o1 = sign(area(p1, q1, p2));
-    var o2 = sign(area(p1, q1, q2));
-    var o3 = sign(area(p2, q2, p1));
-    var o4 = sign(area(p2, q2, q1));
-    if (o1 !== o2 && o3 !== o4) {
+    if (equals(p1, q1) && equals(p2, q2) || equals(p1, q2) && equals(p2, q1)) {
         return true;
     }
-    if (o1 === 0 && onSegment(p1, p2, q1)) {
-        return true;
-    }
-    if (o2 === 0 && onSegment(p1, q2, q1)) {
-        return true;
-    }
-    if (o3 === 0 && onSegment(p2, p1, q2)) {
-        return true;
-    }
-    if (o4 === 0 && onSegment(p2, q1, q2)) {
-        return true;
-    }
-    return false;
-}
-function onSegment(p, q, r) {
-    return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
-}
-function sign(num) {
-    return num > 0 ? 1 : num < 0 ? -1 : 0;
+    return area(p1, q1, p2) > 0 !== area(p1, q1, q2) > 0 && area(p2, q2, p1) > 0 !== area(p2, q2, q1) > 0;
 }
 function intersectsPolygon(a, b) {
     var p = a;
@@ -15466,7 +16051,7 @@ var FillExtrusionStyleLayer = function (StyleLayer) {
     };
     return FillExtrusionStyleLayer;
 }(StyleLayer);
-function dot(a, b) {
+function dot$1(a, b) {
     return a.x * b.x + a.y * b.y;
 }
 function getIntersectionDistance(projectedQueryGeometry, projectedFace) {
@@ -15486,11 +16071,11 @@ function getIntersectionDistance(projectedQueryGeometry, projectedFace) {
             var ab = b.sub(a);
             var ac = c.sub(a);
             var ap = p.sub(a);
-            var dotABAB = dot(ab, ab);
-            var dotABAC = dot(ab, ac);
-            var dotACAC = dot(ac, ac);
-            var dotAPAB = dot(ap, ab);
-            var dotAPAC = dot(ap, ac);
+            var dotABAB = dot$1(ab, ab);
+            var dotABAC = dot$1(ab, ac);
+            var dotACAC = dot$1(ac, ac);
+            var dotAPAB = dot$1(ap, ab);
+            var dotAPAC = dot$1(ap, ac);
             var denom = dotABAB * dotACAC - dotABAC * dotABAC;
             var v = (dotACAC * dotAPAB - dotABAC * dotAPAC) / denom;
             var w = (dotABAB * dotAPAC - dotABAC * dotAPAB) / denom;
@@ -16654,7 +17239,6 @@ function evaluateSizeForZoom(sizeData, currentZoom, property) {
 }
 
 var symbolSize = /*#__PURE__*/Object.freeze({
-__proto__: null,
 getSizeData: getSizeData,
 evaluateSizeForFeature: evaluateSizeForFeature,
 evaluateSizeForZoom: evaluateSizeForZoom,
@@ -17623,10 +18207,10 @@ ImageAtlas.prototype.patchUpdatedImage = function patchUpdatedImage(position, im
 register('ImagePosition', ImagePosition);
 register('ImageAtlas', ImageAtlas);
 
-var HTMLImageElement = window$1.HTMLImageElement;
-var HTMLCanvasElement = window$1.HTMLCanvasElement;
-var HTMLVideoElement = window$1.HTMLVideoElement;
-var ImageData$1 = window$1.ImageData;
+var HTMLImageElement = self.HTMLImageElement;
+var HTMLCanvasElement = self.HTMLCanvasElement;
+var HTMLVideoElement = self.HTMLVideoElement;
+var ImageData$1 = self.ImageData;
 var Texture = function Texture(context, image, format, options) {
     this.context = context;
     this.format = format;
@@ -17797,8 +18381,6 @@ Pbf.Fixed64 = 1;
 Pbf.Bytes = 2;
 Pbf.Fixed32 = 5;
 var SHIFT_LEFT_32 = (1 << 16) * (1 << 16), SHIFT_RIGHT_32 = 1 / SHIFT_LEFT_32;
-var TEXT_DECODER_MIN_LENGTH = 12;
-var utf8TextDecoder = typeof TextDecoder === 'undefined' ? null : new TextDecoder('utf8');
 Pbf.prototype = {
     destroy: function () {
         this.buf = null;
@@ -17885,13 +18467,9 @@ Pbf.prototype = {
         return Boolean(this.readVarint());
     },
     readString: function () {
-        var end = this.readVarint() + this.pos;
-        var pos = this.pos;
+        var end = this.readVarint() + this.pos, str = readUtf8(this.buf, this.pos, end);
         this.pos = end;
-        if (end - pos >= TEXT_DECODER_MIN_LENGTH && utf8TextDecoder) {
-            return readUtf8TextDecoder(this.buf, pos, end);
-        }
-        return readUtf8(this.buf, pos, end);
+        return str;
     },
     readBytes: function () {
         var end = this.readVarint() + this.pos, buffer = this.buf.subarray(this.pos, end);
@@ -17899,9 +18477,6 @@ Pbf.prototype = {
         return buffer;
     },
     readPackedVarint: function (arr, isSigned) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readVarint(isSigned));
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17910,9 +18485,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedSVarint: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readSVarint());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17921,9 +18493,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedBoolean: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readBoolean());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17932,9 +18501,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedFloat: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readFloat());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17943,9 +18509,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedDouble: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readDouble());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17954,9 +18517,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedFixed32: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readFixed32());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17965,9 +18525,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedSFixed32: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readSFixed32());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17976,9 +18533,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedFixed64: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readFixed64());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -17987,9 +18541,6 @@ Pbf.prototype = {
         return arr;
     },
     readPackedSFixed64: function (arr) {
-        if (this.type !== Pbf.Bytes) {
-            return arr.push(this.readSFixed64());
-        }
         var end = readPackedEnd(this);
         arr = arr || [];
         while (this.pos < end) {
@@ -18130,49 +18681,31 @@ Pbf.prototype = {
         this.writeRawMessage(fn, obj);
     },
     writePackedVarint: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedVarint, arr);
-        }
+        this.writeMessage(tag, writePackedVarint, arr);
     },
     writePackedSVarint: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedSVarint, arr);
-        }
+        this.writeMessage(tag, writePackedSVarint, arr);
     },
     writePackedBoolean: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedBoolean, arr);
-        }
+        this.writeMessage(tag, writePackedBoolean, arr);
     },
     writePackedFloat: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedFloat, arr);
-        }
+        this.writeMessage(tag, writePackedFloat, arr);
     },
     writePackedDouble: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedDouble, arr);
-        }
+        this.writeMessage(tag, writePackedDouble, arr);
     },
     writePackedFixed32: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedFixed32, arr);
-        }
+        this.writeMessage(tag, writePackedFixed32, arr);
     },
     writePackedSFixed32: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedSFixed32, arr);
-        }
+        this.writeMessage(tag, writePackedSFixed32, arr);
     },
     writePackedFixed64: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedFixed64, arr);
-        }
+        this.writeMessage(tag, writePackedFixed64, arr);
     },
     writePackedSFixed64: function (tag, arr) {
-        if (arr.length) {
-            this.writeMessage(tag, writePackedSFixed64, arr);
-        }
+        this.writeMessage(tag, writePackedSFixed64, arr);
     },
     writeBytesField: function (tag, buffer) {
         this.writeTag(tag, Pbf.Bytes);
@@ -18319,7 +18852,7 @@ function writeBigVarintHigh(high, pbf) {
     pbf.buf[pbf.pos++] = high & 127;
 }
 function makeRoomForExtraLength(startPos, len, pbf) {
-    var extraLen = len <= 16383 ? 1 : len <= 2097151 ? 2 : len <= 268435455 ? 3 : Math.floor(Math.log(len) / (Math.LN2 * 7));
+    var extraLen = len <= 16383 ? 1 : len <= 2097151 ? 2 : len <= 268435455 ? 3 : Math.ceil(Math.log(len) / (Math.LN2 * 7));
     pbf.realloc(extraLen);
     for (var i = pbf.pos - 1; i >= startPos; i--) {
         pbf.buf[i + extraLen] = pbf.buf[i];
@@ -18438,9 +18971,6 @@ function readUtf8(buf, pos, end) {
     }
     return str;
 }
-function readUtf8TextDecoder(buf, pos, end) {
-    return utf8TextDecoder.decode(buf.subarray(pos, end));
-}
 function writeUtf8(buf, str, pos) {
     for (var i = 0, c, lead; i < str.length; i++) {
         c = str.charCodeAt(i);
@@ -18543,8 +19073,7 @@ function readGlyph(tag, glyph, pbf) {
 }
 function parseGlyphPBF (data) {
     return new pbf(data).readFields(readFontstacks, []);
-}
-var GLYPH_PBF_BORDER = border;
+}var GLYPH_PBF_BORDER = border;
 
 var Actor = function Actor(target, parent, mapId) {
     this.target = target;
@@ -20598,12 +21127,12 @@ TinyQueue.prototype.pop = function pop() {
         return undefined;
     }
     var top = this.data[0];
-    var bottom = this.data.pop();
     this.length--;
     if (this.length > 0) {
-        this.data[0] = bottom;
+        this.data[0] = this.data[this.length];
         this._down(0);
     }
+    this.data.pop();
     return top;
 };
 TinyQueue.prototype.peek = function peek() {
@@ -20711,8 +21240,7 @@ function findPoleOfInaccessibility (polygonRings, precision, debug) {
         console.log('best distance: ' + bestCell.d);
     }
     return bestCell.p;
-}
-function compareMax(a, b) {
+}function compareMax(a, b) {
     return b.max - a.max;
 }
 function Cell(x, y, h, polygon) {
@@ -21177,7 +21705,6 @@ function anchorIsTooClose(bucket, text, repeatDistance, anchor) {
     return false;
 }
 
-exports.ARRAY_TYPE = ARRAY_TYPE;
 exports.Actor = Actor;
 exports.AlphaImage = AlphaImage;
 exports.CanonicalTileID = CanonicalTileID;
@@ -21202,8 +21729,11 @@ exports.LngLatBounds = LngLatBounds;
 exports.MercatorCoordinate = MercatorCoordinate;
 exports.ONE_EM = ONE_EM;
 exports.OverscaledTileID = OverscaledTileID;
+exports.Point = pointGeometry;
+exports.Point$1 = pointGeometry;
 exports.ProgramConfiguration = ProgramConfiguration;
 exports.Properties = Properties;
+exports.Protobuf = pbf;
 exports.RGBAImage = RGBAImage;
 exports.RequestManager = RequestManager;
 exports.ResourceType = ResourceType;
@@ -21233,12 +21763,16 @@ exports.addDynamicAttributes = addDynamicAttributes;
 exports.asyncAll = asyncAll;
 exports.bezier = bezier;
 exports.bindAll = bindAll;
+exports.browser = exported;
 exports.clamp = clamp;
-exports.clone = clone;
+exports.clone = clone$1;
+exports.clone$1 = clone;
 exports.config = config;
+exports.create = create$2;
+exports.create$1 = create$1;
+exports.create$2 = create;
 exports.createCommonjsModule = createCommonjsModule;
 exports.createExpression = createExpression;
-exports.createFilter = createFilter;
 exports.createLayout = createLayout;
 exports.createStyleLayer = createStyleLayer;
 exports.deepEqual = deepEqual;
@@ -21249,10 +21783,10 @@ exports.evaluateRadialOffset = evaluateRadialOffset;
 exports.evaluateSizeForFeature = evaluateSizeForFeature;
 exports.evaluateSizeForZoom = evaluateSizeForZoom;
 exports.evented = evented;
-exports.exported = exported;
-exports.exported$1 = exported$1;
 exports.extend = extend;
+exports.featureFilter = createFilter;
 exports.filterObject = filterObject;
+exports.fromRotation = fromRotation;
 exports.getAnchorAlignment = getAnchorAlignment;
 exports.getAnchorJustification = getAnchorJustification;
 exports.getArrayBuffer = getArrayBuffer;
@@ -21260,6 +21794,9 @@ exports.getImage = getImage;
 exports.getJSON = getJSON;
 exports.getReferrer = getReferrer;
 exports.getVideo = getVideo;
+exports.identity = identity;
+exports.invert = invert;
+exports.isChar = unicodeBlockLookup;
 exports.isMapboxURL = isMapboxURL;
 exports.keysDifference = keysDifference;
 exports.makeRequest = makeRequest;
@@ -21267,13 +21804,16 @@ exports.mapObject = mapObject;
 exports.mercatorXfromLng = mercatorXfromLng;
 exports.mercatorYfromLat = mercatorYfromLat;
 exports.mercatorZfromAltitude = mercatorZfromAltitude;
+exports.multiply = multiply;
+exports.mvt = vectorTile;
 exports.number = number;
+exports.ortho = ortho;
 exports.parseGlyphPBF = parseGlyphPBF;
 exports.pbf = pbf;
 exports.performSymbolLayout = performSymbolLayout;
+exports.perspective = perspective;
 exports.pick = pick;
 exports.plugin = plugin;
-exports.pointGeometry = pointGeometry;
 exports.polygonIntersectsPolygon = polygonIntersectsPolygon;
 exports.postMapLoadEvent = postMapLoadEvent;
 exports.postTurnstileEvent = postTurnstileEvent;
@@ -21283,12 +21823,17 @@ exports.rasterBoundsAttributes = rasterBoundsAttributes;
 exports.refProperties = refProperties;
 exports.register = register;
 exports.registerForPluginAvailability = registerForPluginAvailability;
+exports.rotate = rotate;
+exports.rotateX = rotateX;
+exports.rotateZ = rotateZ;
+exports.scale = scale;
 exports.setRTLTextPlugin = setRTLTextPlugin;
-exports.spec = spec;
 exports.sphericalToCartesian = sphericalToCartesian;
+exports.styleSpec = spec;
 exports.symbolSize = symbolSize;
+exports.transformMat3 = transformMat3;
 exports.transformMat4 = transformMat4;
-exports.unicodeBlockLookup = unicodeBlockLookup;
+exports.translate = translate$1;
 exports.uniqueId = uniqueId;
 exports.validateCustomStyleLayer = validateCustomStyleLayer;
 exports.validateLight = validateLight$1;
@@ -21297,12 +21842,13 @@ exports.values = values;
 exports.vectorTile = vectorTile;
 exports.version = version;
 exports.warnOnce = warnOnce;
-exports.window = window$1;
+exports.webpSupported = exported$1;
+exports.window = self;
 exports.wrap = wrap;
 
 });
 
-define(['./shared'], function (symbol_layout) { 'use strict';
+define(['./shared.js'], function (__chunk_1) { 'use strict';
 
 function stringify(obj) {
     var type = typeof obj;
@@ -21326,16 +21872,19 @@ function stringify(obj) {
 }
 function getKey(layer) {
     var key = '';
-    for (var i = 0, list = symbol_layout.refProperties; i < list.length; i += 1) {
+    for (var i = 0, list = __chunk_1.refProperties; i < list.length; i += 1) {
         var k = list[i];
         key += '/' + stringify(layer[k]);
     }
     return key;
 }
-function groupByLayout(layers) {
+function groupByLayout(layers, cachedKeys) {
     var groups = {};
     for (var i = 0; i < layers.length; i++) {
-        var k = getKey(layers[i]);
+        var k = cachedKeys && cachedKeys[layers[i].id] || getKey(layers[i]);
+        if (cachedKeys) {
+            cachedKeys[layers[i].id] = k;
+        }
         var group = groups[k];
         if (!group) {
             group = groups[k] = [];
@@ -21350,6 +21899,7 @@ function groupByLayout(layers) {
 }
 
 var StyleLayerIndex = function StyleLayerIndex(layerConfigs) {
+    this.keyCache = {};
     if (layerConfigs) {
         this.replace(layerConfigs);
     }
@@ -21364,16 +21914,20 @@ StyleLayerIndex.prototype.update = function update(layerConfigs, removedIds) {
     for (var i = 0, list = layerConfigs; i < list.length; i += 1) {
         var layerConfig = list[i];
         this._layerConfigs[layerConfig.id] = layerConfig;
-        var layer = this._layers[layerConfig.id] = symbol_layout.createStyleLayer(layerConfig);
-        layer._featureFilter = symbol_layout.createFilter(layer.filter);
+        var layer = this._layers[layerConfig.id] = __chunk_1.createStyleLayer(layerConfig);
+        layer._featureFilter = __chunk_1.featureFilter(layer.filter);
+        if (this.keyCache[layerConfig.id]) {
+            delete this.keyCache[layerConfig.id];
+        }
     }
     for (var i$1 = 0, list$1 = removedIds; i$1 < list$1.length; i$1 += 1) {
         var id = list$1[i$1];
+        delete this.keyCache[id];
         delete this._layerConfigs[id];
         delete this._layers[id];
     }
     this.familiesBySource = {};
-    var groups = groupByLayout(symbol_layout.values(this._layerConfigs));
+    var groups = groupByLayout(__chunk_1.values(this._layerConfigs), this.keyCache);
     for (var i$2 = 0, list$2 = groups; i$2 < list$2.length; i$2 += 1) {
         var layerConfigs$1 = list$2[i$2];
         var layers = layerConfigs$1.map(function (layerConfig) {
@@ -21422,10 +21976,10 @@ var GlyphAtlas = function GlyphAtlas(stacks) {
             };
         }
     }
-    var ref = symbol_layout.potpack(bins);
+    var ref = __chunk_1.potpack(bins);
     var w = ref.w;
     var h = ref.h;
-    var image = new symbol_layout.AlphaImage({
+    var image = new __chunk_1.AlphaImage({
         width: w || 1,
         height: h || 1
     });
@@ -21437,7 +21991,7 @@ var GlyphAtlas = function GlyphAtlas(stacks) {
                 continue;
             }
             var bin$1 = positions[stack$1][id$1].rect;
-            symbol_layout.AlphaImage.copy(src$1.bitmap, image, {
+            __chunk_1.AlphaImage.copy(src$1.bitmap, image, {
                 x: 0,
                 y: 0
             }, {
@@ -21449,10 +22003,10 @@ var GlyphAtlas = function GlyphAtlas(stacks) {
     this.image = image;
     this.positions = positions;
 };
-symbol_layout.register('GlyphAtlas', GlyphAtlas);
+__chunk_1.register('GlyphAtlas', GlyphAtlas);
 
 var WorkerTile = function WorkerTile(params) {
-    this.tileID = new symbol_layout.OverscaledTileID(params.tileID.overscaledZ, params.tileID.wrap, params.tileID.canonical.z, params.tileID.canonical.x, params.tileID.canonical.y);
+    this.tileID = new __chunk_1.OverscaledTileID(params.tileID.overscaledZ, params.tileID.wrap, params.tileID.canonical.z, params.tileID.canonical.x, params.tileID.canonical.y);
     this.uid = params.uid;
     this.zoom = params.zoom;
     this.pixelRatio = params.pixelRatio;
@@ -21467,9 +22021,9 @@ WorkerTile.prototype.parse = function parse(data, layerIndex, actor, callback) {
     var this$1 = this;
     this.status = 'parsing';
     this.data = data;
-    this.collisionBoxArray = new symbol_layout.CollisionBoxArray();
-    var sourceLayerCoder = new symbol_layout.DictionaryCoder(Object.keys(data.layers).sort());
-    var featureIndex = new symbol_layout.FeatureIndex(this.tileID);
+    this.collisionBoxArray = new __chunk_1.CollisionBoxArray();
+    var sourceLayerCoder = new __chunk_1.DictionaryCoder(Object.keys(data.layers).sort());
+    var featureIndex = new __chunk_1.FeatureIndex(this.tileID);
     featureIndex.bucketLayerIDs = [];
     var buckets = {};
     var options = {
@@ -21485,7 +22039,7 @@ WorkerTile.prototype.parse = function parse(data, layerIndex, actor, callback) {
             continue;
         }
         if (sourceLayer.version === 1) {
-            symbol_layout.warnOnce('Vector tile source "' + this.source + '" layer "' + sourceLayerId + '" ' + 'does not use vector tile spec v2 and therefore may have some rendering errors.');
+            __chunk_1.warnOnce('Vector tile source "' + this.source + '" layer "' + sourceLayerId + '" ' + 'does not use vector tile spec v2 and therefore may have some rendering errors.');
         }
         var sourceLayerIndex = sourceLayerCoder.encode(sourceLayerId);
         var features = [];
@@ -21530,7 +22084,7 @@ WorkerTile.prototype.parse = function parse(data, layerIndex, actor, callback) {
     var glyphMap;
     var iconMap;
     var patternMap;
-    var stacks = symbol_layout.mapObject(options.glyphDependencies, function (glyphs) {
+    var stacks = __chunk_1.mapObject(options.glyphDependencies, function (glyphs) {
         return Object.keys(glyphs).map(Number);
     });
     if (Object.keys(stacks).length) {
@@ -21577,20 +22131,20 @@ WorkerTile.prototype.parse = function parse(data, layerIndex, actor, callback) {
             return callback(error);
         } else if (glyphMap && iconMap && patternMap) {
             var glyphAtlas = new GlyphAtlas(glyphMap);
-            var imageAtlas = new symbol_layout.ImageAtlas(iconMap, patternMap);
+            var imageAtlas = new __chunk_1.ImageAtlas(iconMap, patternMap);
             for (var key in buckets) {
                 var bucket = buckets[key];
-                if (bucket instanceof symbol_layout.SymbolBucket) {
+                if (bucket instanceof __chunk_1.SymbolBucket) {
                     recalculateLayers(bucket.layers, this.zoom);
-                    symbol_layout.performSymbolLayout(bucket, glyphMap, glyphAtlas.positions, iconMap, imageAtlas.iconPositions, this.showCollisionBoxes);
-                } else if (bucket.hasPattern && (bucket instanceof symbol_layout.LineBucket || bucket instanceof symbol_layout.FillBucket || bucket instanceof symbol_layout.FillExtrusionBucket)) {
+                    __chunk_1.performSymbolLayout(bucket, glyphMap, glyphAtlas.positions, iconMap, imageAtlas.iconPositions, this.showCollisionBoxes);
+                } else if (bucket.hasPattern && (bucket instanceof __chunk_1.LineBucket || bucket instanceof __chunk_1.FillBucket || bucket instanceof __chunk_1.FillExtrusionBucket)) {
                     recalculateLayers(bucket.layers, this.zoom);
                     bucket.addFeatures(options, imageAtlas.patternPositions);
                 }
             }
             this.status = 'done';
             callback(null, {
-                buckets: symbol_layout.values(buckets).filter(function (b) {
+                buckets: __chunk_1.values(buckets).filter(function (b) {
                     return !b.isEmpty();
                 }),
                 featureIndex: featureIndex,
@@ -21605,7 +22159,7 @@ WorkerTile.prototype.parse = function parse(data, layerIndex, actor, callback) {
     }
 };
 function recalculateLayers(layers, zoom) {
-    var parameters = new symbol_layout.EvaluationParameters(zoom);
+    var parameters = new __chunk_1.EvaluationParameters(zoom);
     for (var i = 0, list = layers; i < list.length; i += 1) {
         var layer = list[i];
         layer.recalculate(parameters);
@@ -21678,12 +22232,12 @@ Performance.prototype.finish = function finish() {
 wrapper.Performance = Performance;
 
 function loadVectorTile(params, callback) {
-    var request = symbol_layout.getArrayBuffer(params.request, function (err, data, cacheControl, expires) {
+    var request = __chunk_1.getArrayBuffer(params.request, function (err, data, cacheControl, expires) {
         if (err) {
             callback(err);
         } else if (data) {
             callback(null, {
-                vectorTile: new symbol_layout.vectorTile.VectorTile(new symbol_layout.pbf(data)),
+                vectorTile: new __chunk_1.vectorTile.VectorTile(new __chunk_1.pbf(data)),
                 rawData: data,
                 cacheControl: cacheControl,
                 expires: expires
@@ -21737,7 +22291,7 @@ VectorTileWorkerSource.prototype.loadTile = function loadTile(params, callback) 
             if (err || !result) {
                 return callback(err);
             }
-            callback(null, symbol_layout.extend({ rawTileData: rawTileData.slice(0) }, result, cacheControl, resourceTiming));
+            callback(null, __chunk_1.extend({ rawTileData: rawTileData.slice(0) }, result, cacheControl, resourceTiming));
         });
         this$1.loaded = this$1.loaded || {};
         this$1.loaded[uid] = workerTile;
@@ -21790,7 +22344,7 @@ RasterDEMTileWorkerSource.prototype.loadTile = function loadTile(params, callbac
     var uid = params.uid;
     var encoding = params.encoding;
     var rawImageData = params.rawImageData;
-    var dem = new symbol_layout.DEMData(uid, rawImageData, encoding);
+    var dem = new __chunk_1.DEMData(uid, rawImageData, encoding);
     this.loaded = this.loaded || {};
     this.loaded[uid] = dem;
     callback(null, dem);
@@ -21802,51 +22356,136 @@ RasterDEMTileWorkerSource.prototype.removeTile = function removeTile(params) {
     }
 };
 
-var geojsonRewind = rewind;
-function rewind(gj, outer) {
-    var type = gj && gj.type, i;
-    if (type === 'FeatureCollection') {
-        for (i = 0; i < gj.features.length; i++) {
-            rewind(gj.features[i], outer);
+var RADIUS = 6378137;
+var FLATTENING = 1 / 298.257223563;
+var POLAR_RADIUS = 6356752.3142;
+
+var wgs84 = {
+	RADIUS: RADIUS,
+	FLATTENING: FLATTENING,
+	POLAR_RADIUS: POLAR_RADIUS
+};
+
+var geometry_1 = geometry;
+var ring = ringArea;
+function geometry(_) {
+    var area = 0, i;
+    switch (_.type) {
+    case 'Polygon':
+        return polygonArea(_.coordinates);
+    case 'MultiPolygon':
+        for (i = 0; i < _.coordinates.length; i++) {
+            area += polygonArea(_.coordinates[i]);
         }
-    } else if (type === 'GeometryCollection') {
-        for (i = 0; i < gj.geometries.length; i++) {
-            rewind(gj.geometries[i], outer);
+        return area;
+    case 'Point':
+    case 'MultiPoint':
+    case 'LineString':
+    case 'MultiLineString':
+        return 0;
+    case 'GeometryCollection':
+        for (i = 0; i < _.geometries.length; i++) {
+            area += geometry(_.geometries[i]);
         }
-    } else if (type === 'Feature') {
-        rewind(gj.geometry, outer);
-    } else if (type === 'Polygon') {
-        rewindRings(gj.coordinates, outer);
-    } else if (type === 'MultiPolygon') {
-        for (i = 0; i < gj.coordinates.length; i++) {
-            rewindRings(gj.coordinates[i], outer);
-        }
+        return area;
     }
-    return gj;
 }
-function rewindRings(rings, outer) {
-    if (rings.length === 0) {
-        return;
-    }
-    rewindRing(rings[0], outer);
-    for (var i = 1; i < rings.length; i++) {
-        rewindRing(rings[i], !outer);
-    }
-}
-function rewindRing(ring, dir) {
+function polygonArea(coords) {
     var area = 0;
-    for (var i = 0, len = ring.length, j = len - 1; i < len; j = i++) {
-        area += (ring[i][0] - ring[j][0]) * (ring[j][1] + ring[i][1]);
+    if (coords && coords.length > 0) {
+        area += Math.abs(ringArea(coords[0]));
+        for (var i = 1; i < coords.length; i++) {
+            area -= Math.abs(ringArea(coords[i]));
+        }
     }
-    if (area >= 0 !== !!dir) {
-        ring.reverse();
+    return area;
+}
+function ringArea(coords) {
+    var p1, p2, p3, lowerIndex, middleIndex, upperIndex, i, area = 0, coordsLength = coords.length;
+    if (coordsLength > 2) {
+        for (i = 0; i < coordsLength; i++) {
+            if (i === coordsLength - 2) {
+                lowerIndex = coordsLength - 2;
+                middleIndex = coordsLength - 1;
+                upperIndex = 0;
+            } else if (i === coordsLength - 1) {
+                lowerIndex = coordsLength - 1;
+                middleIndex = 0;
+                upperIndex = 1;
+            } else {
+                lowerIndex = i;
+                middleIndex = i + 1;
+                upperIndex = i + 2;
+            }
+            p1 = coords[lowerIndex];
+            p2 = coords[middleIndex];
+            p3 = coords[upperIndex];
+            area += (rad(p3[0]) - rad(p1[0])) * Math.sin(rad(p2[1]));
+        }
+        area = area * wgs84.RADIUS * wgs84.RADIUS / 2;
     }
+    return area;
+}
+function rad(_) {
+    return _ * Math.PI / 180;
 }
 
-var toGeoJSON = symbol_layout.vectorTile.VectorTileFeature.prototype.toGeoJSON;
+var geojsonArea = {
+	geometry: geometry_1,
+	ring: ring
+};
+
+var geojsonRewind = rewind;
+function rewind(gj, outer) {
+    switch (gj && gj.type || null) {
+    case 'FeatureCollection':
+        gj.features = gj.features.map(curryOuter(rewind, outer));
+        return gj;
+    case 'GeometryCollection':
+        gj.geometries = gj.geometries.map(curryOuter(rewind, outer));
+        return gj;
+    case 'Feature':
+        gj.geometry = rewind(gj.geometry, outer);
+        return gj;
+    case 'Polygon':
+    case 'MultiPolygon':
+        return correct(gj, outer);
+    default:
+        return gj;
+    }
+}
+function curryOuter(a, b) {
+    return function (_) {
+        return a(_, b);
+    };
+}
+function correct(_, outer) {
+    if (_.type === 'Polygon') {
+        _.coordinates = correctRings(_.coordinates, outer);
+    } else if (_.type === 'MultiPolygon') {
+        _.coordinates = _.coordinates.map(curryOuter(correctRings, outer));
+    }
+    return _;
+}
+function correctRings(_, outer) {
+    outer = !!outer;
+    _[0] = wind(_[0], outer);
+    for (var i = 1; i < _.length; i++) {
+        _[i] = wind(_[i], !outer);
+    }
+    return _;
+}
+function wind(_, dir) {
+    return cw(_) === dir ? _ : _.reverse();
+}
+function cw(_) {
+    return geojsonArea.ring(_) >= 0;
+}
+
+var toGeoJSON = __chunk_1.vectorTile.VectorTileFeature.prototype.toGeoJSON;
 var FeatureWrapper = function FeatureWrapper(feature) {
     this._feature = feature;
-    this.extent = symbol_layout.EXTENT;
+    this.extent = __chunk_1.EXTENT;
     this.type = feature.type;
     this.properties = feature.tags;
     if ('id' in feature && !isNaN(feature.id)) {
@@ -21858,7 +22497,7 @@ FeatureWrapper.prototype.loadGeometry = function loadGeometry() {
         var geometry = [];
         for (var i = 0, list = this._feature.geometry; i < list.length; i += 1) {
             var point = list[i];
-            geometry.push([new symbol_layout.pointGeometry(point[0], point[1])]);
+            geometry.push([new __chunk_1.Point$1(point[0], point[1])]);
         }
         return geometry;
     } else {
@@ -21868,7 +22507,7 @@ FeatureWrapper.prototype.loadGeometry = function loadGeometry() {
             var newRing = [];
             for (var i$1 = 0, list$1 = ring; i$1 < list$1.length; i$1 += 1) {
                 var point$1 = list$1[i$1];
-                newRing.push(new symbol_layout.pointGeometry(point$1[0], point$1[1]));
+                newRing.push(new __chunk_1.Point$1(point$1[0], point$1[1]));
             }
             geometry$1.push(newRing);
         }
@@ -21881,7 +22520,7 @@ FeatureWrapper.prototype.toGeoJSON = function toGeoJSON$1(x, y, z) {
 var GeoJSONWrapper = function GeoJSONWrapper(features) {
     this.layers = { '_geojsonTileLayer': this };
     this.name = '_geojsonTileLayer';
-    this.extent = symbol_layout.EXTENT;
+    this.extent = __chunk_1.EXTENT;
     this.length = features.length;
     this._features = features;
 };
@@ -21889,7 +22528,7 @@ GeoJSONWrapper.prototype.feature = function feature(i) {
     return new FeatureWrapper(this._features[i]);
 };
 
-var VectorTileFeature = symbol_layout.vectorTile.VectorTileFeature;
+var VectorTileFeature = __chunk_1.vectorTile.VectorTileFeature;
 var geojson_wrapper = GeoJSONWrapper$1;
 function GeoJSONWrapper$1(features, options) {
     this.options = options || {};
@@ -21913,7 +22552,7 @@ FeatureWrapper$1.prototype.loadGeometry = function () {
         var ring = rings[i];
         var newRing = [];
         for (var j = 0; j < ring.length; j++) {
-            newRing.push(new symbol_layout.pointGeometry(ring[j][0], ring[j][1]));
+            newRing.push(new __chunk_1.Point$1(ring[j][0], ring[j][1]));
         }
         this.geometry.push(newRing);
     }
@@ -21952,7 +22591,7 @@ var fromVectorTileJs_1 = fromVectorTileJs;
 var fromGeojsonVt_1 = fromGeojsonVt;
 var GeoJSONWrapper_1 = geojson_wrapper;
 function fromVectorTileJs(tile) {
-    var out = new symbol_layout.pbf();
+    var out = new __chunk_1.pbf();
     writeTile(tile, out);
     return out.finish();
 }
@@ -22280,12 +22919,10 @@ KDBush.prototype.within = function within$1(x, y, r) {
 var defaultOptions = {
     minZoom: 0,
     maxZoom: 16,
-    minPoints: 2,
     radius: 40,
     extent: 512,
     nodeSize: 64,
     log: false,
-    generateId: false,
     reduce: null,
     map: function (props) {
         return props;
@@ -22367,8 +23004,8 @@ Supercluster.prototype.getClusters = function getClusters(bbox, zoom) {
     return clusters;
 };
 Supercluster.prototype.getChildren = function getChildren(clusterId) {
-    var originId = this._getOriginId(clusterId);
-    var originZoom = this._getOriginZoom(clusterId);
+    var originId = clusterId >> 5;
+    var originZoom = clusterId % 32;
     var errorMsg = 'No cluster with the specified id.';
     var index = this.trees[originZoom];
     if (!index) {
@@ -22420,16 +23057,16 @@ Supercluster.prototype.getTile = function getTile(z, x, y) {
     return tile.features.length ? tile : null;
 };
 Supercluster.prototype.getClusterExpansionZoom = function getClusterExpansionZoom(clusterId) {
-    var expansionZoom = this._getOriginZoom(clusterId) - 1;
-    while (expansionZoom <= this.options.maxZoom) {
+    var clusterZoom = clusterId % 32 - 1;
+    while (clusterZoom <= this.options.maxZoom) {
         var children = this.getChildren(clusterId);
-        expansionZoom++;
+        clusterZoom++;
         if (children.length !== 1) {
             break;
         }
         clusterId = children[0].properties.cluster_id;
     }
-    return expansionZoom;
+    return clusterZoom;
 };
 Supercluster.prototype._appendLeaves = function _appendLeaves(result, clusterId, limit, offset, skipped) {
     var children = this.getChildren(clusterId);
@@ -22457,23 +23094,15 @@ Supercluster.prototype._addTileFeatures = function _addTileFeatures(ids, points,
     for (var i$1 = 0, list = ids; i$1 < list.length; i$1 += 1) {
         var i = list[i$1];
         var c = points[i];
-        var isCluster = c.numPoints;
         var f = {
             type: 1,
             geometry: [[
                     Math.round(this.options.extent * (c.x * z2 - x)),
                     Math.round(this.options.extent * (c.y * z2 - y))
                 ]],
-            tags: isCluster ? getClusterProperties(c) : this.points[c.index].properties
+            tags: c.numPoints ? getClusterProperties(c) : this.points[c.index].properties
         };
-        var id = void 0;
-        if (isCluster) {
-            id = c.id;
-        } else if (this.options.generateId) {
-            id = c.index;
-        } else if (this.points[c.index].id) {
-            id = this.points[c.index].id;
-        }
+        var id = c.numPoints ? c.id : this.points[c.index].id;
         if (id !== undefined) {
             f.id = id;
         }
@@ -22481,7 +23110,7 @@ Supercluster.prototype._addTileFeatures = function _addTileFeatures(ids, points,
     }
 };
 Supercluster.prototype._limitZoom = function _limitZoom(z) {
-    return Math.max(this.options.minZoom, Math.min(+z, this.options.maxZoom + 1));
+    return Math.max(this.options.minZoom, Math.min(z, this.options.maxZoom + 1));
 };
 Supercluster.prototype._cluster = function _cluster(points, zoom) {
     var clusters = [];
@@ -22489,7 +23118,6 @@ Supercluster.prototype._cluster = function _cluster(points, zoom) {
     var radius = ref.radius;
     var extent = ref.extent;
     var reduce = ref.reduce;
-    var minPoints = ref.minPoints;
     var r = radius / (extent * Math.pow(2, zoom));
     for (var i = 0; i < points.length; i++) {
         var p = points[i];
@@ -22499,62 +23127,35 @@ Supercluster.prototype._cluster = function _cluster(points, zoom) {
         p.zoom = zoom;
         var tree = this.trees[zoom + 1];
         var neighborIds = tree.within(p.x, p.y, r);
-        var numPointsOrigin = p.numPoints || 1;
-        var numPoints = numPointsOrigin;
+        var numPoints = p.numPoints || 1;
+        var wx = p.x * numPoints;
+        var wy = p.y * numPoints;
+        var clusterProperties = reduce ? this._map(p, true) : null;
+        var id = (i << 5) + (zoom + 1);
         for (var i$1 = 0, list = neighborIds; i$1 < list.length; i$1 += 1) {
             var neighborId = list[i$1];
             var b = tree.points[neighborId];
-            if (b.zoom > zoom) {
-                numPoints += b.numPoints || 1;
+            if (b.zoom <= zoom) {
+                continue;
+            }
+            b.zoom = zoom;
+            var numPoints2 = b.numPoints || 1;
+            wx += b.x * numPoints2;
+            wy += b.y * numPoints2;
+            numPoints += numPoints2;
+            b.parentId = id;
+            if (reduce) {
+                reduce(clusterProperties, this._map(b));
             }
         }
-        if (numPoints >= minPoints) {
-            var wx = p.x * numPointsOrigin;
-            var wy = p.y * numPointsOrigin;
-            var clusterProperties = reduce && numPointsOrigin > 1 ? this._map(p, true) : null;
-            var id = (i << 5) + (zoom + 1) + this.points.length;
-            for (var i$2 = 0, list$1 = neighborIds; i$2 < list$1.length; i$2 += 1) {
-                var neighborId$1 = list$1[i$2];
-                var b$1 = tree.points[neighborId$1];
-                if (b$1.zoom <= zoom) {
-                    continue;
-                }
-                b$1.zoom = zoom;
-                var numPoints2 = b$1.numPoints || 1;
-                wx += b$1.x * numPoints2;
-                wy += b$1.y * numPoints2;
-                b$1.parentId = id;
-                if (reduce) {
-                    if (!clusterProperties) {
-                        clusterProperties = this._map(p, true);
-                    }
-                    reduce(clusterProperties, this._map(b$1));
-                }
-            }
+        if (numPoints === 1) {
+            clusters.push(p);
+        } else {
             p.parentId = id;
             clusters.push(createCluster(wx / numPoints, wy / numPoints, id, numPoints, clusterProperties));
-        } else {
-            clusters.push(p);
-            if (numPoints > 1) {
-                for (var i$3 = 0, list$2 = neighborIds; i$3 < list$2.length; i$3 += 1) {
-                    var neighborId$2 = list$2[i$3];
-                    var b$2 = tree.points[neighborId$2];
-                    if (b$2.zoom <= zoom) {
-                        continue;
-                    }
-                    b$2.zoom = zoom;
-                    clusters.push(b$2);
-                }
-            }
         }
     }
     return clusters;
-};
-Supercluster.prototype._getOriginId = function _getOriginId(clusterId) {
-    return clusterId - this.points.length >> 5;
-};
-Supercluster.prototype._getOriginZoom = function _getOriginZoom(clusterId) {
-    return (clusterId - this.points.length) % 32;
 };
 Supercluster.prototype._map = function _map(point, clone) {
     if (point.numPoints) {
@@ -23494,7 +24095,7 @@ var GeoJSONWorkerSource = function (VectorTileWorkerSource) {
     };
     GeoJSONWorkerSource.prototype.loadGeoJSON = function loadGeoJSON(params, callback) {
         if (params.request) {
-            symbol_layout.getJSON(params.request, callback);
+            __chunk_1.getJSON(params.request, callback);
         } else if (typeof params.data === 'string') {
             try {
                 return callback(null, JSON.parse(params.data));
@@ -23541,8 +24142,8 @@ function getSuperclusterOptions(ref) {
         var ref$1 = clusterProperties[key];
         var operator = ref$1[0];
         var mapExpression = ref$1[1];
-        var mapExpressionParsed = symbol_layout.createExpression(mapExpression);
-        var reduceExpressionParsed = symbol_layout.createExpression(typeof operator === 'string' ? [
+        var mapExpressionParsed = __chunk_1.createExpression(mapExpression);
+        var reduceExpressionParsed = __chunk_1.createExpression(typeof operator === 'string' ? [
             operator,
             ['accumulated'],
             [
@@ -23576,7 +24177,7 @@ function getSuperclusterOptions(ref) {
 var Worker = function Worker(self) {
     var this$1 = this;
     this.self = self;
-    this.actor = new symbol_layout.Actor(self, this);
+    this.actor = new __chunk_1.Actor(self, this);
     this.layerIndexes = {};
     this.workerSourceTypes = {
         vector: VectorTileWorkerSource,
@@ -23591,12 +24192,12 @@ var Worker = function Worker(self) {
         this$1.workerSourceTypes[name] = WorkerSource;
     };
     this.self.registerRTLTextPlugin = function (rtlTextPlugin) {
-        if (symbol_layout.plugin.isLoaded()) {
+        if (__chunk_1.plugin.isLoaded()) {
             throw new Error('RTL text plugin already registered.');
         }
-        symbol_layout.plugin['applyArabicShaping'] = rtlTextPlugin.applyArabicShaping;
-        symbol_layout.plugin['processBidirectionalText'] = rtlTextPlugin.processBidirectionalText;
-        symbol_layout.plugin['processStyledBidirectionalText'] = rtlTextPlugin.processStyledBidirectionalText;
+        __chunk_1.plugin['applyArabicShaping'] = rtlTextPlugin.applyArabicShaping;
+        __chunk_1.plugin['processBidirectionalText'] = rtlTextPlugin.processBidirectionalText;
+        __chunk_1.plugin['processStyledBidirectionalText'] = rtlTextPlugin.processStyledBidirectionalText;
     };
 };
 Worker.prototype.setReferrer = function setReferrer(mapID, referrer) {
@@ -23650,9 +24251,9 @@ Worker.prototype.loadWorkerSource = function loadWorkerSource(map, params, callb
 };
 Worker.prototype.loadRTLTextPlugin = function loadRTLTextPlugin(map, pluginURL, callback) {
     try {
-        if (!symbol_layout.plugin.isLoaded()) {
+        if (!__chunk_1.plugin.isLoaded()) {
             this.self.importScripts(pluginURL);
-            callback(symbol_layout.plugin.isLoaded() ? null : new Error('RTL Text Plugin failed to import scripts from ' + pluginURL));
+            callback(__chunk_1.plugin.isLoaded() ? null : new Error('RTL Text Plugin failed to import scripts from ' + pluginURL));
         }
     } catch (e) {
         callback(e.toString());
@@ -23692,58 +24293,25 @@ Worker.prototype.getDEMWorkerSource = function getDEMWorkerSource(mapId, source)
     }
     return this.demWorkerSources[mapId][source];
 };
-if (typeof WorkerGlobalScope !== 'undefined' && typeof self !== 'undefined' && self instanceof WorkerGlobalScope) {
-    self.worker = new Worker(self);
+if (typeof WorkerGlobalScope !== 'undefined' && typeof __chunk_1.window !== 'undefined' && __chunk_1.window instanceof WorkerGlobalScope) {
+    __chunk_1.window.worker = new Worker(__chunk_1.window);
 }
 
 return Worker;
 
 });
 
-define(['./shared'], function (symbol_layout) { 'use strict';
+define(['./shared.js'], function (__chunk_1) { 'use strict';
 
-var mapboxGlSupported = symbol_layout.createCommonjsModule(function (module) {
-if ( module.exports) {
+var mapboxGlSupported = __chunk_1.createCommonjsModule(function (module) {
+if (module.exports) {
     module.exports = isSupported;
 } else if (window) {
     window.mapboxgl = window.mapboxgl || {};
     window.mapboxgl.supported = isSupported;
-    window.mapboxgl.notSupportedReason = notSupportedReason;
 }
 function isSupported(options) {
-    return !notSupportedReason(options);
-}
-function notSupportedReason(options) {
-    if (!isBrowser()) {
-        return 'not a browser';
-    }
-    if (!isArraySupported()) {
-        return 'insufficent Array support';
-    }
-    if (!isFunctionSupported()) {
-        return 'insufficient Function support';
-    }
-    if (!isObjectSupported()) {
-        return 'insufficient Object support';
-    }
-    if (!isJSONSupported()) {
-        return 'insufficient JSON support';
-    }
-    if (!isWorkerSupported()) {
-        return 'insufficient worker support';
-    }
-    if (!isUint8ClampedArraySupported()) {
-        return 'insufficient Uint8ClampedArray support';
-    }
-    if (!isArrayBufferSupported()) {
-        return 'insufficient ArrayBuffer support';
-    }
-    if (!isCanvasGetImageDataSupported()) {
-        return 'insufficient Canvas/getImageData support';
-    }
-    if (!isWebGLSupportedCached(options && options.failIfMajorPerformanceCaveat)) {
-        return 'insufficient WebGL support';
-    }
+    return !!(isBrowser() && isArraySupported() && isFunctionSupported() && isObjectSupported() && isJSONSupported() && isWorkerSupported() && isUint8ClampedArraySupported() && isArrayBufferSupported() && isWebGLSupportedCached(options && options.failIfMajorPerformanceCaveat));
 }
 function isBrowser() {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -23786,16 +24354,6 @@ function isUint8ClampedArraySupported() {
 function isArrayBufferSupported() {
     return ArrayBuffer.isView;
 }
-function isCanvasGetImageDataSupported() {
-    var canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1;
-    var context = canvas.getContext('2d');
-    if (!context) {
-        return false;
-    }
-    var imageData = context.getImageData(0, 0, 1, 1);
-    return imageData && imageData.width === canvas.width;
-}
 var isWebGLSupportedCache = {};
 function isWebGLSupportedCached(failIfMajorPerformanceCaveat) {
     if (isWebGLSupportedCache[failIfMajorPerformanceCaveat] === undefined) {
@@ -23809,7 +24367,7 @@ isSupported.webGLContextAttributes = {
     stencil: true,
     depth: true
 };
-function getWebGLContext(failIfMajorPerformanceCaveat) {
+function isWebGLSupported(failIfMajorPerformanceCaveat) {
     var canvas = document.createElement('canvas');
     var attributes = Object.create(isSupported.webGLContextAttributes);
     attributes.failIfMajorPerformanceCaveat = failIfMajorPerformanceCaveat;
@@ -23821,24 +24379,11 @@ function getWebGLContext(failIfMajorPerformanceCaveat) {
         return canvas.getContext('webgl', attributes) || canvas.getContext('experimental-webgl', attributes);
     }
 }
-function isWebGLSupported(failIfMajorPerformanceCaveat) {
-    var gl = getWebGLContext(failIfMajorPerformanceCaveat);
-    if (!gl) {
-        return false;
-    }
-    var shader = gl.createShader(gl.VERTEX_SHADER);
-    if (!shader || gl.isContextLost()) {
-        return false;
-    }
-    gl.shaderSource(shader, 'void main() {}');
-    gl.compileShader(shader);
-    return gl.getShaderParameter(shader, gl.COMPILE_STATUS) === true;
-}
 });
 
 var DOM = {};
 DOM.create = function (tagName, className, container) {
-    var el = symbol_layout.window.document.createElement(tagName);
+    var el = __chunk_1.window.document.createElement(tagName);
     if (className) {
         el.className = className;
     }
@@ -23848,10 +24393,10 @@ DOM.create = function (tagName, className, container) {
     return el;
 };
 DOM.createNS = function (namespaceURI, tagName) {
-    var el = symbol_layout.window.document.createElementNS(namespaceURI, tagName);
+    var el = __chunk_1.window.document.createElementNS(namespaceURI, tagName);
     return el;
 };
-var docStyle = symbol_layout.window.document ? symbol_layout.window.document.documentElement.style : null;
+var docStyle = __chunk_1.window.document ? __chunk_1.window.document.documentElement.style : null;
 function testProp(props) {
     if (!docStyle) {
         return null;
@@ -23895,8 +24440,8 @@ try {
             passiveSupported = true;
         }
     });
-    symbol_layout.window.addEventListener('test', options$1, options$1);
-    symbol_layout.window.removeEventListener('test', options$1, options$1);
+    __chunk_1.window.addEventListener('test', options$1, options$1);
+    __chunk_1.window.removeEventListener('test', options$1, options$1);
 } catch (err) {
     passiveSupported = false;
 }
@@ -23921,29 +24466,29 @@ DOM.removeEventListener = function (target, type, callback, options) {
 var suppressClick = function (e) {
     e.preventDefault();
     e.stopPropagation();
-    symbol_layout.window.removeEventListener('click', suppressClick, true);
+    __chunk_1.window.removeEventListener('click', suppressClick, true);
 };
 DOM.suppressClick = function () {
-    symbol_layout.window.addEventListener('click', suppressClick, true);
-    symbol_layout.window.setTimeout(function () {
-        symbol_layout.window.removeEventListener('click', suppressClick, true);
+    __chunk_1.window.addEventListener('click', suppressClick, true);
+    __chunk_1.window.setTimeout(function () {
+        __chunk_1.window.removeEventListener('click', suppressClick, true);
     }, 0);
 };
 DOM.mousePos = function (el, e) {
     var rect = el.getBoundingClientRect();
     e = e.touches ? e.touches[0] : e;
-    return new symbol_layout.pointGeometry(e.clientX - rect.left - el.clientLeft, e.clientY - rect.top - el.clientTop);
+    return new __chunk_1.Point(e.clientX - rect.left - el.clientLeft, e.clientY - rect.top - el.clientTop);
 };
 DOM.touchPos = function (el, e) {
     var rect = el.getBoundingClientRect(), points = [];
     var touches = e.type === 'touchend' ? e.changedTouches : e.touches;
     for (var i = 0; i < touches.length; i++) {
-        points.push(new symbol_layout.pointGeometry(touches[i].clientX - rect.left - el.clientLeft, touches[i].clientY - rect.top - el.clientTop));
+        points.push(new __chunk_1.Point(touches[i].clientX - rect.left - el.clientLeft, touches[i].clientY - rect.top - el.clientTop));
     }
     return points;
 };
 DOM.mouseButton = function (e) {
-    if (typeof symbol_layout.window.InstallTrigger !== 'undefined' && e.button === 2 && e.ctrlKey && symbol_layout.window.navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
+    if (typeof __chunk_1.window.InstallTrigger !== 'undefined' && e.button === 2 && e.ctrlKey && __chunk_1.window.navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
         return 0;
     }
     return e.button;
@@ -23954,414 +24499,10 @@ DOM.remove = function (node) {
     }
 };
 
-function create() {
-    var out = new symbol_layout.ARRAY_TYPE(4);
-    if (symbol_layout.ARRAY_TYPE != Float32Array) {
-        out[1] = 0;
-        out[2] = 0;
-    }
-    out[0] = 1;
-    out[3] = 1;
-    return out;
-}
-function rotate(out, a, rad) {
-    var a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3];
-    var s = Math.sin(rad);
-    var c = Math.cos(rad);
-    out[0] = a0 * c + a2 * s;
-    out[1] = a1 * c + a3 * s;
-    out[2] = a0 * -s + a2 * c;
-    out[3] = a1 * -s + a3 * c;
-    return out;
-}
-
-function create$1() {
-    var out = new symbol_layout.ARRAY_TYPE(9);
-    if (symbol_layout.ARRAY_TYPE != Float32Array) {
-        out[1] = 0;
-        out[2] = 0;
-        out[3] = 0;
-        out[5] = 0;
-        out[6] = 0;
-        out[7] = 0;
-    }
-    out[0] = 1;
-    out[4] = 1;
-    out[8] = 1;
-    return out;
-}
-function fromRotation(out, rad) {
-    var s = Math.sin(rad), c = Math.cos(rad);
-    out[0] = c;
-    out[1] = s;
-    out[2] = 0;
-    out[3] = -s;
-    out[4] = c;
-    out[5] = 0;
-    out[6] = 0;
-    out[7] = 0;
-    out[8] = 1;
-    return out;
-}
-
-function create$2() {
-    var out = new symbol_layout.ARRAY_TYPE(16);
-    if (symbol_layout.ARRAY_TYPE != Float32Array) {
-        out[1] = 0;
-        out[2] = 0;
-        out[3] = 0;
-        out[4] = 0;
-        out[6] = 0;
-        out[7] = 0;
-        out[8] = 0;
-        out[9] = 0;
-        out[11] = 0;
-        out[12] = 0;
-        out[13] = 0;
-        out[14] = 0;
-    }
-    out[0] = 1;
-    out[5] = 1;
-    out[10] = 1;
-    out[15] = 1;
-    return out;
-}
-function clone(a) {
-    var out = new symbol_layout.ARRAY_TYPE(16);
-    out[0] = a[0];
-    out[1] = a[1];
-    out[2] = a[2];
-    out[3] = a[3];
-    out[4] = a[4];
-    out[5] = a[5];
-    out[6] = a[6];
-    out[7] = a[7];
-    out[8] = a[8];
-    out[9] = a[9];
-    out[10] = a[10];
-    out[11] = a[11];
-    out[12] = a[12];
-    out[13] = a[13];
-    out[14] = a[14];
-    out[15] = a[15];
-    return out;
-}
-function identity(out) {
-    out[0] = 1;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[4] = 0;
-    out[5] = 1;
-    out[6] = 0;
-    out[7] = 0;
-    out[8] = 0;
-    out[9] = 0;
-    out[10] = 1;
-    out[11] = 0;
-    out[12] = 0;
-    out[13] = 0;
-    out[14] = 0;
-    out[15] = 1;
-    return out;
-}
-function invert(out, a) {
-    var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
-    var a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
-    var a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
-    var a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
-    var b00 = a00 * a11 - a01 * a10;
-    var b01 = a00 * a12 - a02 * a10;
-    var b02 = a00 * a13 - a03 * a10;
-    var b03 = a01 * a12 - a02 * a11;
-    var b04 = a01 * a13 - a03 * a11;
-    var b05 = a02 * a13 - a03 * a12;
-    var b06 = a20 * a31 - a21 * a30;
-    var b07 = a20 * a32 - a22 * a30;
-    var b08 = a20 * a33 - a23 * a30;
-    var b09 = a21 * a32 - a22 * a31;
-    var b10 = a21 * a33 - a23 * a31;
-    var b11 = a22 * a33 - a23 * a32;
-    var det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-    if (!det) {
-        return null;
-    }
-    det = 1 / det;
-    out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
-    out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
-    out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
-    out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
-    out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
-    out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
-    out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
-    out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
-    out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
-    out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
-    out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
-    out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
-    out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
-    out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
-    out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
-    out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
-    return out;
-}
-function multiply(out, a, b) {
-    var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
-    var a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
-    var a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
-    var a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
-    var b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
-    out[0] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
-    out[1] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
-    out[2] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
-    out[3] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
-    b0 = b[4];
-    b1 = b[5];
-    b2 = b[6];
-    b3 = b[7];
-    out[4] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
-    out[5] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
-    out[6] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
-    out[7] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
-    b0 = b[8];
-    b1 = b[9];
-    b2 = b[10];
-    b3 = b[11];
-    out[8] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
-    out[9] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
-    out[10] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
-    out[11] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
-    b0 = b[12];
-    b1 = b[13];
-    b2 = b[14];
-    b3 = b[15];
-    out[12] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
-    out[13] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
-    out[14] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
-    out[15] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
-    return out;
-}
-function translate(out, a, v) {
-    var x = v[0], y = v[1], z = v[2];
-    var a00, a01, a02, a03;
-    var a10, a11, a12, a13;
-    var a20, a21, a22, a23;
-    if (a === out) {
-        out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
-        out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
-        out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
-        out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
-    } else {
-        a00 = a[0];
-        a01 = a[1];
-        a02 = a[2];
-        a03 = a[3];
-        a10 = a[4];
-        a11 = a[5];
-        a12 = a[6];
-        a13 = a[7];
-        a20 = a[8];
-        a21 = a[9];
-        a22 = a[10];
-        a23 = a[11];
-        out[0] = a00;
-        out[1] = a01;
-        out[2] = a02;
-        out[3] = a03;
-        out[4] = a10;
-        out[5] = a11;
-        out[6] = a12;
-        out[7] = a13;
-        out[8] = a20;
-        out[9] = a21;
-        out[10] = a22;
-        out[11] = a23;
-        out[12] = a00 * x + a10 * y + a20 * z + a[12];
-        out[13] = a01 * x + a11 * y + a21 * z + a[13];
-        out[14] = a02 * x + a12 * y + a22 * z + a[14];
-        out[15] = a03 * x + a13 * y + a23 * z + a[15];
-    }
-    return out;
-}
-function scale(out, a, v) {
-    var x = v[0], y = v[1], z = v[2];
-    out[0] = a[0] * x;
-    out[1] = a[1] * x;
-    out[2] = a[2] * x;
-    out[3] = a[3] * x;
-    out[4] = a[4] * y;
-    out[5] = a[5] * y;
-    out[6] = a[6] * y;
-    out[7] = a[7] * y;
-    out[8] = a[8] * z;
-    out[9] = a[9] * z;
-    out[10] = a[10] * z;
-    out[11] = a[11] * z;
-    out[12] = a[12];
-    out[13] = a[13];
-    out[14] = a[14];
-    out[15] = a[15];
-    return out;
-}
-function rotateX(out, a, rad) {
-    var s = Math.sin(rad);
-    var c = Math.cos(rad);
-    var a10 = a[4];
-    var a11 = a[5];
-    var a12 = a[6];
-    var a13 = a[7];
-    var a20 = a[8];
-    var a21 = a[9];
-    var a22 = a[10];
-    var a23 = a[11];
-    if (a !== out) {
-        out[0] = a[0];
-        out[1] = a[1];
-        out[2] = a[2];
-        out[3] = a[3];
-        out[12] = a[12];
-        out[13] = a[13];
-        out[14] = a[14];
-        out[15] = a[15];
-    }
-    out[4] = a10 * c + a20 * s;
-    out[5] = a11 * c + a21 * s;
-    out[6] = a12 * c + a22 * s;
-    out[7] = a13 * c + a23 * s;
-    out[8] = a20 * c - a10 * s;
-    out[9] = a21 * c - a11 * s;
-    out[10] = a22 * c - a12 * s;
-    out[11] = a23 * c - a13 * s;
-    return out;
-}
-function rotateZ(out, a, rad) {
-    var s = Math.sin(rad);
-    var c = Math.cos(rad);
-    var a00 = a[0];
-    var a01 = a[1];
-    var a02 = a[2];
-    var a03 = a[3];
-    var a10 = a[4];
-    var a11 = a[5];
-    var a12 = a[6];
-    var a13 = a[7];
-    if (a !== out) {
-        out[8] = a[8];
-        out[9] = a[9];
-        out[10] = a[10];
-        out[11] = a[11];
-        out[12] = a[12];
-        out[13] = a[13];
-        out[14] = a[14];
-        out[15] = a[15];
-    }
-    out[0] = a00 * c + a10 * s;
-    out[1] = a01 * c + a11 * s;
-    out[2] = a02 * c + a12 * s;
-    out[3] = a03 * c + a13 * s;
-    out[4] = a10 * c - a00 * s;
-    out[5] = a11 * c - a01 * s;
-    out[6] = a12 * c - a02 * s;
-    out[7] = a13 * c - a03 * s;
-    return out;
-}
-function perspective(out, fovy, aspect, near, far) {
-    var f = 1 / Math.tan(fovy / 2), nf;
-    out[0] = f / aspect;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[4] = 0;
-    out[5] = f;
-    out[6] = 0;
-    out[7] = 0;
-    out[8] = 0;
-    out[9] = 0;
-    out[11] = -1;
-    out[12] = 0;
-    out[13] = 0;
-    out[15] = 0;
-    if (far != null && far !== Infinity) {
-        nf = 1 / (near - far);
-        out[10] = (far + near) * nf;
-        out[14] = 2 * far * near * nf;
-    } else {
-        out[10] = -1;
-        out[14] = -2 * near;
-    }
-    return out;
-}
-function ortho(out, left, right, bottom, top, near, far) {
-    var lr = 1 / (left - right);
-    var bt = 1 / (bottom - top);
-    var nf = 1 / (near - far);
-    out[0] = -2 * lr;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[4] = 0;
-    out[5] = -2 * bt;
-    out[6] = 0;
-    out[7] = 0;
-    out[8] = 0;
-    out[9] = 0;
-    out[10] = 2 * nf;
-    out[11] = 0;
-    out[12] = (left + right) * lr;
-    out[13] = (top + bottom) * bt;
-    out[14] = (far + near) * nf;
-    out[15] = 1;
-    return out;
-}
-
-function create$3() {
-    var out = new symbol_layout.ARRAY_TYPE(3);
-    if (symbol_layout.ARRAY_TYPE != Float32Array) {
-        out[0] = 0;
-        out[1] = 0;
-        out[2] = 0;
-    }
-    return out;
-}
-function transformMat3(out, a, m) {
-    var x = a[0], y = a[1], z = a[2];
-    out[0] = x * m[0] + y * m[3] + z * m[6];
-    out[1] = x * m[1] + y * m[4] + z * m[7];
-    out[2] = x * m[2] + y * m[5] + z * m[8];
-    return out;
-}
-var forEach = function () {
-    var vec = create$3();
-    return function (a, stride, offset, count, fn, arg) {
-        var i, l;
-        if (!stride) {
-            stride = 3;
-        }
-        if (!offset) {
-            offset = 0;
-        }
-        if (count) {
-            l = Math.min(count * stride + offset, a.length);
-        } else {
-            l = a.length;
-        }
-        for (i = offset; i < l; i += stride) {
-            vec[0] = a[i];
-            vec[1] = a[i + 1];
-            vec[2] = a[i + 2];
-            fn(vec, vec, arg);
-            a[i] = vec[0];
-            a[i + 1] = vec[1];
-            a[i + 2] = vec[2];
-        }
-        return a;
-    };
-}();
-
 function loadSprite (baseURL, requestManager, callback) {
     var json, image, error;
-    var format = symbol_layout.exported.devicePixelRatio > 1 ? '@2x' : '';
-    var jsonRequest = symbol_layout.getJSON(requestManager.transformRequest(requestManager.normalizeSpriteURL(baseURL, format, '.json'), symbol_layout.ResourceType.SpriteJSON), function (err, data) {
+    var format = __chunk_1.browser.devicePixelRatio > 1 ? '@2x' : '';
+    var jsonRequest = __chunk_1.getJSON(requestManager.transformRequest(requestManager.normalizeSpriteURL(baseURL, format, '.json'), __chunk_1.ResourceType.SpriteJSON), function (err, data) {
         jsonRequest = null;
         if (!error) {
             error = err;
@@ -24369,7 +24510,7 @@ function loadSprite (baseURL, requestManager, callback) {
             maybeComplete();
         }
     });
-    var imageRequest = symbol_layout.getImage(requestManager.transformRequest(requestManager.normalizeSpriteURL(baseURL, format, '.png'), symbol_layout.ResourceType.SpriteImage), function (err, img) {
+    var imageRequest = __chunk_1.getImage(requestManager.transformRequest(requestManager.normalizeSpriteURL(baseURL, format, '.png'), __chunk_1.ResourceType.SpriteImage), function (err, img) {
         imageRequest = null;
         if (!error) {
             error = err;
@@ -24381,7 +24522,7 @@ function loadSprite (baseURL, requestManager, callback) {
         if (error) {
             callback(error);
         } else if (json && image) {
-            var imageData = symbol_layout.exported.getImageData(image);
+            var imageData = __chunk_1.browser.getImageData(image);
             var result = {};
             for (var id in json) {
                 var ref = json[id];
@@ -24391,11 +24532,11 @@ function loadSprite (baseURL, requestManager, callback) {
                 var y = ref.y;
                 var sdf = ref.sdf;
                 var pixelRatio = ref.pixelRatio;
-                var data = new symbol_layout.RGBAImage({
+                var data = new __chunk_1.RGBAImage({
                     width: width,
                     height: height
                 });
-                symbol_layout.RGBAImage.copy(imageData, data, {
+                __chunk_1.RGBAImage.copy(imageData, data, {
                     x: x,
                     y: y
                 }, {
@@ -24450,7 +24591,7 @@ var ImageManager = function (Evented) {
         this.loaded = false;
         this.requestors = [];
         this.patterns = {};
-        this.atlasImage = new symbol_layout.RGBAImage({
+        this.atlasImage = new __chunk_1.RGBAImage({
             width: 1,
             height: 1
         });
@@ -24525,7 +24666,7 @@ var ImageManager = function (Evented) {
         for (var i = 0, list = ids; i < list.length; i += 1) {
             var id = list[i];
             if (!this.images[id]) {
-                this.fire(new symbol_layout.Event('styleimagemissing', { id: id }));
+                this.fire(new __chunk_1.Event('styleimagemissing', { id: id }));
             }
             var image = this.images[id];
             if (image) {
@@ -24537,7 +24678,7 @@ var ImageManager = function (Evented) {
                     hasRenderCallback: Boolean(image.userImage && image.userImage.render)
                 };
             } else {
-                symbol_layout.warnOnce('Image "' + id + '" could not be loaded. Please make sure you have added the image with map.addImage() or a "sprite" property in your style. You can provide missing images by listening for the "styleimagemissing" map event.');
+                __chunk_1.warnOnce('Image "' + id + '" could not be loaded. Please make sure you have added the image with map.addImage() or a "sprite" property in your style. You can provide missing images by listening for the "styleimagemissing" map event.');
             }
         }
         callback(null, response);
@@ -24569,7 +24710,7 @@ var ImageManager = function (Evented) {
                 x: 0,
                 y: 0
             };
-            var position = new symbol_layout.ImagePosition(bin, image);
+            var position = new __chunk_1.ImagePosition(bin, image);
             this.patterns[id] = {
                 bin: bin,
                 position: position
@@ -24583,7 +24724,7 @@ var ImageManager = function (Evented) {
     ImageManager.prototype.bind = function bind(context) {
         var gl = context.gl;
         if (!this.atlasTexture) {
-            this.atlasTexture = new symbol_layout.Texture(context, this.atlasImage, gl.RGBA);
+            this.atlasTexture = new __chunk_1.Texture(context, this.atlasImage, gl.RGBA);
         } else if (this.dirty) {
             this.atlasTexture.update(this.atlasImage);
             this.dirty = false;
@@ -24595,7 +24736,7 @@ var ImageManager = function (Evented) {
         for (var id in this.patterns) {
             bins.push(this.patterns[id].bin);
         }
-        var ref = symbol_layout.potpack(bins);
+        var ref = __chunk_1.potpack(bins);
         var w = ref.w;
         var h = ref.h;
         var dst = this.atlasImage;
@@ -24611,7 +24752,7 @@ var ImageManager = function (Evented) {
             var src = this.images[id$1].data;
             var w$1 = src.width;
             var h$1 = src.height;
-            symbol_layout.RGBAImage.copy(src, dst, {
+            __chunk_1.RGBAImage.copy(src, dst, {
                 x: 0,
                 y: 0
             }, {
@@ -24621,7 +24762,7 @@ var ImageManager = function (Evented) {
                 width: w$1,
                 height: h$1
             });
-            symbol_layout.RGBAImage.copy(src, dst, {
+            __chunk_1.RGBAImage.copy(src, dst, {
                 x: 0,
                 y: h$1 - 1
             }, {
@@ -24631,7 +24772,7 @@ var ImageManager = function (Evented) {
                 width: w$1,
                 height: 1
             });
-            symbol_layout.RGBAImage.copy(src, dst, {
+            __chunk_1.RGBAImage.copy(src, dst, {
                 x: 0,
                 y: 0
             }, {
@@ -24641,7 +24782,7 @@ var ImageManager = function (Evented) {
                 width: w$1,
                 height: 1
             });
-            symbol_layout.RGBAImage.copy(src, dst, {
+            __chunk_1.RGBAImage.copy(src, dst, {
                 x: w$1 - 1,
                 y: 0
             }, {
@@ -24651,7 +24792,7 @@ var ImageManager = function (Evented) {
                 width: 1,
                 height: h$1
             });
-            symbol_layout.RGBAImage.copy(src, dst, {
+            __chunk_1.RGBAImage.copy(src, dst, {
                 x: 0,
                 y: 0
             }, {
@@ -24682,18 +24823,18 @@ var ImageManager = function (Evented) {
         }
     };
     return ImageManager;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 function loadGlyphRange (fontstack, range, urlTemplate, requestManager, callback) {
     var begin = range * 256;
     var end = begin + 255;
-    var request = requestManager.transformRequest(requestManager.normalizeGlyphsURL(urlTemplate).replace('{fontstack}', fontstack).replace('{range}', begin + '-' + end), symbol_layout.ResourceType.Glyphs);
-    symbol_layout.getArrayBuffer(request, function (err, data) {
+    var request = requestManager.transformRequest(requestManager.normalizeGlyphsURL(urlTemplate).replace('{fontstack}', fontstack).replace('{range}', begin + '-' + end), __chunk_1.ResourceType.Glyphs);
+    __chunk_1.getArrayBuffer(request, function (err, data) {
         if (err) {
             callback(err);
         } else if (data) {
             var glyphs = {};
-            for (var i = 0, list = symbol_layout.parseGlyphPBF(data); i < list.length; i += 1) {
+            for (var i = 0, list = __chunk_1.parseGlyphPBF(data); i < list.length; i += 1) {
                 var glyph = list[i];
                 glyphs[glyph.id] = glyph;
             }
@@ -24703,7 +24844,6 @@ function loadGlyphRange (fontstack, range, urlTemplate, requestManager, callback
 }
 
 var tinySdf = TinySDF;
-var default_1 = TinySDF;
 var INF = 100000000000000000000;
 function TinySDF(fontSize, buffer, radius, cutoff, fontFamily, fontWeight) {
     this.fontSize = fontSize || 24;
@@ -24787,7 +24927,6 @@ function edt1d(f, d, v, z, n) {
         d[q] = (q - v[k]) * (q - v[k]) + f[v[k]];
     }
 }
-tinySdf.default = default_1;
 
 var GlyphManager = function GlyphManager(requestManager, localIdeographFontFamily) {
     this.requestManager = requestManager;
@@ -24809,7 +24948,7 @@ GlyphManager.prototype.getGlyphs = function getGlyphs(glyphs, callback) {
             });
         }
     }
-    symbol_layout.asyncAll(all, function (ref, callback) {
+    __chunk_1.asyncAll(all, function (ref, callback) {
         var stack = ref.stack;
         var id = ref.id;
         var entry = this$1.entries[stack];
@@ -24894,7 +25033,7 @@ GlyphManager.prototype._tinySDF = function _tinySDF(entry, stack, id) {
     if (!family) {
         return;
     }
-    if (!symbol_layout.unicodeBlockLookup['CJK Unified Ideographs'](id) && !symbol_layout.unicodeBlockLookup['Hangul Syllables'](id)) {
+    if (!__chunk_1.isChar['CJK Unified Ideographs'](id) && !__chunk_1.isChar['Hangul Syllables'](id)) {
         return;
     }
     var tinySDF = entry.tinySDF;
@@ -24911,7 +25050,7 @@ GlyphManager.prototype._tinySDF = function _tinySDF(entry, stack, id) {
     }
     return {
         id: id,
-        bitmap: new symbol_layout.AlphaImage({
+        bitmap: new __chunk_1.AlphaImage({
             width: 30,
             height: 30
         }, tinySDF.draw(String.fromCharCode(id))),
@@ -24928,29 +25067,29 @@ GlyphManager.loadGlyphRange = loadGlyphRange;
 GlyphManager.TinySDF = tinySdf;
 
 var LightPositionProperty = function LightPositionProperty() {
-    this.specification = symbol_layout.spec.light.position;
+    this.specification = __chunk_1.styleSpec.light.position;
 };
 LightPositionProperty.prototype.possiblyEvaluate = function possiblyEvaluate(value, parameters) {
-    return symbol_layout.sphericalToCartesian(value.expression.evaluate(parameters));
+    return __chunk_1.sphericalToCartesian(value.expression.evaluate(parameters));
 };
 LightPositionProperty.prototype.interpolate = function interpolate$1(a, b, t) {
     return {
-        x: symbol_layout.number(a.x, b.x, t),
-        y: symbol_layout.number(a.y, b.y, t),
-        z: symbol_layout.number(a.z, b.z, t)
+        x: __chunk_1.number(a.x, b.x, t),
+        y: __chunk_1.number(a.y, b.y, t),
+        z: __chunk_1.number(a.z, b.z, t)
     };
 };
-var properties = new symbol_layout.Properties({
-    'anchor': new symbol_layout.DataConstantProperty(symbol_layout.spec.light.anchor),
+var properties = new __chunk_1.Properties({
+    'anchor': new __chunk_1.DataConstantProperty(__chunk_1.styleSpec.light.anchor),
     'position': new LightPositionProperty(),
-    'color': new symbol_layout.DataConstantProperty(symbol_layout.spec.light.color),
-    'intensity': new symbol_layout.DataConstantProperty(symbol_layout.spec.light.intensity)
+    'color': new __chunk_1.DataConstantProperty(__chunk_1.styleSpec.light.color),
+    'intensity': new __chunk_1.DataConstantProperty(__chunk_1.styleSpec.light.intensity)
 });
 var TRANSITION_SUFFIX = '-transition';
 var Light = function (Evented) {
     function Light(lightOptions) {
         Evented.call(this);
-        this._transitionable = new symbol_layout.Transitionable(properties);
+        this._transitionable = new __chunk_1.Transitionable(properties);
         this.setLight(lightOptions);
         this._transitioning = this._transitionable.untransitioned();
     }
@@ -24964,12 +25103,12 @@ var Light = function (Evented) {
     Light.prototype.setLight = function setLight(light, options) {
         if (options === void 0)
             options = {};
-        if (this._validate(symbol_layout.validateLight, light, options)) {
+        if (this._validate(__chunk_1.validateLight, light, options)) {
             return;
         }
         for (var name in light) {
             var value = light[name];
-            if (symbol_layout.endsWith(name, TRANSITION_SUFFIX)) {
+            if (__chunk_1.endsWith(name, TRANSITION_SUFFIX)) {
                 this._transitionable.setTransition(name.slice(0, -TRANSITION_SUFFIX.length), value);
             } else {
                 this._transitionable.setValue(name, value);
@@ -24989,17 +25128,17 @@ var Light = function (Evented) {
         if (options && options.validate === false) {
             return false;
         }
-        return symbol_layout.emitValidationErrors(this, validate.call(symbol_layout.validateStyle, symbol_layout.extend({
+        return __chunk_1.emitValidationErrors(this, validate.call(__chunk_1.validateStyle, __chunk_1.extend({
             value: value,
             style: {
                 glyphs: true,
                 sprite: true
             },
-            styleSpec: symbol_layout.spec
+            styleSpec: __chunk_1.styleSpec
         })));
     };
     return Light;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 var LineAtlas = function LineAtlas(width, height) {
     this.width = width;
@@ -25021,7 +25160,7 @@ LineAtlas.prototype.addDash = function addDash(dasharray, round) {
     var height = 2 * n + 1;
     var offset = 128;
     if (this.nextRow + height > this.height) {
-        symbol_layout.warnOnce('LineAtlas out of space');
+        __chunk_1.warnOnce('LineAtlas out of space');
         return null;
     }
     var length = 0;
@@ -25097,7 +25236,7 @@ var Dispatcher = function Dispatcher(workerPool, parent) {
     this.workerPool = workerPool;
     this.actors = [];
     this.currentActor = 0;
-    this.id = symbol_layout.uniqueId();
+    this.id = __chunk_1.uniqueId();
     var workers = this.workerPool.acquire(this.id);
     for (var i = 0; i < workers.length; i++) {
         var worker = workers[i];
@@ -25109,7 +25248,7 @@ var Dispatcher = function Dispatcher(workerPool, parent) {
 Dispatcher.prototype.broadcast = function broadcast(type, data, cb) {
     cb = cb || function () {
     };
-    symbol_layout.asyncAll(this.actors, function (actor, done) {
+    __chunk_1.asyncAll(this.actors, function (actor, done) {
         actor.send(type, data, done);
     }, cb);
 };
@@ -25127,14 +25266,14 @@ Dispatcher.prototype.remove = function remove() {
     this.actors = [];
     this.workerPool.release(this.id);
 };
-Dispatcher.Actor = symbol_layout.Actor;
+Dispatcher.Actor = __chunk_1.Actor;
 
 function loadTileJSON (options, requestManager, callback) {
     var loaded = function (err, tileJSON) {
         if (err) {
             return callback(err);
         } else if (tileJSON) {
-            var result = symbol_layout.pick(tileJSON, [
+            var result = __chunk_1.pick(tileJSON, [
                 'tiles',
                 'minzoom',
                 'maxzoom',
@@ -25155,16 +25294,16 @@ function loadTileJSON (options, requestManager, callback) {
         }
     };
     if (options.url) {
-        return symbol_layout.getJSON(requestManager.transformRequest(requestManager.normalizeSourceURL(options.url), symbol_layout.ResourceType.Source), loaded);
+        return __chunk_1.getJSON(requestManager.transformRequest(requestManager.normalizeSourceURL(options.url), __chunk_1.ResourceType.Source), loaded);
     } else {
-        return symbol_layout.exported.frame(function () {
+        return __chunk_1.browser.frame(function () {
             return loaded(null, options);
         });
     }
 }
 
 var TileBounds = function TileBounds(bounds, minzoom, maxzoom) {
-    this.bounds = symbol_layout.LngLatBounds.convert(this.validateBounds(bounds));
+    this.bounds = __chunk_1.LngLatBounds.convert(this.validateBounds(bounds));
     this.minzoom = minzoom || 0;
     this.maxzoom = maxzoom || 24;
 };
@@ -25187,10 +25326,10 @@ TileBounds.prototype.validateBounds = function validateBounds(bounds) {
 TileBounds.prototype.contains = function contains(tileID) {
     var worldSize = Math.pow(2, tileID.z);
     var level = {
-        minX: Math.floor(symbol_layout.mercatorXfromLng(this.bounds.getWest()) * worldSize),
-        minY: Math.floor(symbol_layout.mercatorYfromLat(this.bounds.getNorth()) * worldSize),
-        maxX: Math.ceil(symbol_layout.mercatorXfromLng(this.bounds.getEast()) * worldSize),
-        maxY: Math.ceil(symbol_layout.mercatorYfromLat(this.bounds.getSouth()) * worldSize)
+        minX: Math.floor(__chunk_1.mercatorXfromLng(this.bounds.getWest()) * worldSize),
+        minY: Math.floor(__chunk_1.mercatorYfromLat(this.bounds.getNorth()) * worldSize),
+        maxX: Math.ceil(__chunk_1.mercatorXfromLng(this.bounds.getEast()) * worldSize),
+        maxY: Math.ceil(__chunk_1.mercatorYfromLat(this.bounds.getSouth()) * worldSize)
     };
     var hit = tileID.x >= level.minX && tileID.x < level.maxX && tileID.y >= level.minY && tileID.y < level.maxY;
     return hit;
@@ -25208,12 +25347,12 @@ var VectorTileSource = function (Evented) {
         this.tileSize = 512;
         this.reparseOverscaled = true;
         this.isTileClipped = true;
-        symbol_layout.extend(this, symbol_layout.pick(options, [
+        __chunk_1.extend(this, __chunk_1.pick(options, [
             'url',
             'scheme',
             'tileSize'
         ]));
-        this._options = symbol_layout.extend({ type: 'vector' }, options);
+        this._options = __chunk_1.extend({ type: 'vector' }, options);
         this._collectResourceTiming = options.collectResourceTiming;
         if (this.tileSize !== 512) {
             throw new Error('vector tile sources must have a tileSize of 512');
@@ -25226,23 +25365,23 @@ var VectorTileSource = function (Evented) {
     VectorTileSource.prototype.constructor = VectorTileSource;
     VectorTileSource.prototype.load = function load() {
         var this$1 = this;
-        this.fire(new symbol_layout.Event('dataloading', { dataType: 'source' }));
+        this.fire(new __chunk_1.Event('dataloading', { dataType: 'source' }));
         this._tileJSONRequest = loadTileJSON(this._options, this.map._requestManager, function (err, tileJSON) {
             this$1._tileJSONRequest = null;
             if (err) {
-                this$1.fire(new symbol_layout.ErrorEvent(err));
+                this$1.fire(new __chunk_1.ErrorEvent(err));
             } else if (tileJSON) {
-                symbol_layout.extend(this$1, tileJSON);
+                __chunk_1.extend(this$1, tileJSON);
                 if (tileJSON.bounds) {
                     this$1.tileBounds = new TileBounds(tileJSON.bounds, this$1.minzoom, this$1.maxzoom);
                 }
-                symbol_layout.postTurnstileEvent(tileJSON.tiles);
-                symbol_layout.postMapLoadEvent(tileJSON.tiles, this$1.map._getMapId(), this$1.map._requestManager._skuToken);
-                this$1.fire(new symbol_layout.Event('data', {
+                __chunk_1.postTurnstileEvent(tileJSON.tiles);
+                __chunk_1.postMapLoadEvent(tileJSON.tiles, this$1.map._getMapId(), this$1.map._requestManager._skuToken);
+                this$1.fire(new __chunk_1.Event('data', {
                     dataType: 'source',
                     sourceDataType: 'metadata'
                 }));
-                this$1.fire(new symbol_layout.Event('data', {
+                this$1.fire(new __chunk_1.Event('data', {
                     dataType: 'source',
                     sourceDataType: 'content'
                 }));
@@ -25263,19 +25402,19 @@ var VectorTileSource = function (Evented) {
         }
     };
     VectorTileSource.prototype.serialize = function serialize() {
-        return symbol_layout.extend({}, this._options);
+        return __chunk_1.extend({}, this._options);
     };
     VectorTileSource.prototype.loadTile = function loadTile(tile, callback) {
         var url = this.map._requestManager.normalizeTileURL(tile.tileID.canonical.url(this.tiles, this.scheme), this.url, null);
         var params = {
-            request: this.map._requestManager.transformRequest(url, symbol_layout.ResourceType.Tile),
+            request: this.map._requestManager.transformRequest(url, __chunk_1.ResourceType.Tile),
             uid: tile.uid,
             tileID: tile.tileID,
             zoom: tile.tileID.overscaledZ,
             tileSize: this.tileSize * tile.tileID.overscaleFactor(),
             type: this.type,
             source: this.id,
-            pixelRatio: symbol_layout.exported.devicePixelRatio,
+            pixelRatio: __chunk_1.browser.devicePixelRatio,
             showCollisionBoxes: this.map.showCollisionBoxes
         };
         params.request.collectResourceTiming = this._collectResourceTiming;
@@ -25327,7 +25466,7 @@ var VectorTileSource = function (Evented) {
         return false;
     };
     return VectorTileSource;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 var RasterTileSource = function (Evented) {
     function RasterTileSource(id, options, dispatcher, eventedParent) {
@@ -25342,8 +25481,8 @@ var RasterTileSource = function (Evented) {
         this.scheme = 'xyz';
         this.tileSize = 512;
         this._loaded = false;
-        this._options = symbol_layout.extend({}, options);
-        symbol_layout.extend(this, symbol_layout.pick(options, [
+        this._options = __chunk_1.extend({}, options);
+        __chunk_1.extend(this, __chunk_1.pick(options, [
             'url',
             'scheme',
             'tileSize'
@@ -25355,23 +25494,23 @@ var RasterTileSource = function (Evented) {
     RasterTileSource.prototype.constructor = RasterTileSource;
     RasterTileSource.prototype.load = function load() {
         var this$1 = this;
-        this.fire(new symbol_layout.Event('dataloading', { dataType: 'source' }));
+        this.fire(new __chunk_1.Event('dataloading', { dataType: 'source' }));
         this._tileJSONRequest = loadTileJSON(this._options, this.map._requestManager, function (err, tileJSON) {
             this$1._tileJSONRequest = null;
             if (err) {
-                this$1.fire(new symbol_layout.ErrorEvent(err));
+                this$1.fire(new __chunk_1.ErrorEvent(err));
             } else if (tileJSON) {
-                symbol_layout.extend(this$1, tileJSON);
+                __chunk_1.extend(this$1, tileJSON);
                 if (tileJSON.bounds) {
                     this$1.tileBounds = new TileBounds(tileJSON.bounds, this$1.minzoom, this$1.maxzoom);
                 }
-                symbol_layout.postTurnstileEvent(tileJSON.tiles);
-                symbol_layout.postMapLoadEvent(tileJSON.tiles, this$1.map._getMapId(), this$1.map._requestManager._skuToken);
-                this$1.fire(new symbol_layout.Event('data', {
+                __chunk_1.postTurnstileEvent(tileJSON.tiles);
+                __chunk_1.postMapLoadEvent(tileJSON.tiles, this$1.map._getMapId(), this$1.map._requestManager._skuToken);
+                this$1.fire(new __chunk_1.Event('data', {
                     dataType: 'source',
                     sourceDataType: 'metadata'
                 }));
-                this$1.fire(new symbol_layout.Event('data', {
+                this$1.fire(new __chunk_1.Event('data', {
                     dataType: 'source',
                     sourceDataType: 'content'
                 }));
@@ -25389,7 +25528,7 @@ var RasterTileSource = function (Evented) {
         }
     };
     RasterTileSource.prototype.serialize = function serialize() {
-        return symbol_layout.extend({}, this._options);
+        return __chunk_1.extend({}, this._options);
     };
     RasterTileSource.prototype.hasTile = function hasTile(tileID) {
         return !this.tileBounds || this.tileBounds.contains(tileID.canonical);
@@ -25397,7 +25536,7 @@ var RasterTileSource = function (Evented) {
     RasterTileSource.prototype.loadTile = function loadTile(tile, callback) {
         var this$1 = this;
         var url = this.map._requestManager.normalizeTileURL(tile.tileID.canonical.url(this.tiles, this.scheme), this.url, this.tileSize);
-        tile.request = symbol_layout.getImage(this.map._requestManager.transformRequest(url, symbol_layout.ResourceType.Tile), function (err, img) {
+        tile.request = __chunk_1.getImage(this.map._requestManager.transformRequest(url, __chunk_1.ResourceType.Tile), function (err, img) {
             delete tile.request;
             if (tile.aborted) {
                 tile.state = 'unloaded';
@@ -25417,7 +25556,7 @@ var RasterTileSource = function (Evented) {
                 if (tile.texture) {
                     tile.texture.update(img, { useMipmap: true });
                 } else {
-                    tile.texture = new symbol_layout.Texture(context, img, gl.RGBA, { useMipmap: true });
+                    tile.texture = new __chunk_1.Texture(context, img, gl.RGBA, { useMipmap: true });
                     tile.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
                     if (context.extTextureFilterAnisotropic) {
                         gl.texParameterf(gl.TEXTURE_2D, context.extTextureFilterAnisotropic.TEXTURE_MAX_ANISOTROPY_EXT, context.extTextureFilterAnisotropicMax);
@@ -25446,14 +25585,14 @@ var RasterTileSource = function (Evented) {
         return false;
     };
     return RasterTileSource;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 var RasterDEMTileSource = function (RasterTileSource) {
     function RasterDEMTileSource(id, options, dispatcher, eventedParent) {
         RasterTileSource.call(this, id, options, dispatcher, eventedParent);
         this.type = 'raster-dem';
         this.maxzoom = options.maxzoom;
-        this._options = symbol_layout.extend({}, options);
+        this._options = __chunk_1.extend({}, options);
         this.encoding = options.encoding || 'mapbox';
     }
     if (RasterTileSource)
@@ -25472,7 +25611,7 @@ var RasterDEMTileSource = function (RasterTileSource) {
     };
     RasterDEMTileSource.prototype.loadTile = function loadTile(tile, callback) {
         var url = this.map._requestManager.normalizeTileURL(tile.tileID.canonical.url(this.tiles, this.scheme), this.url, this.tileSize);
-        tile.request = symbol_layout.getImage(this.map._requestManager.transformRequest(url, symbol_layout.ResourceType.Tile), imageLoaded.bind(this));
+        tile.request = __chunk_1.getImage(this.map._requestManager.transformRequest(url, __chunk_1.ResourceType.Tile), imageLoaded.bind(this));
         tile.neighboringTiles = this._getNeighboringTiles(tile.tileID);
         function imageLoaded(err, img) {
             delete tile.request;
@@ -25484,7 +25623,7 @@ var RasterDEMTileSource = function (RasterTileSource) {
             } else if (err) {
                 if (err.status === 404) {
                     var color = this.encoding === 'mapbox' ? 'rgb(1, 134, 255)' : 'rgb(128, 0, 0)';
-                    rawImageData = symbol_layout.exported.createImageData(this.tileSize, this.tileSize, color);
+                    rawImageData = __chunk_1.browser.createImageData(this.tileSize, this.tileSize, color);
                 } else {
                     tile.state = 'errored';
                     callback(err);
@@ -25496,7 +25635,7 @@ var RasterDEMTileSource = function (RasterTileSource) {
                 }
                 delete img.cacheControl;
                 delete img.expires;
-                rawImageData = symbol_layout.exported.getImageData(img);
+                rawImageData = __chunk_1.browser.getImageData(img);
             }
             var params = {
                 uid: tile.uid,
@@ -25530,17 +25669,17 @@ var RasterDEMTileSource = function (RasterTileSource) {
         var nx = (canonical.x + 1 + dim) % dim;
         var nxw = canonical.x + 1 === dim ? tileID.wrap + 1 : tileID.wrap;
         var neighboringTiles = {};
-        neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, pxw, canonical.z, px, canonical.y).key] = { backfilled: false };
-        neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, nxw, canonical.z, nx, canonical.y).key] = { backfilled: false };
+        neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, pxw, canonical.z, px, canonical.y).key] = { backfilled: false };
+        neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, nxw, canonical.z, nx, canonical.y).key] = { backfilled: false };
         if (canonical.y > 0) {
-            neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, pxw, canonical.z, px, canonical.y - 1).key] = { backfilled: false };
-            neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, tileID.wrap, canonical.z, canonical.x, canonical.y - 1).key] = { backfilled: false };
-            neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, nxw, canonical.z, nx, canonical.y - 1).key] = { backfilled: false };
+            neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, pxw, canonical.z, px, canonical.y - 1).key] = { backfilled: false };
+            neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, tileID.wrap, canonical.z, canonical.x, canonical.y - 1).key] = { backfilled: false };
+            neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, nxw, canonical.z, nx, canonical.y - 1).key] = { backfilled: false };
         }
         if (canonical.y + 1 < dim) {
-            neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, pxw, canonical.z, px, canonical.y + 1).key] = { backfilled: false };
-            neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, tileID.wrap, canonical.z, canonical.x, canonical.y + 1).key] = { backfilled: false };
-            neighboringTiles[new symbol_layout.OverscaledTileID(tileID.overscaledZ, nxw, canonical.z, nx, canonical.y + 1).key] = { backfilled: false };
+            neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, pxw, canonical.z, px, canonical.y + 1).key] = { backfilled: false };
+            neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, tileID.wrap, canonical.z, canonical.x, canonical.y + 1).key] = { backfilled: false };
+            neighboringTiles[new __chunk_1.OverscaledTileID(tileID.overscaledZ, nxw, canonical.z, nx, canonical.y + 1).key] = { backfilled: false };
         }
         return neighboringTiles;
     };
@@ -25580,7 +25719,7 @@ var GeoJSONSource = function (Evented) {
         this.dispatcher = dispatcher;
         this.setEventedParent(eventedParent);
         this._data = options.data;
-        this._options = symbol_layout.extend({}, options);
+        this._options = __chunk_1.extend({}, options);
         this._collectResourceTiming = options.collectResourceTiming;
         this._resourceTiming = [];
         if (options.maxzoom !== undefined) {
@@ -25592,21 +25731,21 @@ var GeoJSONSource = function (Evented) {
         if (options.attribution) {
             this.attribution = options.attribution;
         }
-        var scale = symbol_layout.EXTENT / this.tileSize;
-        this.workerOptions = symbol_layout.extend({
+        var scale = __chunk_1.EXTENT / this.tileSize;
+        this.workerOptions = __chunk_1.extend({
             source: this.id,
             cluster: options.cluster || false,
             geojsonVtOptions: {
                 buffer: (options.buffer !== undefined ? options.buffer : 128) * scale,
                 tolerance: (options.tolerance !== undefined ? options.tolerance : 0.375) * scale,
-                extent: symbol_layout.EXTENT,
+                extent: __chunk_1.EXTENT,
                 maxZoom: this.maxzoom,
                 lineMetrics: options.lineMetrics || false,
                 generateId: options.generateId || false
             },
             superclusterOptions: {
                 maxZoom: options.clusterMaxZoom !== undefined ? Math.min(options.clusterMaxZoom, this.maxzoom - 1) : this.maxzoom - 1,
-                extent: symbol_layout.EXTENT,
+                extent: __chunk_1.EXTENT,
                 radius: (options.clusterRadius || 50) * scale,
                 log: false
             },
@@ -25619,10 +25758,10 @@ var GeoJSONSource = function (Evented) {
     GeoJSONSource.prototype.constructor = GeoJSONSource;
     GeoJSONSource.prototype.load = function load() {
         var this$1 = this;
-        this.fire(new symbol_layout.Event('dataloading', { dataType: 'source' }));
+        this.fire(new __chunk_1.Event('dataloading', { dataType: 'source' }));
         this._updateWorkerData(function (err) {
             if (err) {
-                this$1.fire(new symbol_layout.ErrorEvent(err));
+                this$1.fire(new __chunk_1.ErrorEvent(err));
                 return;
             }
             var data = {
@@ -25633,7 +25772,7 @@ var GeoJSONSource = function (Evented) {
                 data.resourceTiming = this$1._resourceTiming;
                 this$1._resourceTiming = [];
             }
-            this$1.fire(new symbol_layout.Event('data', data));
+            this$1.fire(new __chunk_1.Event('data', data));
         });
     };
     GeoJSONSource.prototype.onAdd = function onAdd(map) {
@@ -25643,10 +25782,10 @@ var GeoJSONSource = function (Evented) {
     GeoJSONSource.prototype.setData = function setData(data) {
         var this$1 = this;
         this._data = data;
-        this.fire(new symbol_layout.Event('dataloading', { dataType: 'source' }));
+        this.fire(new __chunk_1.Event('dataloading', { dataType: 'source' }));
         this._updateWorkerData(function (err) {
             if (err) {
-                this$1.fire(new symbol_layout.ErrorEvent(err));
+                this$1.fire(new __chunk_1.ErrorEvent(err));
                 return;
             }
             var data = {
@@ -25657,7 +25796,7 @@ var GeoJSONSource = function (Evented) {
                 data.resourceTiming = this$1._resourceTiming;
                 this$1._resourceTiming = [];
             }
-            this$1.fire(new symbol_layout.Event('data', data));
+            this$1.fire(new __chunk_1.Event('data', data));
         });
         return this;
     };
@@ -25686,10 +25825,10 @@ var GeoJSONSource = function (Evented) {
     };
     GeoJSONSource.prototype._updateWorkerData = function _updateWorkerData(callback) {
         var this$1 = this;
-        var options = symbol_layout.extend({}, this.workerOptions);
+        var options = __chunk_1.extend({}, this.workerOptions);
         var data = this._data;
         if (typeof data === 'string') {
-            options.request = this.map._requestManager.transformRequest(symbol_layout.exported.resolveURL(data), symbol_layout.ResourceType.Source);
+            options.request = this.map._requestManager.transformRequest(__chunk_1.browser.resolveURL(data), __chunk_1.ResourceType.Source);
             options.request.collectResourceTiming = this._collectResourceTiming;
         } else {
             options.data = JSON.stringify(data);
@@ -25717,7 +25856,7 @@ var GeoJSONSource = function (Evented) {
             maxZoom: this.maxzoom,
             tileSize: this.tileSize,
             source: this.id,
-            pixelRatio: symbol_layout.exported.devicePixelRatio,
+            pixelRatio: __chunk_1.browser.devicePixelRatio,
             showCollisionBoxes: this.map.showCollisionBoxes
         };
         tile.workerID = this.dispatcher.send(message, params, function (err, data) {
@@ -25752,7 +25891,7 @@ var GeoJSONSource = function (Evented) {
         }, null, this.workerID);
     };
     GeoJSONSource.prototype.serialize = function serialize() {
-        return symbol_layout.extend({}, this._options, {
+        return __chunk_1.extend({}, this._options, {
             type: this.type,
             data: this._data
         });
@@ -25761,7 +25900,7 @@ var GeoJSONSource = function (Evented) {
         return false;
     };
     return GeoJSONSource;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 var ImageSource = function (Evented) {
     function ImageSource(id, options, dispatcher, eventedParent) {
@@ -25783,11 +25922,11 @@ var ImageSource = function (Evented) {
     ImageSource.prototype.constructor = ImageSource;
     ImageSource.prototype.load = function load(newCoordinates, successCallback) {
         var this$1 = this;
-        this.fire(new symbol_layout.Event('dataloading', { dataType: 'source' }));
+        this.fire(new __chunk_1.Event('dataloading', { dataType: 'source' }));
         this.url = this.options.url;
-        symbol_layout.getImage(this.map._requestManager.transformRequest(this.url, symbol_layout.ResourceType.Image), function (err, image) {
+        __chunk_1.getImage(this.map._requestManager.transformRequest(this.url, __chunk_1.ResourceType.Image), function (err, image) {
             if (err) {
-                this$1.fire(new symbol_layout.ErrorEvent(err));
+                this$1.fire(new __chunk_1.ErrorEvent(err));
             } else if (image) {
                 this$1.image = image;
                 if (newCoordinates) {
@@ -25814,7 +25953,7 @@ var ImageSource = function (Evented) {
     ImageSource.prototype._finishLoading = function _finishLoading() {
         if (this.map) {
             this.setCoordinates(this.coordinates);
-            this.fire(new symbol_layout.Event('data', {
+            this.fire(new __chunk_1.Event('data', {
                 dataType: 'source',
                 sourceDataType: 'metadata'
             }));
@@ -25827,22 +25966,22 @@ var ImageSource = function (Evented) {
     ImageSource.prototype.setCoordinates = function setCoordinates(coordinates) {
         var this$1 = this;
         this.coordinates = coordinates;
-        var cornerCoords = coordinates.map(symbol_layout.MercatorCoordinate.fromLngLat);
+        var cornerCoords = coordinates.map(__chunk_1.MercatorCoordinate.fromLngLat);
         this.tileID = getCoordinatesCenterTileID(cornerCoords);
         this.minzoom = this.maxzoom = this.tileID.z;
         var tileCoords = cornerCoords.map(function (coord) {
             return this$1.tileID.getTilePoint(coord)._round();
         });
-        this._boundsArray = new symbol_layout.StructArrayLayout4i8();
+        this._boundsArray = new __chunk_1.StructArrayLayout4i8();
         this._boundsArray.emplaceBack(tileCoords[0].x, tileCoords[0].y, 0, 0);
-        this._boundsArray.emplaceBack(tileCoords[1].x, tileCoords[1].y, symbol_layout.EXTENT, 0);
-        this._boundsArray.emplaceBack(tileCoords[3].x, tileCoords[3].y, 0, symbol_layout.EXTENT);
-        this._boundsArray.emplaceBack(tileCoords[2].x, tileCoords[2].y, symbol_layout.EXTENT, symbol_layout.EXTENT);
+        this._boundsArray.emplaceBack(tileCoords[1].x, tileCoords[1].y, __chunk_1.EXTENT, 0);
+        this._boundsArray.emplaceBack(tileCoords[3].x, tileCoords[3].y, 0, __chunk_1.EXTENT);
+        this._boundsArray.emplaceBack(tileCoords[2].x, tileCoords[2].y, __chunk_1.EXTENT, __chunk_1.EXTENT);
         if (this.boundsBuffer) {
             this.boundsBuffer.destroy();
             delete this.boundsBuffer;
         }
-        this.fire(new symbol_layout.Event('data', {
+        this.fire(new __chunk_1.Event('data', {
             dataType: 'source',
             sourceDataType: 'content'
         }));
@@ -25855,13 +25994,13 @@ var ImageSource = function (Evented) {
         var context = this.map.painter.context;
         var gl = context.gl;
         if (!this.boundsBuffer) {
-            this.boundsBuffer = context.createVertexBuffer(this._boundsArray, symbol_layout.rasterBoundsAttributes.members);
+            this.boundsBuffer = context.createVertexBuffer(this._boundsArray, __chunk_1.rasterBoundsAttributes.members);
         }
         if (!this.boundsSegments) {
-            this.boundsSegments = symbol_layout.SegmentVector.simpleSegment(0, 0, 4, 2);
+            this.boundsSegments = __chunk_1.SegmentVector.simpleSegment(0, 0, 4, 2);
         }
         if (!this.texture) {
-            this.texture = new symbol_layout.Texture(context, this.image, gl.RGBA);
+            this.texture = new __chunk_1.Texture(context, this.image, gl.RGBA);
             this.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
         }
         for (var w in this.tiles) {
@@ -25893,7 +26032,7 @@ var ImageSource = function (Evented) {
         return false;
     };
     return ImageSource;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 function getCoordinatesCenterTileID(coords) {
     var minX = Infinity;
     var minY = Infinity;
@@ -25911,7 +26050,7 @@ function getCoordinatesCenterTileID(coords) {
     var dMax = Math.max(dx, dy);
     var zoom = Math.max(0, Math.floor(-Math.log(dMax) / Math.LN2));
     var tilesAtZoom = Math.pow(2, zoom);
-    return new symbol_layout.CanonicalTileID(zoom, Math.floor((minX + maxX) / 2 * tilesAtZoom), Math.floor((minY + maxY) / 2 * tilesAtZoom));
+    return new __chunk_1.CanonicalTileID(zoom, Math.floor((minX + maxX) / 2 * tilesAtZoom), Math.floor((minY + maxY) / 2 * tilesAtZoom));
 }
 
 var VideoSource = function (ImageSource) {
@@ -25931,11 +26070,11 @@ var VideoSource = function (ImageSource) {
         this.urls = [];
         for (var i = 0, list = options.urls; i < list.length; i += 1) {
             var url = list[i];
-            this.urls.push(this.map._requestManager.transformRequest(url, symbol_layout.ResourceType.Source).url);
+            this.urls.push(this.map._requestManager.transformRequest(url, __chunk_1.ResourceType.Source).url);
         }
-        symbol_layout.getVideo(this.urls, function (err, video) {
+        __chunk_1.getVideo(this.urls, function (err, video) {
             if (err) {
-                this$1.fire(new symbol_layout.ErrorEvent(err));
+                this$1.fire(new __chunk_1.ErrorEvent(err));
             } else if (video) {
                 this$1.video = video;
                 this$1.video.loop = true;
@@ -25970,13 +26109,13 @@ var VideoSource = function (ImageSource) {
         var context = this.map.painter.context;
         var gl = context.gl;
         if (!this.boundsBuffer) {
-            this.boundsBuffer = context.createVertexBuffer(this._boundsArray, symbol_layout.rasterBoundsAttributes.members);
+            this.boundsBuffer = context.createVertexBuffer(this._boundsArray, __chunk_1.rasterBoundsAttributes.members);
         }
         if (!this.boundsSegments) {
-            this.boundsSegments = symbol_layout.SegmentVector.simpleSegment(0, 0, 4, 2);
+            this.boundsSegments = __chunk_1.SegmentVector.simpleSegment(0, 0, 4, 2);
         }
         if (!this.texture) {
-            this.texture = new symbol_layout.Texture(context, this.video, gl.RGBA);
+            this.texture = new __chunk_1.Texture(context, this.video, gl.RGBA);
             this.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
         } else if (!this.video.paused) {
             this.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
@@ -26007,21 +26146,21 @@ var CanvasSource = function (ImageSource) {
     function CanvasSource(id, options, dispatcher, eventedParent) {
         ImageSource.call(this, id, options, dispatcher, eventedParent);
         if (!options.coordinates) {
-            this.fire(new symbol_layout.ErrorEvent(new symbol_layout.ValidationError('sources.' + id, null, 'missing required property "coordinates"')));
+            this.fire(new __chunk_1.ErrorEvent(new __chunk_1.ValidationError('sources.' + id, null, 'missing required property "coordinates"')));
         } else if (!Array.isArray(options.coordinates) || options.coordinates.length !== 4 || options.coordinates.some(function (c) {
                 return !Array.isArray(c) || c.length !== 2 || c.some(function (l) {
                     return typeof l !== 'number';
                 });
             })) {
-            this.fire(new symbol_layout.ErrorEvent(new symbol_layout.ValidationError('sources.' + id, null, '"coordinates" property must be an array of 4 longitude/latitude array pairs')));
+            this.fire(new __chunk_1.ErrorEvent(new __chunk_1.ValidationError('sources.' + id, null, '"coordinates" property must be an array of 4 longitude/latitude array pairs')));
         }
         if (options.animate && typeof options.animate !== 'boolean') {
-            this.fire(new symbol_layout.ErrorEvent(new symbol_layout.ValidationError('sources.' + id, null, 'optional "animate" property must be a boolean value')));
+            this.fire(new __chunk_1.ErrorEvent(new __chunk_1.ValidationError('sources.' + id, null, 'optional "animate" property must be a boolean value')));
         }
         if (!options.canvas) {
-            this.fire(new symbol_layout.ErrorEvent(new symbol_layout.ValidationError('sources.' + id, null, 'missing required property "canvas"')));
-        } else if (typeof options.canvas !== 'string' && !(options.canvas instanceof symbol_layout.window.HTMLCanvasElement)) {
-            this.fire(new symbol_layout.ErrorEvent(new symbol_layout.ValidationError('sources.' + id, null, '"canvas" must be either a string representing the ID of the canvas element from which to read, or an HTMLCanvasElement instance')));
+            this.fire(new __chunk_1.ErrorEvent(new __chunk_1.ValidationError('sources.' + id, null, 'missing required property "canvas"')));
+        } else if (typeof options.canvas !== 'string' && !(options.canvas instanceof __chunk_1.window.HTMLCanvasElement)) {
+            this.fire(new __chunk_1.ErrorEvent(new __chunk_1.ValidationError('sources.' + id, null, '"canvas" must be either a string representing the ID of the canvas element from which to read, or an HTMLCanvasElement instance')));
         }
         this.options = options;
         this.animate = options.animate !== undefined ? options.animate : true;
@@ -26032,12 +26171,12 @@ var CanvasSource = function (ImageSource) {
     CanvasSource.prototype.constructor = CanvasSource;
     CanvasSource.prototype.load = function load() {
         if (!this.canvas) {
-            this.canvas = this.options.canvas instanceof symbol_layout.window.HTMLCanvasElement ? this.options.canvas : symbol_layout.window.document.getElementById(this.options.canvas);
+            this.canvas = this.options.canvas instanceof __chunk_1.window.HTMLCanvasElement ? this.options.canvas : __chunk_1.window.document.getElementById(this.options.canvas);
         }
         this.width = this.canvas.width;
         this.height = this.canvas.height;
         if (this._hasInvalidDimensions()) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('Canvas dimensions cannot be less than or equal to zero.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('Canvas dimensions cannot be less than or equal to zero.')));
             return;
         }
         this.play = function () {
@@ -26086,13 +26225,13 @@ var CanvasSource = function (ImageSource) {
         var context = this.map.painter.context;
         var gl = context.gl;
         if (!this.boundsBuffer) {
-            this.boundsBuffer = context.createVertexBuffer(this._boundsArray, symbol_layout.rasterBoundsAttributes.members);
+            this.boundsBuffer = context.createVertexBuffer(this._boundsArray, __chunk_1.rasterBoundsAttributes.members);
         }
         if (!this.boundsSegments) {
-            this.boundsSegments = symbol_layout.SegmentVector.simpleSegment(0, 0, 4, 2);
+            this.boundsSegments = __chunk_1.SegmentVector.simpleSegment(0, 0, 4, 2);
         }
         if (!this.texture) {
-            this.texture = new symbol_layout.Texture(context, this.canvas, gl.RGBA, { premultiply: true });
+            this.texture = new __chunk_1.Texture(context, this.canvas, gl.RGBA, { premultiply: true });
         } else if (resize || this._playing) {
             this.texture.update(this.canvas, { premultiply: true });
         }
@@ -26137,12 +26276,12 @@ var sourceTypes = {
     image: ImageSource,
     canvas: CanvasSource
 };
-var create$4 = function (id, specification, dispatcher, eventedParent) {
+var create = function (id, specification, dispatcher, eventedParent) {
     var source = new sourceTypes[specification.type](id, specification, dispatcher, eventedParent);
     if (source.id !== id) {
         throw new Error('Expected Source id to be ' + id + ' instead of ' + source.id);
     }
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         'load',
         'abort',
         'unload',
@@ -26159,18 +26298,18 @@ var setType = function (name, type) {
 };
 
 function getPixelPosMatrix(transform, tileID) {
-    var t = identity([]);
-    translate(t, t, [
+    var t = __chunk_1.identity([]);
+    __chunk_1.translate(t, t, [
         1,
         1,
         0
     ]);
-    scale(t, t, [
+    __chunk_1.scale(t, t, [
         transform.width * 0.5,
         transform.height * 0.5,
         1
     ]);
-    return multiply(t, t, transform.calculatePosMatrix(tileID.toUnwrapped()));
+    return __chunk_1.multiply(t, t, transform.calculatePosMatrix(tileID.toUnwrapped()));
 }
 function queryIncludes3DLayer(layers, styleLayers, sourceID) {
     if (layers) {
@@ -26529,7 +26668,7 @@ var ClearColor = function (BaseValue) {
     ClearColor.prototype = Object.create(BaseValue && BaseValue.prototype);
     ClearColor.prototype.constructor = ClearColor;
     ClearColor.prototype.getDefault = function getDefault() {
-        return symbol_layout.Color.transparent;
+        return __chunk_1.Color.transparent;
     };
     ClearColor.prototype.set = function set(v) {
         var c = this.current;
@@ -26865,7 +27004,7 @@ var BlendColor = function (BaseValue) {
     BlendColor.prototype = Object.create(BaseValue && BaseValue.prototype);
     BlendColor.prototype.constructor = BlendColor;
     BlendColor.prototype.getDefault = function getDefault() {
-        return symbol_layout.Color.transparent;
+        return __chunk_1.Color.transparent;
     };
     BlendColor.prototype.set = function set(v) {
         var c = this.current;
@@ -27357,13 +27496,13 @@ ColorMode.Replace = [
     ONE,
     ZERO
 ];
-ColorMode.disabled = new ColorMode(ColorMode.Replace, symbol_layout.Color.transparent, [
+ColorMode.disabled = new ColorMode(ColorMode.Replace, __chunk_1.Color.transparent, [
     false,
     false,
     false,
     false
 ]);
-ColorMode.unblended = new ColorMode(ColorMode.Replace, symbol_layout.Color.transparent, [
+ColorMode.unblended = new ColorMode(ColorMode.Replace, __chunk_1.Color.transparent, [
     true,
     true,
     true,
@@ -27372,7 +27511,7 @@ ColorMode.unblended = new ColorMode(ColorMode.Replace, symbol_layout.Color.trans
 ColorMode.alphaBlended = new ColorMode([
     ONE,
     ONE_MINUS_SRC_ALPHA
-], symbol_layout.Color.transparent, [
+], __chunk_1.Color.transparent, [
     true,
     true,
     true,
@@ -27549,7 +27688,7 @@ Context.prototype.setStencilMode = function setStencilMode(stencilMode) {
     }
 };
 Context.prototype.setColorMode = function setColorMode(colorMode) {
-    if (symbol_layout.deepEqual(colorMode.blendFunction, ColorMode.Replace)) {
+    if (__chunk_1.deepEqual(colorMode.blendFunction, ColorMode.Replace)) {
         this.blend.set(false);
     } else {
         this.blend.set(true);
@@ -27587,14 +27726,14 @@ var SourceCache = function (Evented) {
         this.on('error', function () {
             this$1._sourceErrored = true;
         });
-        this._source = create$4(id, options, dispatcher, this);
+        this._source = create(id, options, dispatcher, this);
         this._tiles = {};
         this._cache = new TileCache(0, this._unloadTile.bind(this));
         this._timers = {};
         this._cacheTimers = {};
         this._maxTileCacheSize = null;
         this._coveredTiles = {};
-        this._state = new symbol_layout.SourceFeatureState();
+        this._state = new __chunk_1.SourceFeatureState();
     }
     if (Evented)
         SourceCache.__proto__ = Evented;
@@ -27691,8 +27830,8 @@ var SourceCache = function (Evented) {
             return ids.sort(function (a_, b_) {
                 var a = this$1._tiles[a_].tileID;
                 var b = this$1._tiles[b_].tileID;
-                var rotatedA = new symbol_layout.pointGeometry(a.canonical.x, a.canonical.y)._rotate(this$1.transform.angle);
-                var rotatedB = new symbol_layout.pointGeometry(b.canonical.x, b.canonical.y)._rotate(this$1.transform.angle);
+                var rotatedA = new __chunk_1.Point(a.canonical.x, a.canonical.y)._rotate(this$1.transform.angle);
+                var rotatedB = new __chunk_1.Point(b.canonical.x, b.canonical.y)._rotate(this$1.transform.angle);
                 return a.overscaledZ - b.overscaledZ || rotatedB.y - rotatedA.y || rotatedB.x - rotatedA.x;
             });
         }
@@ -27734,13 +27873,13 @@ var SourceCache = function (Evented) {
         if (err) {
             tile.state = 'errored';
             if (err.status !== 404) {
-                this._source.fire(new symbol_layout.ErrorEvent(err, { tile: tile }));
+                this._source.fire(new __chunk_1.ErrorEvent(err, { tile: tile }));
             } else {
                 this.update(this.transform);
             }
             return;
         }
-        tile.timeAdded = symbol_layout.exported.now();
+        tile.timeAdded = __chunk_1.browser.now();
         if (previousState === 'expired') {
             tile.refreshedUponExpiration = true;
         }
@@ -27749,7 +27888,7 @@ var SourceCache = function (Evented) {
             this._backfillDEM(tile);
         }
         this._state.initializeTileState(tile, this.map ? this.map.painter : null);
-        this._source.fire(new symbol_layout.Event('data', {
+        this._source.fire(new __chunk_1.Event('data', {
             dataType: 'source',
             tile: tile,
             coord: tile.tileID
@@ -27887,7 +28026,7 @@ var SourceCache = function (Evented) {
             idealTileIDs = [];
         } else if (this._source.tileID) {
             idealTileIDs = transform.getVisibleUnwrappedCoordinates(this._source.tileID).map(function (unwrapped) {
-                return new symbol_layout.OverscaledTileID(unwrapped.canonical.z, unwrapped.wrap, unwrapped.canonical.z, unwrapped.canonical.x, unwrapped.canonical.y);
+                return new __chunk_1.OverscaledTileID(unwrapped.canonical.z, unwrapped.wrap, unwrapped.canonical.z, unwrapped.canonical.x, unwrapped.canonical.y);
             });
         } else {
             idealTileIDs = transform.coveringTiles({
@@ -27915,7 +28054,7 @@ var SourceCache = function (Evented) {
                 var id = list[i];
                 var tileID = retain[id];
                 var tile = this._tiles[id];
-                if (!tile || tile.fadeEndTime && tile.fadeEndTime <= symbol_layout.exported.now()) {
+                if (!tile || tile.fadeEndTime && tile.fadeEndTime <= __chunk_1.browser.now()) {
                     continue;
                 }
                 var parentTile = this.findLoadedParent(tileID, minCoveringZoom);
@@ -27936,7 +28075,7 @@ var SourceCache = function (Evented) {
         for (var retainedId in retain) {
             this._tiles[retainedId].clearFadeHold();
         }
-        var remove = symbol_layout.keysDifference(this._tiles, retain);
+        var remove = __chunk_1.keysDifference(this._tiles, retain);
         for (var i$1 = 0, list$1 = remove; i$1 < list$1.length; i$1 += 1) {
             var tileID$1 = list$1[i$1];
             var tile$1 = this._tiles[tileID$1];
@@ -28031,7 +28170,7 @@ var SourceCache = function (Evented) {
         }
         var cached = Boolean(tile);
         if (!cached) {
-            tile = new symbol_layout.Tile(tileID, this._source.tileSize * tileID.overscaleFactor());
+            tile = new __chunk_1.Tile(tileID, this._source.tileSize * tileID.overscaleFactor());
             this._loadTile(tile, this._tileLoaded.bind(this, tile, tileID.key, tile.state));
         }
         if (!tile) {
@@ -28040,7 +28179,7 @@ var SourceCache = function (Evented) {
         tile.uses++;
         this._tiles[tileID.key] = tile;
         if (!cached) {
-            this._source.fire(new symbol_layout.Event('dataloading', {
+            this._source.fire(new __chunk_1.Event('dataloading', {
                 tile: tile,
                 coord: tile.tileID,
                 dataType: 'source'
@@ -28125,12 +28264,12 @@ var SourceCache = function (Evented) {
             }
             var tileID = tile.tileID;
             var scale = Math.pow(2, transform.zoom - tile.tileID.overscaledZ);
-            var queryPadding = maxPitchScaleFactor * tile.queryPadding * symbol_layout.EXTENT / tile.tileSize / scale;
+            var queryPadding = maxPitchScaleFactor * tile.queryPadding * __chunk_1.EXTENT / tile.tileSize / scale;
             var tileSpaceBounds = [
-                tileID.getTilePoint(new symbol_layout.MercatorCoordinate(minX, minY)),
-                tileID.getTilePoint(new symbol_layout.MercatorCoordinate(maxX, maxY))
+                tileID.getTilePoint(new __chunk_1.MercatorCoordinate(minX, minY)),
+                tileID.getTilePoint(new __chunk_1.MercatorCoordinate(maxX, maxY))
             ];
-            if (tileSpaceBounds[0].x - queryPadding < symbol_layout.EXTENT && tileSpaceBounds[0].y - queryPadding < symbol_layout.EXTENT && tileSpaceBounds[1].x + queryPadding >= 0 && tileSpaceBounds[1].y + queryPadding >= 0) {
+            if (tileSpaceBounds[0].x - queryPadding < __chunk_1.EXTENT && tileSpaceBounds[0].y - queryPadding < __chunk_1.EXTENT && tileSpaceBounds[1].x + queryPadding >= 0 && tileSpaceBounds[1].y + queryPadding >= 0) {
                 var tileSpaceQueryGeometry = queryGeometry.map(function (c) {
                     return tileID.getTilePoint(c);
                 });
@@ -28168,7 +28307,7 @@ var SourceCache = function (Evented) {
         if (isRasterType(this._source.type)) {
             for (var id in this._tiles) {
                 var tile = this._tiles[id];
-                if (tile.fadeEndTime !== undefined && tile.fadeEndTime >= symbol_layout.exported.now()) {
+                if (tile.fadeEndTime !== undefined && tile.fadeEndTime >= __chunk_1.browser.now()) {
                     return true;
                 }
             }
@@ -28188,7 +28327,7 @@ var SourceCache = function (Evented) {
         return this._state.getState(sourceLayer, feature);
     };
     return SourceCache;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 SourceCache.maxOverzooming = 10;
 SourceCache.maxUnderzooming = 3;
 function compareKeyZoom(a, b) {
@@ -28199,7 +28338,7 @@ function isRasterType(type) {
 }
 
 function WebWorker () {
-    return new symbol_layout.window.Worker(exported.workerUrl);
+    return new __chunk_1.window.Worker(exported.workerUrl);
 }
 
 var WorkerPool = function WorkerPool() {
@@ -28224,7 +28363,7 @@ WorkerPool.prototype.release = function release(mapId) {
         this.workers = null;
     }
 };
-var availableLogicalProcessors = Math.floor(symbol_layout.exported.hardwareConcurrency / 2);
+var availableLogicalProcessors = Math.floor(__chunk_1.browser.hardwareConcurrency / 2);
 WorkerPool.workerCount = Math.max(Math.min(availableLogicalProcessors, 6), 1);
 
 var globalWorkerPool;
@@ -28242,7 +28381,7 @@ function deref(layer, parent) {
             result[k] = layer[k];
         }
     }
-    symbol_layout.refProperties.forEach(function (k) {
+    __chunk_1.refProperties.forEach(function (k) {
         if (k in parent) {
             result[k] = parent[k];
         }
@@ -28310,7 +28449,7 @@ function canUpdateGeoJSON(before, after, sourceId) {
         if (!before[sourceId].hasOwnProperty(prop)) {
             continue;
         }
-        if (prop !== 'data' && !symbol_layout.deepEqual(before[sourceId][prop], after[sourceId][prop])) {
+        if (prop !== 'data' && !__chunk_1.deepEqual(before[sourceId][prop], after[sourceId][prop])) {
             return false;
         }
     }
@@ -28318,7 +28457,7 @@ function canUpdateGeoJSON(before, after, sourceId) {
         if (!after[sourceId].hasOwnProperty(prop)) {
             continue;
         }
-        if (prop !== 'data' && !symbol_layout.deepEqual(before[sourceId][prop], after[sourceId][prop])) {
+        if (prop !== 'data' && !__chunk_1.deepEqual(before[sourceId][prop], after[sourceId][prop])) {
             return false;
         }
     }
@@ -28342,7 +28481,7 @@ function diffSources(before, after, commands, sourcesRemoved) {
         }
         if (!before.hasOwnProperty(sourceId)) {
             addSource(sourceId, after, commands);
-        } else if (!symbol_layout.deepEqual(before[sourceId], after[sourceId])) {
+        } else if (!__chunk_1.deepEqual(before[sourceId], after[sourceId])) {
             if (before[sourceId].type === 'geojson' && after[sourceId].type === 'geojson' && canUpdateGeoJSON(before, after, sourceId)) {
                 commands.push({
                     command: operations.setGeoJSONSourceData,
@@ -28365,7 +28504,7 @@ function diffLayerPropertyChanges(before, after, commands, layerId, klass, comma
         if (!before.hasOwnProperty(prop)) {
             continue;
         }
-        if (!symbol_layout.deepEqual(before[prop], after[prop])) {
+        if (!__chunk_1.deepEqual(before[prop], after[prop])) {
             commands.push({
                 command: command,
                 args: [
@@ -28381,7 +28520,7 @@ function diffLayerPropertyChanges(before, after, commands, layerId, klass, comma
         if (!after.hasOwnProperty(prop) || before.hasOwnProperty(prop)) {
             continue;
         }
-        if (!symbol_layout.deepEqual(before[prop], after[prop])) {
+        if (!__chunk_1.deepEqual(before[prop], after[prop])) {
             commands.push({
                 command: command,
                 args: [
@@ -28452,10 +28591,10 @@ function diffLayers(before, after, commands) {
         layerId = afterOrder[i];
         beforeLayer = beforeIndex[layerId];
         afterLayer = afterIndex[layerId];
-        if (clean[layerId] || symbol_layout.deepEqual(beforeLayer, afterLayer)) {
+        if (clean[layerId] || __chunk_1.deepEqual(beforeLayer, afterLayer)) {
             continue;
         }
-        if (!symbol_layout.deepEqual(beforeLayer.source, afterLayer.source) || !symbol_layout.deepEqual(beforeLayer['source-layer'], afterLayer['source-layer']) || !symbol_layout.deepEqual(beforeLayer.type, afterLayer.type)) {
+        if (!__chunk_1.deepEqual(beforeLayer.source, afterLayer.source) || !__chunk_1.deepEqual(beforeLayer['source-layer'], afterLayer['source-layer']) || !__chunk_1.deepEqual(beforeLayer.type, afterLayer.type)) {
             commands.push({
                 command: operations.removeLayer,
                 args: [layerId]
@@ -28472,7 +28611,7 @@ function diffLayers(before, after, commands) {
         }
         diffLayerPropertyChanges(beforeLayer.layout, afterLayer.layout, commands, layerId, null, operations.setLayoutProperty);
         diffLayerPropertyChanges(beforeLayer.paint, afterLayer.paint, commands, layerId, null, operations.setPaintProperty);
-        if (!symbol_layout.deepEqual(beforeLayer.filter, afterLayer.filter)) {
+        if (!__chunk_1.deepEqual(beforeLayer.filter, afterLayer.filter)) {
             commands.push({
                 command: operations.setFilter,
                 args: [
@@ -28481,7 +28620,7 @@ function diffLayers(before, after, commands) {
                 ]
             });
         }
-        if (!symbol_layout.deepEqual(beforeLayer.minzoom, afterLayer.minzoom) || !symbol_layout.deepEqual(beforeLayer.maxzoom, afterLayer.maxzoom)) {
+        if (!__chunk_1.deepEqual(beforeLayer.minzoom, afterLayer.minzoom) || !__chunk_1.deepEqual(beforeLayer.maxzoom, afterLayer.maxzoom)) {
             commands.push({
                 command: operations.setLayerZoomRange,
                 args: [
@@ -28500,7 +28639,7 @@ function diffLayers(before, after, commands) {
             }
             if (prop.indexOf('paint.') === 0) {
                 diffLayerPropertyChanges(beforeLayer[prop], afterLayer[prop], commands, layerId, prop.slice(6), operations.setPaintProperty);
-            } else if (!symbol_layout.deepEqual(beforeLayer[prop], afterLayer[prop])) {
+            } else if (!__chunk_1.deepEqual(beforeLayer[prop], afterLayer[prop])) {
                 commands.push({
                     command: operations.setLayerProperty,
                     args: [
@@ -28520,7 +28659,7 @@ function diffLayers(before, after, commands) {
             }
             if (prop.indexOf('paint.') === 0) {
                 diffLayerPropertyChanges(beforeLayer[prop], afterLayer[prop], commands, layerId, prop.slice(6), operations.setPaintProperty);
-            } else if (!symbol_layout.deepEqual(beforeLayer[prop], afterLayer[prop])) {
+            } else if (!__chunk_1.deepEqual(beforeLayer[prop], afterLayer[prop])) {
                 commands.push({
                     command: operations.setLayerProperty,
                     args: [
@@ -28542,55 +28681,55 @@ function diffStyles(before, after) {
     }
     var commands = [];
     try {
-        if (!symbol_layout.deepEqual(before.version, after.version)) {
+        if (!__chunk_1.deepEqual(before.version, after.version)) {
             return [{
                     command: operations.setStyle,
                     args: [after]
                 }];
         }
-        if (!symbol_layout.deepEqual(before.center, after.center)) {
+        if (!__chunk_1.deepEqual(before.center, after.center)) {
             commands.push({
                 command: operations.setCenter,
                 args: [after.center]
             });
         }
-        if (!symbol_layout.deepEqual(before.zoom, after.zoom)) {
+        if (!__chunk_1.deepEqual(before.zoom, after.zoom)) {
             commands.push({
                 command: operations.setZoom,
                 args: [after.zoom]
             });
         }
-        if (!symbol_layout.deepEqual(before.bearing, after.bearing)) {
+        if (!__chunk_1.deepEqual(before.bearing, after.bearing)) {
             commands.push({
                 command: operations.setBearing,
                 args: [after.bearing]
             });
         }
-        if (!symbol_layout.deepEqual(before.pitch, after.pitch)) {
+        if (!__chunk_1.deepEqual(before.pitch, after.pitch)) {
             commands.push({
                 command: operations.setPitch,
                 args: [after.pitch]
             });
         }
-        if (!symbol_layout.deepEqual(before.sprite, after.sprite)) {
+        if (!__chunk_1.deepEqual(before.sprite, after.sprite)) {
             commands.push({
                 command: operations.setSprite,
                 args: [after.sprite]
             });
         }
-        if (!symbol_layout.deepEqual(before.glyphs, after.glyphs)) {
+        if (!__chunk_1.deepEqual(before.glyphs, after.glyphs)) {
             commands.push({
                 command: operations.setGlyphs,
                 args: [after.glyphs]
             });
         }
-        if (!symbol_layout.deepEqual(before.transition, after.transition)) {
+        if (!__chunk_1.deepEqual(before.transition, after.transition)) {
             commands.push({
                 command: operations.setTransition,
                 args: [after.transition]
             });
         }
-        if (!symbol_layout.deepEqual(before.light, after.light)) {
+        if (!__chunk_1.deepEqual(before.light, after.light)) {
             commands.push({
                 command: operations.setLight,
                 args: [after.light]
@@ -28879,33 +29018,33 @@ GridIndex.prototype._circleAndRectCollide = function _circleAndRectCollide(circl
     return dx * dx + dy * dy <= radius * radius;
 };
 
-var symbolLayoutProperties = symbol_layout.properties.layout;
+var symbolLayoutProperties = __chunk_1.properties.layout;
 function getLabelPlaneMatrix(posMatrix, pitchWithMap, rotateWithMap, transform, pixelsToTileUnits) {
-    var m = create$2();
+    var m = __chunk_1.create();
     if (pitchWithMap) {
-        scale(m, m, [
+        __chunk_1.scale(m, m, [
             1 / pixelsToTileUnits,
             1 / pixelsToTileUnits,
             1
         ]);
         if (!rotateWithMap) {
-            rotateZ(m, m, transform.angle);
+            __chunk_1.rotateZ(m, m, transform.angle);
         }
     } else {
-        multiply(m, transform.labelPlaneMatrix, posMatrix);
+        __chunk_1.multiply(m, transform.labelPlaneMatrix, posMatrix);
     }
     return m;
 }
 function getGlCoordMatrix(posMatrix, pitchWithMap, rotateWithMap, transform, pixelsToTileUnits) {
     if (pitchWithMap) {
-        var m = clone(posMatrix);
-        scale(m, m, [
+        var m = __chunk_1.clone(posMatrix);
+        __chunk_1.scale(m, m, [
             pixelsToTileUnits,
             pixelsToTileUnits,
             1
         ]);
         if (!rotateWithMap) {
-            rotateZ(m, m, -transform.angle);
+            __chunk_1.rotateZ(m, m, -transform.angle);
         }
         return m;
     } else {
@@ -28922,7 +29061,7 @@ function project(point, matrix) {
     xyTransformMat4(pos, pos, matrix);
     var w = pos[3];
     return {
-        point: new symbol_layout.pointGeometry(pos[0] / w, pos[1] / w),
+        point: new __chunk_1.Point(pos[0] / w, pos[1] / w),
         signedDistanceFromCamera: w
     };
 }
@@ -28934,7 +29073,7 @@ function isVisible(anchorPos, clippingBuffer) {
 }
 function updateLineLabels(bucket, posMatrix, painter, isText, labelPlaneMatrix, glCoordMatrix, pitchWithMap, keepUpright) {
     var sizeData = isText ? bucket.textSizeData : bucket.iconSizeData;
-    var partiallyEvaluatedSize = symbol_layout.evaluateSizeForZoom(sizeData, painter.transform.zoom, symbolLayoutProperties.properties[isText ? 'text-size' : 'icon-size']);
+    var partiallyEvaluatedSize = __chunk_1.evaluateSizeForZoom(sizeData, painter.transform.zoom, symbolLayoutProperties.properties[isText ? 'text-size' : 'icon-size']);
     var clippingBuffer = [
         256 / painter.width * 2 + 1,
         256 / painter.height * 2 + 1
@@ -28947,7 +29086,7 @@ function updateLineLabels(bucket, posMatrix, painter, isText, labelPlaneMatrix, 
     var useVertical = false;
     for (var s = 0; s < placedSymbols.length; s++) {
         var symbol = placedSymbols.get(s);
-        if (symbol.hidden || symbol.writingMode === symbol_layout.WritingMode.vertical && !useVertical) {
+        if (symbol.hidden || symbol.writingMode === __chunk_1.WritingMode.vertical && !useVertical) {
             hideGlyphs(symbol.numGlyphs, dynamicLayoutVertexArray);
             continue;
         }
@@ -28958,16 +29097,16 @@ function updateLineLabels(bucket, posMatrix, painter, isText, labelPlaneMatrix, 
             0,
             1
         ];
-        symbol_layout.transformMat4(anchorPos, anchorPos, posMatrix);
+        __chunk_1.transformMat4(anchorPos, anchorPos, posMatrix);
         if (!isVisible(anchorPos, clippingBuffer)) {
             hideGlyphs(symbol.numGlyphs, dynamicLayoutVertexArray);
             continue;
         }
         var cameraToAnchorDistance = anchorPos[3];
         var perspectiveRatio = 0.5 + 0.5 * (cameraToAnchorDistance / painter.transform.cameraToCenterDistance);
-        var fontSize = symbol_layout.evaluateSizeForFeature(sizeData, partiallyEvaluatedSize, symbol);
+        var fontSize = __chunk_1.evaluateSizeForFeature(sizeData, partiallyEvaluatedSize, symbol);
         var pitchScaledFontSize = pitchWithMap ? fontSize * perspectiveRatio : fontSize / perspectiveRatio;
-        var tileAnchorPoint = new symbol_layout.pointGeometry(symbol.anchorX, symbol.anchorY);
+        var tileAnchorPoint = new __chunk_1.Point(symbol.anchorX, symbol.anchorY);
         var anchorPoint = project(tileAnchorPoint, labelPlaneMatrix).point;
         var projectionCache = {};
         var placeUnflipped = placeGlyphsAlongLine(symbol, pitchScaledFontSize, false, keepUpright, posMatrix, labelPlaneMatrix, glCoordMatrix, bucket.glyphOffsetArray, lineVertexArray, dynamicLayoutVertexArray, anchorPoint, tileAnchorPoint, projectionCache, aspectRatio);
@@ -29002,14 +29141,14 @@ function placeFirstAndLastGlyph(fontScale, glyphOffsetArray, lineOffsetX, lineOf
     };
 }
 function requiresOrientationChange(writingMode, firstPoint, lastPoint, aspectRatio) {
-    if (writingMode === symbol_layout.WritingMode.horizontal) {
+    if (writingMode === __chunk_1.WritingMode.horizontal) {
         var rise = Math.abs(lastPoint.y - firstPoint.y);
         var run = Math.abs(lastPoint.x - firstPoint.x) * aspectRatio;
         if (rise > run) {
             return { useVertical: true };
         }
     }
-    if (writingMode === symbol_layout.WritingMode.vertical ? firstPoint.y < lastPoint.y : firstPoint.x > lastPoint.x) {
+    if (writingMode === __chunk_1.WritingMode.vertical ? firstPoint.y < lastPoint.y : firstPoint.x > lastPoint.x) {
         return { needsFlipping: true };
     }
     return null;
@@ -29044,7 +29183,7 @@ function placeGlyphsAlongLine(symbol, fontSize, flip, keepUpright, posMatrix, la
         if (keepUpright && !flip) {
             var a = project(tileAnchorPoint, posMatrix).point;
             var tileVertexIndex = symbol.lineStartIndex + symbol.segment + 1;
-            var tileSegmentEnd = new symbol_layout.pointGeometry(lineVertexArray.getx(tileVertexIndex), lineVertexArray.gety(tileVertexIndex));
+            var tileSegmentEnd = new __chunk_1.Point(lineVertexArray.getx(tileVertexIndex), lineVertexArray.gety(tileVertexIndex));
             var projectedVertex = project(tileSegmentEnd, posMatrix);
             var b = projectedVertex.signedDistanceFromCamera > 0 ? projectedVertex.point : projectTruncatedLineSegment(tileAnchorPoint, tileSegmentEnd, a, 1, posMatrix);
             var orientationChange$1 = requiresOrientationChange(symbol.writingMode, a, b, aspectRatio);
@@ -29060,7 +29199,7 @@ function placeGlyphsAlongLine(symbol, fontSize, flip, keepUpright, posMatrix, la
     }
     for (var i = 0, list = placedGlyphs; i < list.length; i += 1) {
         var glyph = list[i];
-        symbol_layout.addDynamicAttributes(dynamicLayoutVertexArray, glyph.point, glyph.angle);
+        __chunk_1.addDynamicAttributes(dynamicLayoutVertexArray, glyph.point, glyph.angle);
     }
     return {};
 }
@@ -29095,13 +29234,13 @@ function placeGlyphAlongLine(offsetX, lineOffsetX, lineOffsetY, flip, anchorPoin
         prev = current;
         current = projectionCache[currentIndex];
         if (current === undefined) {
-            var currentVertex = new symbol_layout.pointGeometry(lineVertexArray.getx(currentIndex), lineVertexArray.gety(currentIndex));
+            var currentVertex = new __chunk_1.Point(lineVertexArray.getx(currentIndex), lineVertexArray.gety(currentIndex));
             var projection = project(currentVertex, labelPlaneMatrix);
             if (projection.signedDistanceFromCamera > 0) {
                 current = projectionCache[currentIndex] = projection.point;
             } else {
                 var previousLineVertexIndex = currentIndex - dir;
-                var previousTilePoint = distanceToPrev === 0 ? tileAnchorPoint : new symbol_layout.pointGeometry(lineVertexArray.getx(previousLineVertexIndex), lineVertexArray.gety(previousLineVertexIndex));
+                var previousTilePoint = distanceToPrev === 0 ? tileAnchorPoint : new __chunk_1.Point(lineVertexArray.getx(previousLineVertexIndex), lineVertexArray.gety(previousLineVertexIndex));
                 current = projectTruncatedLineSegment(previousTilePoint, currentVertex, prev, absOffsetX - distanceToPrev + 1, labelPlaneMatrix);
             }
         }
@@ -29201,7 +29340,7 @@ CollisionIndex.prototype.placeCollisionCircles = function placeCollisionCircles(
     var fontScale = fontSize / 24;
     var lineOffsetX = symbol.lineOffsetX * fontSize;
     var lineOffsetY = symbol.lineOffsetY * fontSize;
-    var tileUnitAnchorPoint = new symbol_layout.pointGeometry(symbol.anchorX, symbol.anchorY);
+    var tileUnitAnchorPoint = new __chunk_1.Point(symbol.anchorX, symbol.anchorY);
     var labelPlaneAnchorPoint = project(tileUnitAnchorPoint, labelPlaneMatrix).point;
     var firstAndLastGlyph = placeFirstAndLastGlyph(fontScale, glyphOffsetArray, lineOffsetX, lineOffsetY, false, labelPlaneAnchorPoint, tileUnitAnchorPoint, symbol, lineVertexArray, labelPlaneMatrix, projectionCache, true);
     var collisionDetected = false;
@@ -29279,7 +29418,7 @@ CollisionIndex.prototype.queryRenderedSymbols = function queryRenderedSymbols(vi
     var maxY = -Infinity;
     for (var i = 0, list = viewportQueryGeometry; i < list.length; i += 1) {
         var point = list[i];
-        var gridPoint = new symbol_layout.pointGeometry(point.x + viewportPadding, point.y + viewportPadding);
+        var gridPoint = new __chunk_1.Point(point.x + viewportPadding, point.y + viewportPadding);
         minX = Math.min(minX, gridPoint.x);
         minY = Math.min(minY, gridPoint.y);
         maxX = Math.max(maxX, gridPoint.x);
@@ -29299,12 +29438,12 @@ CollisionIndex.prototype.queryRenderedSymbols = function queryRenderedSymbols(vi
             continue;
         }
         var bbox = [
-            new symbol_layout.pointGeometry(feature.x1, feature.y1),
-            new symbol_layout.pointGeometry(feature.x2, feature.y1),
-            new symbol_layout.pointGeometry(feature.x2, feature.y2),
-            new symbol_layout.pointGeometry(feature.x1, feature.y2)
+            new __chunk_1.Point(feature.x1, feature.y1),
+            new __chunk_1.Point(feature.x2, feature.y1),
+            new __chunk_1.Point(feature.x2, feature.y2),
+            new __chunk_1.Point(feature.x1, feature.y2)
         ];
-        if (!symbol_layout.polygonIntersectsPolygon(query, bbox)) {
+        if (!__chunk_1.polygonIntersectsPolygon(query, bbox)) {
             continue;
         }
         seenFeatures[featureKey.bucketInstanceId][featureKey.featureIndex] = true;
@@ -29356,7 +29495,7 @@ CollisionIndex.prototype.projectPoint = function projectPoint(posMatrix, x, y) {
         1
     ];
     xyTransformMat4(p, p, posMatrix);
-    return new symbol_layout.pointGeometry((p[0] / p[3] + 1) / 2 * this.transform.width + viewportPadding, (-p[1] / p[3] + 1) / 2 * this.transform.height + viewportPadding);
+    return new __chunk_1.Point((p[0] / p[3] + 1) / 2 * this.transform.width + viewportPadding, (-p[1] / p[3] + 1) / 2 * this.transform.height + viewportPadding);
 };
 CollisionIndex.prototype.projectAndGetPerspectiveRatio = function projectAndGetPerspectiveRatio(posMatrix, x, y) {
     var p = [
@@ -29366,7 +29505,7 @@ CollisionIndex.prototype.projectAndGetPerspectiveRatio = function projectAndGetP
         1
     ];
     xyTransformMat4(p, p, posMatrix);
-    var a = new symbol_layout.pointGeometry((p[0] / p[3] + 1) / 2 * this.transform.width + viewportPadding, (-p[1] / p[3] + 1) / 2 * this.transform.height + viewportPadding);
+    var a = new __chunk_1.Point((p[0] / p[3] + 1) / 2 * this.transform.width + viewportPadding, (-p[1] / p[3] + 1) / 2 * this.transform.height + viewportPadding);
     return {
         point: a,
         perspectiveRatio: 0.5 + 0.5 * (this.transform.cameraToCenterDistance / p[3])
@@ -29383,7 +29522,7 @@ function markCollisionCircleUsed(collisionCircles, index, used) {
 }
 
 function pixelsToTileUnits (tile, pixelValue, z) {
-    return pixelValue * (symbol_layout.EXTENT / (tile.tileSize * Math.pow(2, z - tile.tileID.overscaledZ)));
+    return pixelValue * (__chunk_1.EXTENT / (tile.tileSize * Math.pow(2, z - tile.tileID.overscaledZ)));
 }
 
 var OpacityState = function OpacityState(prevState, increment, placed, skipFade) {
@@ -29441,13 +29580,13 @@ CollisionGroups.prototype.get = function get(sourceID) {
     }
 };
 function calculateVariableLayoutOffset(anchor, width, height, radialOffset, textBoxScale) {
-    var ref = symbol_layout.getAnchorAlignment(anchor);
+    var ref = __chunk_1.getAnchorAlignment(anchor);
     var horizontalAlign = ref.horizontalAlign;
     var verticalAlign = ref.verticalAlign;
     var shiftX = -(horizontalAlign - 0.5) * width;
     var shiftY = -(verticalAlign - 0.5) * height;
-    var offset = symbol_layout.evaluateRadialOffset(anchor, radialOffset);
-    return new symbol_layout.pointGeometry(shiftX + offset[0] * textBoxScale, shiftY + offset[1] * textBoxScale);
+    var offset = __chunk_1.evaluateRadialOffset(anchor, radialOffset);
+    return new __chunk_1.Point(shiftX + offset[0] * textBoxScale, shiftY + offset[1] * textBoxScale);
 }
 function shiftVariableCollisionBox(collisionBox, shiftX, shiftY, rotateWithMap, pitchWithMap, angle) {
     var x1 = collisionBox.x1;
@@ -29456,7 +29595,7 @@ function shiftVariableCollisionBox(collisionBox, shiftX, shiftY, rotateWithMap, 
     var y2 = collisionBox.y2;
     var anchorPointX = collisionBox.anchorPointX;
     var anchorPointY = collisionBox.anchorPointY;
-    var rotatedOffset = new symbol_layout.pointGeometry(shiftX, shiftY);
+    var rotatedOffset = new __chunk_1.Point(shiftX, shiftY);
     if (rotateWithMap) {
         rotatedOffset._rotate(pitchWithMap ? angle : -angle);
     }
@@ -29494,7 +29633,7 @@ Placement.prototype.placeLayerTile = function placeLayerTile(styleLayer, tile, s
     var collisionBoxArray = tile.collisionBoxArray;
     var layout = symbolBucket.layers[0].layout;
     var scale = Math.pow(2, this.transform.zoom - tile.tileID.overscaledZ);
-    var textPixelRatio = tile.tileSize / symbol_layout.EXTENT;
+    var textPixelRatio = tile.tileSize / __chunk_1.EXTENT;
     var posMatrix = this.transform.calculatePosMatrix(tile.tileID.toUnwrapped());
     var textLabelPlaneMatrix = getLabelPlaneMatrix(posMatrix, layout.get('text-pitch-alignment') === 'map', layout.get('text-rotation-alignment') === 'map', this.transform, pixelsToTileUnits(tile, 1, this.transform.zoom));
     var iconLabelPlaneMatrix = getLabelPlaneMatrix(posMatrix, layout.get('icon-pitch-alignment') === 'map', layout.get('icon-rotation-alignment') === 'map', this.transform, pixelsToTileUnits(tile, 1, this.transform.zoom));
@@ -29523,7 +29662,7 @@ Placement.prototype.attemptAnchorPlacement = function attemptAnchorPlacement(anc
 };
 Placement.prototype.placeLayerBucket = function placeLayerBucket(bucket, posMatrix, textLabelPlaneMatrix, iconLabelPlaneMatrix, scale, textPixelRatio, showCollisionBoxes, holdingForFade, seenCrossTileIDs, collisionBoxArray) {
     var layout = bucket.layers[0].layout;
-    var partiallyEvaluatedTextSize = symbol_layout.evaluateSizeForZoom(bucket.textSizeData, this.transform.zoom, symbol_layout.properties.layout.properties['text-size']);
+    var partiallyEvaluatedTextSize = __chunk_1.evaluateSizeForZoom(bucket.textSizeData, this.transform.zoom, __chunk_1.properties.layout.properties['text-size']);
     var textOptional = layout.get('text-optional');
     var iconOptional = layout.get('icon-optional');
     var textAllowOverlap = layout.get('text-allow-overlap');
@@ -29595,7 +29734,7 @@ Placement.prototype.placeLayerBucket = function placeLayerBucket(bucket, posMatr
             var textCircles = collisionArrays.textCircles;
             if (textCircles) {
                 var placedSymbol = bucket.text.placedSymbolArray.get(symbolInstance.centerJustifiedTextSymbolIndex);
-                var fontSize = symbol_layout.evaluateSizeForFeature(bucket.textSizeData, partiallyEvaluatedTextSize, placedSymbol);
+                var fontSize = __chunk_1.evaluateSizeForFeature(bucket.textSizeData, partiallyEvaluatedTextSize, placedSymbol);
                 placedGlyphCircles = this.collisionIndex.placeCollisionCircles(textCircles, layout.get('text-allow-overlap'), scale, textPixelRatio, placedSymbol, bucket.lineVertexArray, bucket.glyphOffsetArray, fontSize, posMatrix, textLabelPlaneMatrix, showCollisionBoxes, pitchWithMap, collisionGroup.predicate);
                 placeText = layout.get('text-allow-overlap') || placedGlyphCircles.circles.length > 0;
                 offscreen = offscreen && placedGlyphCircles.offscreen;
@@ -29638,7 +29777,7 @@ Placement.prototype.markUsedJustification = function markUsedJustification(bucke
         'center': symbolInstance.centerJustifiedTextSymbolIndex,
         'right': symbolInstance.rightJustifiedTextSymbolIndex
     };
-    var autoIndex = justifications[symbol_layout.getAnchorJustification(placedAnchor)];
+    var autoIndex = justifications[__chunk_1.getAnchorJustification(placedAnchor)];
     for (var justification in justifications) {
         var index = justifications[justification];
         if (index >= 0) {
@@ -29772,7 +29911,7 @@ Placement.prototype.updateBucketOpacities = function updateBucketOpacities(bucke
             var collisionArrays = bucket.collisionArrays[s];
             if (collisionArrays) {
                 if (collisionArrays.textBox) {
-                    var shift = new symbol_layout.pointGeometry(0, 0);
+                    var shift = new __chunk_1.Point(0, 0);
                     var used = true;
                     if (variablePlacement) {
                         var variableOffset = this.variableOffsets[crossTileID];
@@ -29879,9 +30018,9 @@ PauseablePlacement.prototype.isDone = function isDone() {
 };
 PauseablePlacement.prototype.continuePlacement = function continuePlacement(order, layers, layerTiles) {
     var this$1 = this;
-    var startTime = symbol_layout.exported.now();
+    var startTime = __chunk_1.browser.now();
     var shouldPausePlacement = function () {
-        var elapsedTime = symbol_layout.exported.now() - startTime;
+        var elapsedTime = __chunk_1.browser.now() - startTime;
         return this$1._forceFullPlacement ? false : elapsedTime > 2;
     };
     while (this._currentPlacementIndex >= 0) {
@@ -29907,7 +30046,7 @@ PauseablePlacement.prototype.commit = function commit(now) {
     return this.placement;
 };
 
-var roundingFactor = 512 / symbol_layout.EXTENT / 2;
+var roundingFactor = 512 / __chunk_1.EXTENT / 2;
 var TileLayerIndex = function TileLayerIndex(tileID, symbolInstances, bucketInstanceId) {
     this.tileID = tileID;
     this.indexedSymbolInstances = {};
@@ -29928,8 +30067,8 @@ TileLayerIndex.prototype.getScaledCoordinates = function getScaledCoordinates(sy
     var zDifference = childTileID.canonical.z - this.tileID.canonical.z;
     var scale = roundingFactor / Math.pow(2, zDifference);
     return {
-        x: Math.floor((childTileID.canonical.x * symbol_layout.EXTENT + symbolInstance.anchorX) * scale),
-        y: Math.floor((childTileID.canonical.y * symbol_layout.EXTENT + symbolInstance.anchorY) * scale)
+        x: Math.floor((childTileID.canonical.x * __chunk_1.EXTENT + symbolInstance.anchorX) * scale),
+        y: Math.floor((childTileID.canonical.y * __chunk_1.EXTENT + symbolInstance.anchorY) * scale)
     };
 };
 TileLayerIndex.prototype.findMatches = function findMatches(symbolInstances, newTileID, zoomCrossTileIDs) {
@@ -30095,11 +30234,11 @@ CrossTileSymbolIndex.prototype.pruneUnusedLayers = function pruneUnusedLayers(us
 };
 
 var emitValidationErrors = function (evented, errors) {
-    return symbol_layout.emitValidationErrors(evented, errors && errors.filter(function (error) {
+    return __chunk_1.emitValidationErrors(evented, errors && errors.filter(function (error) {
         return error.identifier !== 'source.canvas';
     }));
 };
-var supportedDiffOperations = symbol_layout.pick(operations, [
+var supportedDiffOperations = __chunk_1.pick(operations, [
     'addLayer',
     'removeLayer',
     'setPaintProperty',
@@ -30112,7 +30251,7 @@ var supportedDiffOperations = symbol_layout.pick(operations, [
     'setTransition',
     'setGeoJSONSourceData'
 ]);
-var ignoredDiffOperations = symbol_layout.pick(operations, [
+var ignoredDiffOperations = __chunk_1.pick(operations, [
     'setCenter',
     'setZoom',
     'setBearing',
@@ -30134,10 +30273,10 @@ var Style = function (Evented) {
         this._layers = {};
         this._order = [];
         this.sourceCaches = {};
-        this.zoomHistory = new symbol_layout.ZoomHistory();
+        this.zoomHistory = new __chunk_1.ZoomHistory();
         this._loaded = false;
         this._resetUpdates();
-        this.dispatcher.broadcast('setReferrer', symbol_layout.getReferrer());
+        this.dispatcher.broadcast('setReferrer', __chunk_1.getReferrer());
         var self = this;
         this._rtlTextPluginCallback = Style.registerForPluginAvailability(function (args) {
             self.dispatcher.broadcast('loadRTLTextPlugin', args.pluginURL, args.completionCallback);
@@ -30173,14 +30312,14 @@ var Style = function (Evented) {
         var this$1 = this;
         if (options === void 0)
             options = {};
-        this.fire(new symbol_layout.Event('dataloading', { dataType: 'style' }));
-        var validate = typeof options.validate === 'boolean' ? options.validate : !symbol_layout.isMapboxURL(url);
+        this.fire(new __chunk_1.Event('dataloading', { dataType: 'style' }));
+        var validate = typeof options.validate === 'boolean' ? options.validate : !__chunk_1.isMapboxURL(url);
         url = this.map._requestManager.normalizeStyleURL(url, options.accessToken);
-        var request = this.map._requestManager.transformRequest(url, symbol_layout.ResourceType.Style);
-        this._request = symbol_layout.getJSON(request, function (error, json) {
+        var request = this.map._requestManager.transformRequest(url, __chunk_1.ResourceType.Style);
+        this._request = __chunk_1.getJSON(request, function (error, json) {
             this$1._request = null;
             if (error) {
-                this$1.fire(new symbol_layout.ErrorEvent(error));
+                this$1.fire(new __chunk_1.ErrorEvent(error));
             } else if (json) {
                 this$1._load(json, validate);
             }
@@ -30190,15 +30329,15 @@ var Style = function (Evented) {
         var this$1 = this;
         if (options === void 0)
             options = {};
-        this.fire(new symbol_layout.Event('dataloading', { dataType: 'style' }));
-        this._request = symbol_layout.exported.frame(function () {
+        this.fire(new __chunk_1.Event('dataloading', { dataType: 'style' }));
+        this._request = __chunk_1.browser.frame(function () {
             this$1._request = null;
             this$1._load(json, options.validate !== false);
         });
     };
     Style.prototype._load = function _load(json, validate) {
         var this$1 = this;
-        if (validate && emitValidationErrors(this, symbol_layout.validateStyle(json))) {
+        if (validate && emitValidationErrors(this, __chunk_1.validateStyle(json))) {
             return;
         }
         this._loaded = true;
@@ -30210,14 +30349,14 @@ var Style = function (Evented) {
             this._spriteRequest = loadSprite(json.sprite, this.map._requestManager, function (err, images) {
                 this$1._spriteRequest = null;
                 if (err) {
-                    this$1.fire(new symbol_layout.ErrorEvent(err));
+                    this$1.fire(new __chunk_1.ErrorEvent(err));
                 } else if (images) {
                     for (var id in images) {
                         this$1.imageManager.addImage(id, images[id]);
                     }
                 }
                 this$1.imageManager.setLoaded(true);
-                this$1.fire(new symbol_layout.Event('data', { dataType: 'style' }));
+                this$1.fire(new __chunk_1.Event('data', { dataType: 'style' }));
             });
         } else {
             this.imageManager.setLoaded(true);
@@ -30230,14 +30369,14 @@ var Style = function (Evented) {
         this._layers = {};
         for (var i = 0, list = layers; i < list.length; i += 1) {
             var layer = list[i];
-            layer = symbol_layout.createStyleLayer(layer);
+            layer = __chunk_1.createStyleLayer(layer);
             layer.setEventedParent(this, { layer: { id: layer.id } });
             this._layers[layer.id] = layer;
         }
         this.dispatcher.broadcast('setLayers', this._serializeLayers(this._order));
         this.light = new Light(this.stylesheet.light);
-        this.fire(new symbol_layout.Event('data', { dataType: 'style' }));
-        this.fire(new symbol_layout.Event('style.load'));
+        this.fire(new __chunk_1.Event('data', { dataType: 'style' }));
+        this.fire(new __chunk_1.Event('style.load'));
     };
     Style.prototype._validateLayer = function _validateLayer(layer) {
         var sourceCache = this.sourceCaches[layer.source];
@@ -30250,7 +30389,7 @@ var Style = function (Evented) {
         }
         var source = sourceCache.getSource();
         if (source.type === 'geojson' || source.vectorLayerIds && source.vectorLayerIds.indexOf(sourceLayer) === -1) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('Source layer "' + sourceLayer + '" ' + 'does not exist on source "' + source.id + '" ' + 'as specified by style layer "' + layer.id + '"')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('Source layer "' + sourceLayer + '" ' + 'does not exist on source "' + source.id + '" ' + 'as specified by style layer "' + layer.id + '"')));
         }
     };
     Style.prototype.loaded = function loaded() {
@@ -30341,7 +30480,7 @@ var Style = function (Evented) {
         this.light.recalculate(parameters);
         this.z = parameters.zoom;
         if (changed) {
-            this.fire(new symbol_layout.Event('data', { dataType: 'style' }));
+            this.fire(new __chunk_1.Event('data', { dataType: 'style' }));
         }
     };
     Style.prototype._updateWorkerLayers = function _updateWorkerLayers(updatedIds, removedIds) {
@@ -30360,10 +30499,10 @@ var Style = function (Evented) {
     Style.prototype.setState = function setState(nextState) {
         var this$1 = this;
         this._checkLoaded();
-        if (emitValidationErrors(this, symbol_layout.validateStyle(nextState))) {
+        if (emitValidationErrors(this, __chunk_1.validateStyle(nextState))) {
             return false;
         }
-        nextState = symbol_layout.clone(nextState);
+        nextState = __chunk_1.clone$1(nextState);
         nextState.layers = derefLayers(nextState.layers);
         var changes = diffStyles(this.serialize(), nextState).filter(function (op) {
             return !(op.command in ignoredDiffOperations);
@@ -30390,10 +30529,10 @@ var Style = function (Evented) {
     };
     Style.prototype.addImage = function addImage(id, image) {
         if (this.getImage(id)) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('An image with this name already exists.')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('An image with this name already exists.')));
         }
         this.imageManager.addImage(id, image);
-        this.fire(new symbol_layout.Event('data', { dataType: 'style' }));
+        this.fire(new __chunk_1.Event('data', { dataType: 'style' }));
     };
     Style.prototype.updateImage = function updateImage(id, image) {
         this.imageManager.updateImage(id, image);
@@ -30403,10 +30542,10 @@ var Style = function (Evented) {
     };
     Style.prototype.removeImage = function removeImage(id) {
         if (!this.getImage(id)) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('No image with this name exists.')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('No image with this name exists.')));
         }
         this.imageManager.removeImage(id);
-        this.fire(new symbol_layout.Event('data', { dataType: 'style' }));
+        this.fire(new __chunk_1.Event('data', { dataType: 'style' }));
     };
     Style.prototype.listImages = function listImages() {
         this._checkLoaded();
@@ -30431,7 +30570,7 @@ var Style = function (Evented) {
             'image'
         ];
         var shouldValidate = builtIns.indexOf(source.type) >= 0;
-        if (shouldValidate && this._validate(symbol_layout.validateStyle.source, 'sources.' + id, source, null, options)) {
+        if (shouldValidate && this._validate(__chunk_1.validateStyle.source, 'sources.' + id, source, null, options)) {
             return;
         }
         if (this.map && this.map._collectResourceTiming) {
@@ -30459,13 +30598,13 @@ var Style = function (Evented) {
         }
         for (var layerId in this._layers) {
             if (this._layers[layerId].source === id) {
-                return this.fire(new symbol_layout.ErrorEvent(new Error('Source "' + id + '" cannot be removed while layer "' + layerId + '" is using it.')));
+                return this.fire(new __chunk_1.ErrorEvent(new Error('Source "' + id + '" cannot be removed while layer "' + layerId + '" is using it.')));
             }
         }
         var sourceCache = this.sourceCaches[id];
         delete this.sourceCaches[id];
         delete this._updatedSources[id];
-        sourceCache.fire(new symbol_layout.Event('data', {
+        sourceCache.fire(new __chunk_1.Event('data', {
             sourceDataType: 'metadata',
             dataType: 'source',
             sourceId: id
@@ -30492,31 +30631,31 @@ var Style = function (Evented) {
         this._checkLoaded();
         var id = layerObject.id;
         if (this.getLayer(id)) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('Layer with id "' + id + '" already exists on this map')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('Layer with id "' + id + '" already exists on this map')));
             return;
         }
         var layer;
         if (layerObject.type === 'custom') {
-            if (emitValidationErrors(this, symbol_layout.validateCustomStyleLayer(layerObject))) {
+            if (emitValidationErrors(this, __chunk_1.validateCustomStyleLayer(layerObject))) {
                 return;
             }
-            layer = symbol_layout.createStyleLayer(layerObject);
+            layer = __chunk_1.createStyleLayer(layerObject);
         } else {
             if (typeof layerObject.source === 'object') {
                 this.addSource(id, layerObject.source);
-                layerObject = symbol_layout.clone(layerObject);
-                layerObject = symbol_layout.extend(layerObject, { source: id });
+                layerObject = __chunk_1.clone$1(layerObject);
+                layerObject = __chunk_1.extend(layerObject, { source: id });
             }
-            if (this._validate(symbol_layout.validateStyle.layer, 'layers.' + id, layerObject, { arrayIndex: -1 }, options)) {
+            if (this._validate(__chunk_1.validateStyle.layer, 'layers.' + id, layerObject, { arrayIndex: -1 }, options)) {
                 return;
             }
-            layer = symbol_layout.createStyleLayer(layerObject);
+            layer = __chunk_1.createStyleLayer(layerObject);
             this._validateLayer(layer);
             layer.setEventedParent(this, { layer: { id: id } });
         }
         var index = before ? this._order.indexOf(before) : this._order.length;
         if (before && index === -1) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('Layer with id "' + before + '" does not exist on this map.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('Layer with id "' + before + '" does not exist on this map.')));
             return;
         }
         this._order.splice(index, 0, id);
@@ -30542,7 +30681,7 @@ var Style = function (Evented) {
         this._changed = true;
         var layer = this._layers[id];
         if (!layer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + id + '\' does not exist in the map\'s style and cannot be moved.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + id + '\' does not exist in the map\'s style and cannot be moved.')));
             return;
         }
         if (id === before) {
@@ -30552,7 +30691,7 @@ var Style = function (Evented) {
         this._order.splice(index, 1);
         var newIndex = before ? this._order.indexOf(before) : this._order.length;
         if (before && newIndex === -1) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('Layer with id "' + before + '" does not exist on this map.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('Layer with id "' + before + '" does not exist on this map.')));
             return;
         }
         this._order.splice(newIndex, 0, id);
@@ -30562,7 +30701,7 @@ var Style = function (Evented) {
         this._checkLoaded();
         var layer = this._layers[id];
         if (!layer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + id + '\' does not exist in the map\'s style and cannot be removed.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + id + '\' does not exist in the map\'s style and cannot be removed.')));
             return;
         }
         layer.setEventedParent(null);
@@ -30585,7 +30724,7 @@ var Style = function (Evented) {
         this._checkLoaded();
         var layer = this.getLayer(layerId);
         if (!layer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot have zoom extent.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot have zoom extent.')));
             return;
         }
         if (layer.minzoom === minzoom && layer.maxzoom === maxzoom) {
@@ -30605,10 +30744,10 @@ var Style = function (Evented) {
         this._checkLoaded();
         var layer = this.getLayer(layerId);
         if (!layer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be filtered.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be filtered.')));
             return;
         }
-        if (symbol_layout.deepEqual(layer.filter, filter)) {
+        if (__chunk_1.deepEqual(layer.filter, filter)) {
             return;
         }
         if (filter === null || filter === undefined) {
@@ -30616,14 +30755,14 @@ var Style = function (Evented) {
             this._updateLayer(layer);
             return;
         }
-        if (this._validate(symbol_layout.validateStyle.filter, 'layers.' + layer.id + '.filter', filter, null, options)) {
+        if (this._validate(__chunk_1.validateStyle.filter, 'layers.' + layer.id + '.filter', filter, null, options)) {
             return;
         }
-        layer.filter = symbol_layout.clone(filter);
+        layer.filter = __chunk_1.clone$1(filter);
         this._updateLayer(layer);
     };
     Style.prototype.getFilter = function getFilter(layer) {
-        return symbol_layout.clone(this.getLayer(layer).filter);
+        return __chunk_1.clone$1(this.getLayer(layer).filter);
     };
     Style.prototype.setLayoutProperty = function setLayoutProperty(layerId, name, value, options) {
         if (options === void 0)
@@ -30631,10 +30770,10 @@ var Style = function (Evented) {
         this._checkLoaded();
         var layer = this.getLayer(layerId);
         if (!layer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be styled.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be styled.')));
             return;
         }
-        if (symbol_layout.deepEqual(layer.getLayoutProperty(name), value)) {
+        if (__chunk_1.deepEqual(layer.getLayoutProperty(name), value)) {
             return;
         }
         layer.setLayoutProperty(name, value, options);
@@ -30643,7 +30782,7 @@ var Style = function (Evented) {
     Style.prototype.getLayoutProperty = function getLayoutProperty(layerId, name) {
         var layer = this.getLayer(layerId);
         if (!layer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style.')));
             return;
         }
         return layer.getLayoutProperty(name);
@@ -30654,10 +30793,10 @@ var Style = function (Evented) {
         this._checkLoaded();
         var layer = this.getLayer(layerId);
         if (!layer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be styled.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be styled.')));
             return;
         }
-        if (symbol_layout.deepEqual(layer.getPaintProperty(name), value)) {
+        if (__chunk_1.deepEqual(layer.getPaintProperty(name), value)) {
             return;
         }
         var requiresRelayout = layer.setPaintProperty(name, value, options);
@@ -30677,20 +30816,20 @@ var Style = function (Evented) {
         var sourceCache = this.sourceCaches[sourceId];
         var featureId = parseInt(feature.id, 10);
         if (sourceCache === undefined) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The source \'' + sourceId + '\' does not exist in the map\'s style.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The source \'' + sourceId + '\' does not exist in the map\'s style.')));
             return;
         }
         var sourceType = sourceCache.getSource().type;
         if (sourceType === 'geojson' && sourceLayer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('GeoJSON sources cannot have a sourceLayer parameter.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('GeoJSON sources cannot have a sourceLayer parameter.')));
             return;
         }
         if (sourceType === 'vector' && !sourceLayer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The sourceLayer parameter must be provided for vector source types.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The sourceLayer parameter must be provided for vector source types.')));
             return;
         }
         if (isNaN(featureId) || featureId < 0) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The feature id parameter must be provided and non-negative.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The feature id parameter must be provided and non-negative.')));
             return;
         }
         sourceCache.setFeatureState(sourceLayer, featureId, state);
@@ -30700,22 +30839,22 @@ var Style = function (Evented) {
         var sourceId = target.source;
         var sourceCache = this.sourceCaches[sourceId];
         if (sourceCache === undefined) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The source \'' + sourceId + '\' does not exist in the map\'s style.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The source \'' + sourceId + '\' does not exist in the map\'s style.')));
             return;
         }
         var sourceType = sourceCache.getSource().type;
         var sourceLayer = sourceType === 'vector' ? target.sourceLayer : undefined;
         var featureId = parseInt(target.id, 10);
         if (sourceType === 'vector' && !sourceLayer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The sourceLayer parameter must be provided for vector source types.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The sourceLayer parameter must be provided for vector source types.')));
             return;
         }
         if (target.id !== undefined && isNaN(featureId) || featureId < 0) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The feature id parameter must be non-negative.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The feature id parameter must be non-negative.')));
             return;
         }
         if (key && (typeof target.id !== 'string' && typeof target.id !== 'number')) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('A feature id is requred to remove its specific state property.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('A feature id is requred to remove its specific state property.')));
             return;
         }
         sourceCache.removeFeatureState(sourceLayer, featureId, key);
@@ -30727,28 +30866,28 @@ var Style = function (Evented) {
         var sourceCache = this.sourceCaches[sourceId];
         var featureId = parseInt(feature.id, 10);
         if (sourceCache === undefined) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The source \'' + sourceId + '\' does not exist in the map\'s style.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The source \'' + sourceId + '\' does not exist in the map\'s style.')));
             return;
         }
         var sourceType = sourceCache.getSource().type;
         if (sourceType === 'vector' && !sourceLayer) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The sourceLayer parameter must be provided for vector source types.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The sourceLayer parameter must be provided for vector source types.')));
             return;
         }
         if (isNaN(featureId) || featureId < 0) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('The feature id parameter must be provided and non-negative.')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('The feature id parameter must be provided and non-negative.')));
             return;
         }
         return sourceCache.getFeatureState(sourceLayer, featureId);
     };
     Style.prototype.getTransition = function getTransition() {
-        return symbol_layout.extend({
+        return __chunk_1.extend({
             duration: 300,
             delay: 0
         }, this.stylesheet && this.stylesheet.transition);
     };
     Style.prototype.serialize = function serialize() {
-        return symbol_layout.filterObject({
+        return __chunk_1.filterObject({
             version: this.stylesheet.version,
             name: this.stylesheet.name,
             metadata: this.stylesheet.metadata,
@@ -30760,7 +30899,7 @@ var Style = function (Evented) {
             sprite: this.stylesheet.sprite,
             glyphs: this.stylesheet.glyphs,
             transition: this.stylesheet.transition,
-            sources: symbol_layout.mapObject(this.sourceCaches, function (source) {
+            sources: __chunk_1.mapObject(this.sourceCaches, function (source) {
                 return source.serialize();
             }),
             layers: this._serializeLayers(this._order)
@@ -30831,19 +30970,19 @@ var Style = function (Evented) {
     };
     Style.prototype.queryRenderedFeatures = function queryRenderedFeatures$1(queryGeometry, params, transform) {
         if (params && params.filter) {
-            this._validate(symbol_layout.validateStyle.filter, 'queryRenderedFeatures.filter', params.filter);
+            this._validate(__chunk_1.validateStyle.filter, 'queryRenderedFeatures.filter', params.filter);
         }
         var includedSources = {};
         if (params && params.layers) {
             if (!Array.isArray(params.layers)) {
-                this.fire(new symbol_layout.ErrorEvent(new Error('parameters.layers must be an Array.')));
+                this.fire(new __chunk_1.ErrorEvent(new Error('parameters.layers must be an Array.')));
                 return [];
             }
             for (var i = 0, list = params.layers; i < list.length; i += 1) {
                 var layerId = list[i];
                 var layer = this._layers[layerId];
                 if (!layer) {
-                    this.fire(new symbol_layout.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be queried for features.')));
+                    this.fire(new __chunk_1.ErrorEvent(new Error('The layer \'' + layerId + '\' does not exist in the map\'s style and cannot be queried for features.')));
                     return [];
                 }
                 includedSources[layer.source] = true;
@@ -30863,7 +31002,7 @@ var Style = function (Evented) {
     };
     Style.prototype.querySourceFeatures = function querySourceFeatures$1(sourceID, params) {
         if (params && params.filter) {
-            this._validate(symbol_layout.validateStyle.filter, 'querySourceFeatures.filter', params.filter);
+            this._validate(__chunk_1.validateStyle.filter, 'querySourceFeatures.filter', params.filter);
         }
         var sourceCache = this.sourceCaches[sourceID];
         return sourceCache ? querySourceFeatures(sourceCache, params) : [];
@@ -30891,7 +31030,7 @@ var Style = function (Evented) {
         var light = this.light.getLight();
         var _update = false;
         for (var key in lightOptions) {
-            if (!symbol_layout.deepEqual(lightOptions[key], light[key])) {
+            if (!__chunk_1.deepEqual(lightOptions[key], light[key])) {
                 _update = true;
                 break;
             }
@@ -30900,8 +31039,8 @@ var Style = function (Evented) {
             return;
         }
         var parameters = {
-            now: symbol_layout.exported.now(),
-            transition: symbol_layout.extend({
+            now: __chunk_1.browser.now(),
+            transition: __chunk_1.extend({
                 duration: 300,
                 delay: 0
             }, this.stylesheet.transition)
@@ -30915,11 +31054,11 @@ var Style = function (Evented) {
         if (options && options.validate === false) {
             return false;
         }
-        return emitValidationErrors(this, validate.call(symbol_layout.validateStyle, symbol_layout.extend({
+        return emitValidationErrors(this, validate.call(__chunk_1.validateStyle, __chunk_1.extend({
             key: key,
             style: this.serialize(),
             value: value,
-            styleSpec: symbol_layout.spec
+            styleSpec: __chunk_1.styleSpec
         }, props)));
     };
     Style.prototype._remove = function _remove() {
@@ -30931,7 +31070,7 @@ var Style = function (Evented) {
             this._spriteRequest.cancel();
             this._spriteRequest = null;
         }
-        symbol_layout.evented.off('pluginAvailable', this._rtlTextPluginCallback);
+        __chunk_1.evented.off('pluginAvailable', this._rtlTextPluginCallback);
         for (var layerId in this._layers) {
             var layer = this._layers[layerId];
             layer.setEventedParent(null);
@@ -30984,7 +31123,7 @@ var Style = function (Evented) {
         }
         this.crossTileSymbolIndex.pruneUnusedLayers(this._order);
         var forceFullPlacement = this._layerOrderChanged || fadeDuration === 0;
-        if (forceFullPlacement || !this.pauseablePlacement || this.pauseablePlacement.isDone() && !this.placement.stillRecent(symbol_layout.exported.now())) {
+        if (forceFullPlacement || !this.pauseablePlacement || this.pauseablePlacement.isDone() && !this.placement.stillRecent(__chunk_1.browser.now())) {
             this.pauseablePlacement = new PauseablePlacement(transform, this._order, forceFullPlacement, showCollisionBoxes, fadeDuration, crossSourceCollisions, this.placement);
             this._layerOrderChanged = false;
         }
@@ -30993,7 +31132,7 @@ var Style = function (Evented) {
         } else {
             this.pauseablePlacement.continuePlacement(this._order, this._layers, layerTiles);
             if (this.pauseablePlacement.isDone()) {
-                this.placement = this.pauseablePlacement.commit(symbol_layout.exported.now());
+                this.placement = this.pauseablePlacement.commit(__chunk_1.browser.now());
                 placementCommitted = true;
             }
             if (symbolBucketsChanged) {
@@ -31010,7 +31149,7 @@ var Style = function (Evented) {
                 this.placement.updateLayerOpacities(styleLayer$1, layerTiles[styleLayer$1.source]);
             }
         }
-        var needsRerender = !this.pauseablePlacement.isDone() || this.placement.hasTransitions(symbol_layout.exported.now());
+        var needsRerender = !this.pauseablePlacement.isDone() || this.placement.hasTransitions(__chunk_1.browser.now());
         return needsRerender;
     };
     Style.prototype._releaseSymbolFadeTiles = function _releaseSymbolFadeTiles() {
@@ -31025,15 +31164,15 @@ var Style = function (Evented) {
         this.glyphManager.getGlyphs(params.stacks, callback);
     };
     Style.prototype.getResource = function getResource(mapId, params, callback) {
-        return symbol_layout.makeRequest(params, callback);
+        return __chunk_1.makeRequest(params, callback);
     };
     return Style;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 Style.getSourceType = getType;
 Style.setSourceType = setType;
-Style.registerForPluginAvailability = symbol_layout.registerForPluginAvailability;
+Style.registerForPluginAvailability = __chunk_1.registerForPluginAvailability;
 
-var posAttributes = symbol_layout.createLayout([{
+var posAttributes = __chunk_1.createLayout([{
         name: 'a_pos',
         type: 'Int16',
         components: 2
@@ -31207,7 +31346,6 @@ function compile(fragmentSource, vertexSource) {
 }
 
 var shaders = /*#__PURE__*/Object.freeze({
-__proto__: null,
 prelude: prelude,
 background: background,
 backgroundPattern: backgroundPattern,
@@ -31334,7 +31472,7 @@ VertexArrayObject.prototype.destroy = function destroy() {
 var Program$1 = function Program(context, source, configuration, fixedUniforms, showOverdrawInspector) {
     var gl = context.gl;
     this.program = gl.createProgram();
-    var defines = configuration.defines().concat('#define DEVICE_PIXEL_RATIO ' + symbol_layout.exported.devicePixelRatio.toFixed(1));
+    var defines = configuration.defines().concat('#define DEVICE_PIXEL_RATIO ' + __chunk_1.browser.devicePixelRatio.toFixed(1));
     if (showOverdrawInspector) {
         defines.push('#define OVERDRAW_INSPECTOR;');
     }
@@ -31408,7 +31546,7 @@ function patternUniformValues(crossfade, painter, tile) {
         'u_image': 0,
         'u_texsize': tile.imageAtlasTexture.size,
         'u_scale': [
-            symbol_layout.exported.devicePixelRatio,
+            __chunk_1.browser.devicePixelRatio,
             tileRatio,
             crossfade.fromScale,
             crossfade.toScale
@@ -31463,31 +31601,31 @@ function bgPatternUniformValues(image, crossfade, painter, tile) {
 
 var fillExtrusionUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_lightpos': new symbol_layout.Uniform3f(context, locations.u_lightpos),
-        'u_lightintensity': new symbol_layout.Uniform1f(context, locations.u_lightintensity),
-        'u_lightcolor': new symbol_layout.Uniform3f(context, locations.u_lightcolor),
-        'u_vertical_gradient': new symbol_layout.Uniform1f(context, locations.u_vertical_gradient),
-        'u_opacity': new symbol_layout.Uniform1f(context, locations.u_opacity),
-        'u_scale': new symbol_layout.Uniform1f(context, locations.u_scale)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_lightpos': new __chunk_1.Uniform3f(context, locations.u_lightpos),
+        'u_lightintensity': new __chunk_1.Uniform1f(context, locations.u_lightintensity),
+        'u_lightcolor': new __chunk_1.Uniform3f(context, locations.u_lightcolor),
+        'u_vertical_gradient': new __chunk_1.Uniform1f(context, locations.u_vertical_gradient),
+        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity),
+        'u_scale': new __chunk_1.Uniform1f(context, locations.u_scale)
     };
 };
 var fillExtrusionPatternUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_lightpos': new symbol_layout.Uniform3f(context, locations.u_lightpos),
-        'u_lightintensity': new symbol_layout.Uniform1f(context, locations.u_lightintensity),
-        'u_lightcolor': new symbol_layout.Uniform3f(context, locations.u_lightcolor),
-        'u_vertical_gradient': new symbol_layout.Uniform1f(context, locations.u_vertical_gradient),
-        'u_height_factor': new symbol_layout.Uniform1f(context, locations.u_height_factor),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_texsize': new symbol_layout.Uniform2f(context, locations.u_texsize),
-        'u_pixel_coord_upper': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_upper),
-        'u_pixel_coord_lower': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_lower),
-        'u_scale': new symbol_layout.Uniform4f(context, locations.u_scale),
-        'u_fade': new symbol_layout.Uniform1f(context, locations.u_fade),
-        'u_scale': new symbol_layout.Uniform1f(context, locations.u_scale),
-        'u_opacity': new symbol_layout.Uniform1f(context, locations.u_opacity)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_lightpos': new __chunk_1.Uniform3f(context, locations.u_lightpos),
+        'u_lightintensity': new __chunk_1.Uniform1f(context, locations.u_lightintensity),
+        'u_lightcolor': new __chunk_1.Uniform3f(context, locations.u_lightcolor),
+        'u_vertical_gradient': new __chunk_1.Uniform1f(context, locations.u_vertical_gradient),
+        'u_height_factor': new __chunk_1.Uniform1f(context, locations.u_height_factor),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_texsize': new __chunk_1.Uniform2f(context, locations.u_texsize),
+        'u_pixel_coord_upper': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_upper),
+        'u_pixel_coord_lower': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_lower),
+        'u_scale': new __chunk_1.Uniform4f(context, locations.u_scale),
+        'u_fade': new __chunk_1.Uniform1f(context, locations.u_fade),
+        'u_scale': new __chunk_1.Uniform1f(context, locations.u_scale),
+        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity)
     };
 };
 var fillExtrusionUniformValues = function (matrix, painter, shouldUseVerticalGradient, opacity, scale) {
@@ -31498,11 +31636,11 @@ var fillExtrusionUniformValues = function (matrix, painter, shouldUseVerticalGra
         _lp.y,
         _lp.z
     ];
-    var lightMat = create$1();
+    var lightMat = __chunk_1.create$1();
     if (light.properties.get('anchor') === 'viewport') {
-        fromRotation(lightMat, -painter.transform.angle);
+        __chunk_1.fromRotation(lightMat, -painter.transform.angle);
     }
-    transformMat3(lightPos, lightPos, lightMat);
+    __chunk_1.transformMat3(lightPos, lightPos, lightMat);
     var lightColor = light.properties.get('color');
     return {
         'u_matrix': matrix,
@@ -31519,46 +31657,46 @@ var fillExtrusionUniformValues = function (matrix, painter, shouldUseVerticalGra
     };
 };
 var fillExtrusionPatternUniformValues = function (matrix, painter, shouldUseVerticalGradient, opacity, scale, coord, crossfade, tile) {
-    return symbol_layout.extend(fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale), patternUniformValues(crossfade, painter, tile), { 'u_height_factor': -Math.pow(2, coord.overscaledZ) / tile.tileSize / 8 });
+    return __chunk_1.extend(fillExtrusionUniformValues(matrix, painter, shouldUseVerticalGradient, opacity, scale), patternUniformValues(crossfade, painter, tile), { 'u_height_factor': -Math.pow(2, coord.overscaledZ) / tile.tileSize / 8 });
 };
 
 var fillUniforms = function (context, locations) {
-    return { 'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix) };
+    return { 'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix) };
 };
 var fillPatternUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_texsize': new symbol_layout.Uniform2f(context, locations.u_texsize),
-        'u_pixel_coord_upper': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_upper),
-        'u_pixel_coord_lower': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_lower),
-        'u_scale': new symbol_layout.Uniform4f(context, locations.u_scale),
-        'u_fade': new symbol_layout.Uniform1f(context, locations.u_fade)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_texsize': new __chunk_1.Uniform2f(context, locations.u_texsize),
+        'u_pixel_coord_upper': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_upper),
+        'u_pixel_coord_lower': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_lower),
+        'u_scale': new __chunk_1.Uniform4f(context, locations.u_scale),
+        'u_fade': new __chunk_1.Uniform1f(context, locations.u_fade)
     };
 };
 var fillOutlineUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_world': new symbol_layout.Uniform2f(context, locations.u_world)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_world': new __chunk_1.Uniform2f(context, locations.u_world)
     };
 };
 var fillOutlinePatternUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_world': new symbol_layout.Uniform2f(context, locations.u_world),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_texsize': new symbol_layout.Uniform2f(context, locations.u_texsize),
-        'u_pixel_coord_upper': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_upper),
-        'u_pixel_coord_lower': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_lower),
-        'u_scale': new symbol_layout.Uniform4f(context, locations.u_scale),
-        'u_fade': new symbol_layout.Uniform1f(context, locations.u_fade)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_world': new __chunk_1.Uniform2f(context, locations.u_world),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_texsize': new __chunk_1.Uniform2f(context, locations.u_texsize),
+        'u_pixel_coord_upper': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_upper),
+        'u_pixel_coord_lower': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_lower),
+        'u_scale': new __chunk_1.Uniform4f(context, locations.u_scale),
+        'u_fade': new __chunk_1.Uniform1f(context, locations.u_fade)
     };
 };
 var fillUniformValues = function (matrix) {
     return { 'u_matrix': matrix };
 };
 var fillPatternUniformValues = function (matrix, painter, crossfade, tile) {
-    return symbol_layout.extend(fillUniformValues(matrix), patternUniformValues(crossfade, painter, tile));
+    return __chunk_1.extend(fillUniformValues(matrix), patternUniformValues(crossfade, painter, tile));
 };
 var fillOutlineUniformValues = function (matrix, drawingBufferSize) {
     return {
@@ -31567,16 +31705,16 @@ var fillOutlineUniformValues = function (matrix, drawingBufferSize) {
     };
 };
 var fillOutlinePatternUniformValues = function (matrix, painter, crossfade, tile, drawingBufferSize) {
-    return symbol_layout.extend(fillPatternUniformValues(matrix, painter, crossfade, tile), { 'u_world': drawingBufferSize });
+    return __chunk_1.extend(fillPatternUniformValues(matrix, painter, crossfade, tile), { 'u_world': drawingBufferSize });
 };
 
 var circleUniforms = function (context, locations) {
     return {
-        'u_camera_to_center_distance': new symbol_layout.Uniform1f(context, locations.u_camera_to_center_distance),
-        'u_scale_with_map': new symbol_layout.Uniform1i(context, locations.u_scale_with_map),
-        'u_pitch_with_map': new symbol_layout.Uniform1i(context, locations.u_pitch_with_map),
-        'u_extrude_scale': new symbol_layout.Uniform2f(context, locations.u_extrude_scale),
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix)
+        'u_camera_to_center_distance': new __chunk_1.Uniform1f(context, locations.u_camera_to_center_distance),
+        'u_scale_with_map': new __chunk_1.Uniform1i(context, locations.u_scale_with_map),
+        'u_pitch_with_map': new __chunk_1.Uniform1i(context, locations.u_pitch_with_map),
+        'u_extrude_scale': new __chunk_1.Uniform2f(context, locations.u_extrude_scale),
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix)
     };
 };
 var circleUniformValues = function (painter, coord, tile, layer) {
@@ -31604,11 +31742,11 @@ var circleUniformValues = function (painter, coord, tile, layer) {
 
 var collisionUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_camera_to_center_distance': new symbol_layout.Uniform1f(context, locations.u_camera_to_center_distance),
-        'u_pixels_to_tile_units': new symbol_layout.Uniform1f(context, locations.u_pixels_to_tile_units),
-        'u_extrude_scale': new symbol_layout.Uniform2f(context, locations.u_extrude_scale),
-        'u_overscale_factor': new symbol_layout.Uniform1f(context, locations.u_overscale_factor)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_camera_to_center_distance': new __chunk_1.Uniform1f(context, locations.u_camera_to_center_distance),
+        'u_pixels_to_tile_units': new __chunk_1.Uniform1f(context, locations.u_pixels_to_tile_units),
+        'u_extrude_scale': new __chunk_1.Uniform2f(context, locations.u_extrude_scale),
+        'u_overscale_factor': new __chunk_1.Uniform1f(context, locations.u_overscale_factor)
     };
 };
 var collisionUniformValues = function (matrix, transform, tile) {
@@ -31629,8 +31767,8 @@ var collisionUniformValues = function (matrix, transform, tile) {
 
 var debugUniforms = function (context, locations) {
     return {
-        'u_color': new symbol_layout.UniformColor(context, locations.u_color),
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix)
+        'u_color': new __chunk_1.UniformColor(context, locations.u_color),
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix)
     };
 };
 var debugUniformValues = function (matrix, color) {
@@ -31641,7 +31779,7 @@ var debugUniformValues = function (matrix, color) {
 };
 
 var clippingMaskUniforms = function (context, locations) {
-    return { 'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix) };
+    return { 'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix) };
 };
 var clippingMaskUniformValues = function (matrix) {
     return { 'u_matrix': matrix };
@@ -31649,18 +31787,18 @@ var clippingMaskUniformValues = function (matrix) {
 
 var heatmapUniforms = function (context, locations) {
     return {
-        'u_extrude_scale': new symbol_layout.Uniform1f(context, locations.u_extrude_scale),
-        'u_intensity': new symbol_layout.Uniform1f(context, locations.u_intensity),
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix)
+        'u_extrude_scale': new __chunk_1.Uniform1f(context, locations.u_extrude_scale),
+        'u_intensity': new __chunk_1.Uniform1f(context, locations.u_intensity),
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix)
     };
 };
 var heatmapTextureUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_world': new symbol_layout.Uniform2f(context, locations.u_world),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_color_ramp': new symbol_layout.Uniform1i(context, locations.u_color_ramp),
-        'u_opacity': new symbol_layout.Uniform1f(context, locations.u_opacity)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_world': new __chunk_1.Uniform2f(context, locations.u_world),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_color_ramp': new __chunk_1.Uniform1i(context, locations.u_color_ramp),
+        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity)
     };
 };
 var heatmapUniformValues = function (matrix, tile, zoom, intensity) {
@@ -31671,8 +31809,8 @@ var heatmapUniformValues = function (matrix, tile, zoom, intensity) {
     };
 };
 var heatmapTextureUniformValues = function (painter, layer, textureUnit, colorRampUnit) {
-    var matrix = create$2();
-    ortho(matrix, 0, painter.width, painter.height, 0, 0, 1);
+    var matrix = __chunk_1.create();
+    __chunk_1.ortho(matrix, 0, painter.width, painter.height, 0, 0, 1);
     var gl = painter.context.gl;
     return {
         'u_matrix': matrix,
@@ -31688,63 +31826,63 @@ var heatmapTextureUniformValues = function (painter, layer, textureUnit, colorRa
 
 var hillshadeUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_latrange': new symbol_layout.Uniform2f(context, locations.u_latrange),
-        'u_light': new symbol_layout.Uniform2f(context, locations.u_light),
-        'u_shadow': new symbol_layout.UniformColor(context, locations.u_shadow),
-        'u_highlight': new symbol_layout.UniformColor(context, locations.u_highlight),
-        'u_accent': new symbol_layout.UniformColor(context, locations.u_accent)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_latrange': new __chunk_1.Uniform2f(context, locations.u_latrange),
+        'u_light': new __chunk_1.Uniform2f(context, locations.u_light),
+        'u_shadow': new __chunk_1.UniformColor(context, locations.u_shadow),
+        'u_highlight': new __chunk_1.UniformColor(context, locations.u_highlight),
+        'u_accent': new __chunk_1.UniformColor(context, locations.u_accent)
     };
 };
 var hillshadePrepareUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_dimension': new symbol_layout.Uniform2f(context, locations.u_dimension),
-        'u_zoom': new symbol_layout.Uniform1f(context, locations.u_zoom),
-        'u_maxzoom': new symbol_layout.Uniform1f(context, locations.u_maxzoom)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_dimension': new __chunk_1.Uniform2f(context, locations.u_dimension),
+        'u_zoom': new __chunk_1.Uniform1f(context, locations.u_zoom),
+        'u_maxzoom': new __chunk_1.Uniform1f(context, locations.u_maxzoom)
     };
 };
 
 var lineUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_ratio': new symbol_layout.Uniform1f(context, locations.u_ratio),
-        'u_gl_units_to_pixels': new symbol_layout.Uniform2f(context, locations.u_gl_units_to_pixels)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_ratio': new __chunk_1.Uniform1f(context, locations.u_ratio),
+        'u_gl_units_to_pixels': new __chunk_1.Uniform2f(context, locations.u_gl_units_to_pixels)
     };
 };
 var lineGradientUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_ratio': new symbol_layout.Uniform1f(context, locations.u_ratio),
-        'u_gl_units_to_pixels': new symbol_layout.Uniform2f(context, locations.u_gl_units_to_pixels),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_ratio': new __chunk_1.Uniform1f(context, locations.u_ratio),
+        'u_gl_units_to_pixels': new __chunk_1.Uniform2f(context, locations.u_gl_units_to_pixels),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image)
     };
 };
 var linePatternUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_texsize': new symbol_layout.Uniform2f(context, locations.u_texsize),
-        'u_ratio': new symbol_layout.Uniform1f(context, locations.u_ratio),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_gl_units_to_pixels': new symbol_layout.Uniform2f(context, locations.u_gl_units_to_pixels),
-        'u_scale': new symbol_layout.Uniform4f(context, locations.u_scale),
-        'u_fade': new symbol_layout.Uniform1f(context, locations.u_fade)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_texsize': new __chunk_1.Uniform2f(context, locations.u_texsize),
+        'u_ratio': new __chunk_1.Uniform1f(context, locations.u_ratio),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_gl_units_to_pixels': new __chunk_1.Uniform2f(context, locations.u_gl_units_to_pixels),
+        'u_scale': new __chunk_1.Uniform4f(context, locations.u_scale),
+        'u_fade': new __chunk_1.Uniform1f(context, locations.u_fade)
     };
 };
 var lineSDFUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_ratio': new symbol_layout.Uniform1f(context, locations.u_ratio),
-        'u_gl_units_to_pixels': new symbol_layout.Uniform2f(context, locations.u_gl_units_to_pixels),
-        'u_patternscale_a': new symbol_layout.Uniform2f(context, locations.u_patternscale_a),
-        'u_patternscale_b': new symbol_layout.Uniform2f(context, locations.u_patternscale_b),
-        'u_sdfgamma': new symbol_layout.Uniform1f(context, locations.u_sdfgamma),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_tex_y_a': new symbol_layout.Uniform1f(context, locations.u_tex_y_a),
-        'u_tex_y_b': new symbol_layout.Uniform1f(context, locations.u_tex_y_b),
-        'u_mix': new symbol_layout.Uniform1f(context, locations.u_mix)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_ratio': new __chunk_1.Uniform1f(context, locations.u_ratio),
+        'u_gl_units_to_pixels': new __chunk_1.Uniform2f(context, locations.u_gl_units_to_pixels),
+        'u_patternscale_a': new __chunk_1.Uniform2f(context, locations.u_patternscale_a),
+        'u_patternscale_b': new __chunk_1.Uniform2f(context, locations.u_patternscale_b),
+        'u_sdfgamma': new __chunk_1.Uniform1f(context, locations.u_sdfgamma),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_tex_y_a': new __chunk_1.Uniform1f(context, locations.u_tex_y_a),
+        'u_tex_y_b': new __chunk_1.Uniform1f(context, locations.u_tex_y_b),
+        'u_mix': new __chunk_1.Uniform1f(context, locations.u_mix)
     };
 };
 var lineUniformValues = function (painter, tile, layer) {
@@ -31759,7 +31897,7 @@ var lineUniformValues = function (painter, tile, layer) {
     };
 };
 var lineGradientUniformValues = function (painter, tile, layer) {
-    return symbol_layout.extend(lineUniformValues(painter, tile, layer), { 'u_image': 0 });
+    return __chunk_1.extend(lineUniformValues(painter, tile, layer), { 'u_image': 0 });
 };
 var linePatternUniformValues = function (painter, tile, layer, crossfade) {
     var transform = painter.transform;
@@ -31770,7 +31908,7 @@ var linePatternUniformValues = function (painter, tile, layer, crossfade) {
         'u_ratio': 1 / pixelsToTileUnits(tile, 1, transform.zoom),
         'u_image': 0,
         'u_scale': [
-            symbol_layout.exported.devicePixelRatio,
+            __chunk_1.browser.devicePixelRatio,
             tileZoomRatio,
             crossfade.fromScale,
             crossfade.toScale
@@ -31791,7 +31929,7 @@ var lineSDFUniformValues = function (painter, tile, layer, dasharray, crossfade)
     var posB = lineAtlas.getDash(dasharray.to, round);
     var widthA = posA.width * crossfade.fromScale;
     var widthB = posB.width * crossfade.toScale;
-    return symbol_layout.extend(lineUniformValues(painter, tile, layer), {
+    return __chunk_1.extend(lineUniformValues(painter, tile, layer), {
         'u_patternscale_a': [
             tileRatio / widthA,
             -posA.height / 2
@@ -31800,7 +31938,7 @@ var lineSDFUniformValues = function (painter, tile, layer, dasharray, crossfade)
             tileRatio / widthB,
             -posB.height / 2
         ],
-        'u_sdfgamma': lineAtlas.width / (Math.min(widthA, widthB) * 256 * symbol_layout.exported.devicePixelRatio) / 2,
+        'u_sdfgamma': lineAtlas.width / (Math.min(widthA, widthB) * 256 * __chunk_1.browser.devicePixelRatio) / 2,
         'u_image': 0,
         'u_tex_y_a': posA.y,
         'u_tex_y_b': posB.y,
@@ -31816,20 +31954,20 @@ function calculateMatrix(painter, tile, layer) {
 
 var rasterUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_tl_parent': new symbol_layout.Uniform2f(context, locations.u_tl_parent),
-        'u_scale_parent': new symbol_layout.Uniform1f(context, locations.u_scale_parent),
-        'u_buffer_scale': new symbol_layout.Uniform1f(context, locations.u_buffer_scale),
-        'u_ground_ratio': new symbol_layout.Uniform1f(context, locations.u_ground_ratio),
-        'u_fade_t': new symbol_layout.Uniform1f(context, locations.u_fade_t),
-        'u_opacity': new symbol_layout.Uniform1f(context, locations.u_opacity),
-        'u_image0': new symbol_layout.Uniform1i(context, locations.u_image0),
-        'u_image1': new symbol_layout.Uniform1i(context, locations.u_image1),
-        'u_brightness_low': new symbol_layout.Uniform1f(context, locations.u_brightness_low),
-        'u_brightness_high': new symbol_layout.Uniform1f(context, locations.u_brightness_high),
-        'u_saturation_factor': new symbol_layout.Uniform1f(context, locations.u_saturation_factor),
-        'u_contrast_factor': new symbol_layout.Uniform1f(context, locations.u_contrast_factor),
-        'u_spin_weights': new symbol_layout.Uniform3f(context, locations.u_spin_weights)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_tl_parent': new __chunk_1.Uniform2f(context, locations.u_tl_parent),
+        'u_scale_parent': new __chunk_1.Uniform1f(context, locations.u_scale_parent),
+        'u_buffer_scale': new __chunk_1.Uniform1f(context, locations.u_buffer_scale),
+        'u_ground_ratio': new __chunk_1.Uniform1f(context, locations.u_ground_ratio),
+        'u_fade_t': new __chunk_1.Uniform1f(context, locations.u_fade_t),
+        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity),
+        'u_image0': new __chunk_1.Uniform1i(context, locations.u_image0),
+        'u_image1': new __chunk_1.Uniform1i(context, locations.u_image1),
+        'u_brightness_low': new __chunk_1.Uniform1f(context, locations.u_brightness_low),
+        'u_brightness_high': new __chunk_1.Uniform1f(context, locations.u_brightness_high),
+        'u_saturation_factor': new __chunk_1.Uniform1f(context, locations.u_saturation_factor),
+        'u_contrast_factor': new __chunk_1.Uniform1f(context, locations.u_contrast_factor),
+        'u_spin_weights': new __chunk_1.Uniform3f(context, locations.u_spin_weights)
     };
 };
 var rasterUniformValues = function (matrix, parentTL, parentScaleBy, fade, layer, groundRatio) {
@@ -31869,44 +32007,44 @@ function saturationFactor(saturation) {
 
 var symbolIconUniforms = function (context, locations) {
     return {
-        'u_is_size_zoom_constant': new symbol_layout.Uniform1i(context, locations.u_is_size_zoom_constant),
-        'u_is_size_feature_constant': new symbol_layout.Uniform1i(context, locations.u_is_size_feature_constant),
-        'u_size_t': new symbol_layout.Uniform1f(context, locations.u_size_t),
-        'u_size': new symbol_layout.Uniform1f(context, locations.u_size),
-        'u_camera_to_center_distance': new symbol_layout.Uniform1f(context, locations.u_camera_to_center_distance),
-        'u_pitch': new symbol_layout.Uniform1f(context, locations.u_pitch),
-        'u_rotate_symbol': new symbol_layout.Uniform1i(context, locations.u_rotate_symbol),
-        'u_aspect_ratio': new symbol_layout.Uniform1f(context, locations.u_aspect_ratio),
-        'u_fade_change': new symbol_layout.Uniform1f(context, locations.u_fade_change),
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_label_plane_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_label_plane_matrix),
-        'u_gl_coord_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_gl_coord_matrix),
-        'u_is_text': new symbol_layout.Uniform1f(context, locations.u_is_text),
-        'u_pitch_with_map': new symbol_layout.Uniform1i(context, locations.u_pitch_with_map),
-        'u_texsize': new symbol_layout.Uniform2f(context, locations.u_texsize),
-        'u_texture': new symbol_layout.Uniform1i(context, locations.u_texture)
+        'u_is_size_zoom_constant': new __chunk_1.Uniform1i(context, locations.u_is_size_zoom_constant),
+        'u_is_size_feature_constant': new __chunk_1.Uniform1i(context, locations.u_is_size_feature_constant),
+        'u_size_t': new __chunk_1.Uniform1f(context, locations.u_size_t),
+        'u_size': new __chunk_1.Uniform1f(context, locations.u_size),
+        'u_camera_to_center_distance': new __chunk_1.Uniform1f(context, locations.u_camera_to_center_distance),
+        'u_pitch': new __chunk_1.Uniform1f(context, locations.u_pitch),
+        'u_rotate_symbol': new __chunk_1.Uniform1i(context, locations.u_rotate_symbol),
+        'u_aspect_ratio': new __chunk_1.Uniform1f(context, locations.u_aspect_ratio),
+        'u_fade_change': new __chunk_1.Uniform1f(context, locations.u_fade_change),
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_label_plane_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_label_plane_matrix),
+        'u_gl_coord_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_gl_coord_matrix),
+        'u_is_text': new __chunk_1.Uniform1f(context, locations.u_is_text),
+        'u_pitch_with_map': new __chunk_1.Uniform1i(context, locations.u_pitch_with_map),
+        'u_texsize': new __chunk_1.Uniform2f(context, locations.u_texsize),
+        'u_texture': new __chunk_1.Uniform1i(context, locations.u_texture)
     };
 };
 var symbolSDFUniforms = function (context, locations) {
     return {
-        'u_is_size_zoom_constant': new symbol_layout.Uniform1i(context, locations.u_is_size_zoom_constant),
-        'u_is_size_feature_constant': new symbol_layout.Uniform1i(context, locations.u_is_size_feature_constant),
-        'u_size_t': new symbol_layout.Uniform1f(context, locations.u_size_t),
-        'u_size': new symbol_layout.Uniform1f(context, locations.u_size),
-        'u_camera_to_center_distance': new symbol_layout.Uniform1f(context, locations.u_camera_to_center_distance),
-        'u_pitch': new symbol_layout.Uniform1f(context, locations.u_pitch),
-        'u_rotate_symbol': new symbol_layout.Uniform1i(context, locations.u_rotate_symbol),
-        'u_aspect_ratio': new symbol_layout.Uniform1f(context, locations.u_aspect_ratio),
-        'u_fade_change': new symbol_layout.Uniform1f(context, locations.u_fade_change),
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_label_plane_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_label_plane_matrix),
-        'u_gl_coord_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_gl_coord_matrix),
-        'u_is_text': new symbol_layout.Uniform1f(context, locations.u_is_text),
-        'u_pitch_with_map': new symbol_layout.Uniform1i(context, locations.u_pitch_with_map),
-        'u_texsize': new symbol_layout.Uniform2f(context, locations.u_texsize),
-        'u_texture': new symbol_layout.Uniform1i(context, locations.u_texture),
-        'u_gamma_scale': new symbol_layout.Uniform1f(context, locations.u_gamma_scale),
-        'u_is_halo': new symbol_layout.Uniform1f(context, locations.u_is_halo)
+        'u_is_size_zoom_constant': new __chunk_1.Uniform1i(context, locations.u_is_size_zoom_constant),
+        'u_is_size_feature_constant': new __chunk_1.Uniform1i(context, locations.u_is_size_feature_constant),
+        'u_size_t': new __chunk_1.Uniform1f(context, locations.u_size_t),
+        'u_size': new __chunk_1.Uniform1f(context, locations.u_size),
+        'u_camera_to_center_distance': new __chunk_1.Uniform1f(context, locations.u_camera_to_center_distance),
+        'u_pitch': new __chunk_1.Uniform1f(context, locations.u_pitch),
+        'u_rotate_symbol': new __chunk_1.Uniform1i(context, locations.u_rotate_symbol),
+        'u_aspect_ratio': new __chunk_1.Uniform1f(context, locations.u_aspect_ratio),
+        'u_fade_change': new __chunk_1.Uniform1f(context, locations.u_fade_change),
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_label_plane_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_label_plane_matrix),
+        'u_gl_coord_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_gl_coord_matrix),
+        'u_is_text': new __chunk_1.Uniform1f(context, locations.u_is_text),
+        'u_pitch_with_map': new __chunk_1.Uniform1i(context, locations.u_pitch_with_map),
+        'u_texsize': new __chunk_1.Uniform2f(context, locations.u_texsize),
+        'u_texture': new __chunk_1.Uniform1i(context, locations.u_texture),
+        'u_gamma_scale': new __chunk_1.Uniform1f(context, locations.u_gamma_scale),
+        'u_is_halo': new __chunk_1.Uniform1f(context, locations.u_is_halo)
     };
 };
 var symbolIconUniformValues = function (functionType, size, rotateInShader, pitchWithMap, painter, matrix, labelPlaneMatrix, glCoordMatrix, isText, texSize) {
@@ -31932,7 +32070,7 @@ var symbolIconUniformValues = function (functionType, size, rotateInShader, pitc
 };
 var symbolSDFUniformValues = function (functionType, size, rotateInShader, pitchWithMap, painter, matrix, labelPlaneMatrix, glCoordMatrix, isText, texSize, isHalo) {
     var transform = painter.transform;
-    return symbol_layout.extend(symbolIconUniformValues(functionType, size, rotateInShader, pitchWithMap, painter, matrix, labelPlaneMatrix, glCoordMatrix, isText, texSize), {
+    return __chunk_1.extend(symbolIconUniformValues(functionType, size, rotateInShader, pitchWithMap, painter, matrix, labelPlaneMatrix, glCoordMatrix, isText, texSize), {
         'u_gamma_scale': pitchWithMap ? Math.cos(transform._pitch) * transform.cameraToCenterDistance : 1,
         'u_is_halo': +isHalo
     });
@@ -31940,29 +32078,29 @@ var symbolSDFUniformValues = function (functionType, size, rotateInShader, pitch
 
 var backgroundUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_opacity': new symbol_layout.Uniform1f(context, locations.u_opacity),
-        'u_color': new symbol_layout.UniformColor(context, locations.u_color)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity),
+        'u_color': new __chunk_1.UniformColor(context, locations.u_color)
     };
 };
 var backgroundPatternUniforms = function (context, locations) {
     return {
-        'u_matrix': new symbol_layout.UniformMatrix4f(context, locations.u_matrix),
-        'u_opacity': new symbol_layout.Uniform1f(context, locations.u_opacity),
-        'u_image': new symbol_layout.Uniform1i(context, locations.u_image),
-        'u_pattern_tl_a': new symbol_layout.Uniform2f(context, locations.u_pattern_tl_a),
-        'u_pattern_br_a': new symbol_layout.Uniform2f(context, locations.u_pattern_br_a),
-        'u_pattern_tl_b': new symbol_layout.Uniform2f(context, locations.u_pattern_tl_b),
-        'u_pattern_br_b': new symbol_layout.Uniform2f(context, locations.u_pattern_br_b),
-        'u_texsize': new symbol_layout.Uniform2f(context, locations.u_texsize),
-        'u_mix': new symbol_layout.Uniform1f(context, locations.u_mix),
-        'u_pattern_size_a': new symbol_layout.Uniform2f(context, locations.u_pattern_size_a),
-        'u_pattern_size_b': new symbol_layout.Uniform2f(context, locations.u_pattern_size_b),
-        'u_scale_a': new symbol_layout.Uniform1f(context, locations.u_scale_a),
-        'u_scale_b': new symbol_layout.Uniform1f(context, locations.u_scale_b),
-        'u_pixel_coord_upper': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_upper),
-        'u_pixel_coord_lower': new symbol_layout.Uniform2f(context, locations.u_pixel_coord_lower),
-        'u_tile_units_to_pixels': new symbol_layout.Uniform1f(context, locations.u_tile_units_to_pixels)
+        'u_matrix': new __chunk_1.UniformMatrix4f(context, locations.u_matrix),
+        'u_opacity': new __chunk_1.Uniform1f(context, locations.u_opacity),
+        'u_image': new __chunk_1.Uniform1i(context, locations.u_image),
+        'u_pattern_tl_a': new __chunk_1.Uniform2f(context, locations.u_pattern_tl_a),
+        'u_pattern_br_a': new __chunk_1.Uniform2f(context, locations.u_pattern_br_a),
+        'u_pattern_tl_b': new __chunk_1.Uniform2f(context, locations.u_pattern_tl_b),
+        'u_pattern_br_b': new __chunk_1.Uniform2f(context, locations.u_pattern_br_b),
+        'u_texsize': new __chunk_1.Uniform2f(context, locations.u_texsize),
+        'u_mix': new __chunk_1.Uniform1f(context, locations.u_mix),
+        'u_pattern_size_a': new __chunk_1.Uniform2f(context, locations.u_pattern_size_a),
+        'u_pattern_size_b': new __chunk_1.Uniform2f(context, locations.u_pattern_size_b),
+        'u_scale_a': new __chunk_1.Uniform1f(context, locations.u_scale_a),
+        'u_scale_b': new __chunk_1.Uniform1f(context, locations.u_scale_b),
+        'u_pixel_coord_upper': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_upper),
+        'u_pixel_coord_lower': new __chunk_1.Uniform2f(context, locations.u_pixel_coord_lower),
+        'u_tile_units_to_pixels': new __chunk_1.Uniform1f(context, locations.u_tile_units_to_pixels)
     };
 };
 var backgroundUniformValues = function (matrix, opacity, color) {
@@ -31973,7 +32111,7 @@ var backgroundUniformValues = function (matrix, opacity, color) {
     };
 };
 var backgroundPatternUniformValues = function (matrix, opacity, painter, image, tile, crossfade) {
-    return symbol_layout.extend(bgPatternUniformValues(image, crossfade, painter, tile), {
+    return __chunk_1.extend(bgPatternUniformValues(image, crossfade, painter, tile), {
         'u_matrix': matrix,
         'u_opacity': opacity
     });
@@ -32014,11 +32152,10 @@ function updateTileMasks (renderableTiles, context, highResolution) {
         var mask = {};
         var tile = sortedRenderables[i];
         var childArray = sortedRenderables.slice(i + 1);
-        computeTileMasks(tile.tileID.wrapped(), tile.tileID, childArray, new symbol_layout.OverscaledTileID(0, tile.tileID.wrap + 1, 0, 0, 0), mask);
+        computeTileMasks(tile.tileID.wrapped(), tile.tileID, childArray, new __chunk_1.OverscaledTileID(0, tile.tileID.wrap + 1, 0, 0, 0), mask);
         tile.setMask(mask, context, highResolution);
     }
-}
-function computeTileMasks(rootTile, ref, childArray, lowerBound, mask) {
+}function computeTileMasks(rootTile, ref, childArray, lowerBound, mask) {
     for (var i = 0; i < childArray.length; i++) {
         var childTile = childArray[i];
         if (lowerBound.isLessThan(childTile.tileID)) {
@@ -32036,7 +32173,7 @@ function computeTileMasks(rootTile, ref, childArray, lowerBound, mask) {
         }
     }
     var diffZ = ref.overscaledZ - rootTile.overscaledZ;
-    var maskTileId = new symbol_layout.CanonicalTileID(diffZ, ref.canonical.x - (rootTile.canonical.x << diffZ), ref.canonical.y - (rootTile.canonical.y << diffZ));
+    var maskTileId = new __chunk_1.CanonicalTileID(diffZ, ref.canonical.x - (rootTile.canonical.x << diffZ), ref.canonical.y - (rootTile.canonical.y << diffZ));
     mask[maskTileId.key] = mask[maskTileId.key] || maskTileId;
 }
 
@@ -32063,8 +32200,8 @@ function drawCollisionDebug(painter, sourceCache, layer, coords) {
     drawCollisionDebugGeometry(painter, sourceCache, layer, coords, true);
 }
 
-var identityMat4 = identity(new Float32Array(16));
-var symbolLayoutProperties$1 = symbol_layout.properties.layout;
+var identityMat4 = __chunk_1.identity(new Float32Array(16));
+var symbolLayoutProperties$1 = __chunk_1.properties.layout;
 function drawSymbols(painter, sourceCache, layer, coords, variableOffsets) {
     if (painter.renderPass !== 'translucent') {
         return;
@@ -32082,13 +32219,13 @@ function drawSymbols(painter, sourceCache, layer, coords, variableOffsets) {
     }
 }
 function calculateVariableRenderShift(anchor, width, height, radialOffset, textBoxScale, renderTextSize) {
-    var ref = symbol_layout.getAnchorAlignment(anchor);
+    var ref = __chunk_1.getAnchorAlignment(anchor);
     var horizontalAlign = ref.horizontalAlign;
     var verticalAlign = ref.verticalAlign;
     var shiftX = -(horizontalAlign - 0.5) * width;
     var shiftY = -(verticalAlign - 0.5) * height;
-    var offset = symbol_layout.evaluateRadialOffset(anchor, radialOffset);
-    return new symbol_layout.pointGeometry((shiftX / textBoxScale + offset[0]) * renderTextSize, (shiftY / textBoxScale + offset[1]) * renderTextSize);
+    var offset = __chunk_1.evaluateRadialOffset(anchor, radialOffset);
+    return new __chunk_1.Point((shiftX / textBoxScale + offset[0]) * renderTextSize, (shiftY / textBoxScale + offset[1]) * renderTextSize);
 }
 function updateVariableAnchors(bucket, rotateWithMap, pitchWithMap, variableOffsets, symbolSize, transform, labelPlaneMatrix, posMatrix, tileScale, size) {
     var placedSymbols = bucket.text.placedSymbolArray;
@@ -32100,10 +32237,10 @@ function updateVariableAnchors(bucket, rotateWithMap, pitchWithMap, variableOffs
         if (!variableOffset) {
             hideGlyphs(symbol.numGlyphs, dynamicLayoutVertexArray);
         } else {
-            var tileAnchor = new symbol_layout.pointGeometry(symbol.anchorX, symbol.anchorY);
+            var tileAnchor = new __chunk_1.Point(symbol.anchorX, symbol.anchorY);
             var projectedAnchor = project(tileAnchor, pitchWithMap ? posMatrix : labelPlaneMatrix);
             var perspectiveRatio = 0.5 + 0.5 * (transform.cameraToCenterDistance / projectedAnchor.signedDistanceFromCamera);
-            var renderTextSize = symbolSize.evaluateSizeForFeature(bucket.textSizeData, size, symbol) * perspectiveRatio / symbol_layout.ONE_EM;
+            var renderTextSize = symbolSize.evaluateSizeForFeature(bucket.textSizeData, size, symbol) * perspectiveRatio / __chunk_1.ONE_EM;
             if (pitchWithMap) {
                 renderTextSize *= bucket.tilePixelRatio / tileScale;
             }
@@ -32114,7 +32251,7 @@ function updateVariableAnchors(bucket, rotateWithMap, pitchWithMap, variableOffs
             var shift = calculateVariableRenderShift(variableOffset.anchor, width, height, radialOffset, textBoxScale, renderTextSize);
             var shiftedAnchor = pitchWithMap ? project(tileAnchor.add(shift), labelPlaneMatrix).point : projectedAnchor.point.add(rotateWithMap ? shift.rotate(-transform.angle) : shift);
             for (var g = 0; g < symbol.numGlyphs; g++) {
-                symbol_layout.addDynamicAttributes(dynamicLayoutVertexArray, shiftedAnchor, 0);
+                __chunk_1.addDynamicAttributes(dynamicLayoutVertexArray, shiftedAnchor, 0);
             }
         }
     }
@@ -32150,7 +32287,7 @@ function drawLayerSymbols(painter, sourceCache, layer, coords, isText, translate
         var sizeData = isText ? bucket.textSizeData : bucket.iconSizeData;
         if (!program) {
             program = painter.useProgram(isSDF ? 'symbolSDF' : 'symbolIcon', programConfiguration);
-            size = symbol_layout.evaluateSizeForZoom(sizeData, tr.zoom, symbolLayoutProperties$1.properties[isText ? 'text-size' : 'icon-size']);
+            size = __chunk_1.evaluateSizeForZoom(sizeData, tr.zoom, symbolLayoutProperties$1.properties[isText ? 'text-size' : 'icon-size']);
         }
         context.activeTexture.set(gl.TEXTURE0);
         var texSize = void 0;
@@ -32174,7 +32311,7 @@ function drawLayerSymbols(painter, sourceCache, layer, coords, isText, translate
             updateLineLabels(bucket, coord.posMatrix, painter, isText, labelPlaneMatrix, glCoordMatrix, pitchWithMap, keepUpright);
         } else if (isText && size && variablePlacement) {
             var tileScale = Math.pow(2, tr.zoom - tile.tileID.overscaledZ);
-            updateVariableAnchors(bucket, rotateWithMap, pitchWithMap, variableOffsets, symbol_layout.symbolSize, tr, labelPlaneMatrix, coord.posMatrix, tileScale, size);
+            updateVariableAnchors(bucket, rotateWithMap, pitchWithMap, variableOffsets, __chunk_1.symbolSize, tr, labelPlaneMatrix, coord.posMatrix, tileScale, size);
         }
         var matrix = painter.translatePosMatrix(coord.posMatrix, tile, translate, translateAnchor), uLabelPlaneMatrix = alongLine || isText && variablePlacement ? identityMat4 : labelPlaneMatrix, uglCoordMatrix = painter.translatePosMatrix(glCoordMatrix, tile, translate, translateAnchor, true);
         var hasHalo = isSDF && layer.paint.get(isText ? 'text-halo-width' : 'icon-halo-width').constantOr(1) !== 0;
@@ -32198,7 +32335,7 @@ function drawLayerSymbols(painter, sourceCache, layer, coords, isText, translate
             for (var i = 0, list = oldSegments; i < list.length; i += 1) {
                 var segment = list[i];
                 tileRenderState.push({
-                    segments: new symbol_layout.SegmentVector([segment]),
+                    segments: new __chunk_1.SegmentVector([segment]),
                     sortKey: segment.sortKey,
                     state: state
                 });
@@ -32276,14 +32413,14 @@ function drawHeatmap(painter, sourceCache, layer, coords) {
         var colorMode = new ColorMode([
             gl.ONE,
             gl.ONE
-        ], symbol_layout.Color.transparent, [
+        ], __chunk_1.Color.transparent, [
             true,
             true,
             true,
             true
         ]);
         bindFramebuffer(context, painter, layer);
-        context.clear({ color: symbol_layout.Color.transparent });
+        context.clear({ color: __chunk_1.Color.transparent });
         for (var i = 0; i < coords.length; i++) {
             var coord = coords[i];
             if (sourceCache.hasRenderableParent(coord)) {
@@ -32353,7 +32490,7 @@ function renderTextureToMap(painter, layer) {
     context.activeTexture.set(gl.TEXTURE1);
     var colorRampTexture = layer.colorRampTexture;
     if (!colorRampTexture) {
-        colorRampTexture = layer.colorRampTexture = new symbol_layout.Texture(context, layer.colorRamp, gl.RGBA);
+        colorRampTexture = layer.colorRampTexture = new __chunk_1.Texture(context, layer.colorRamp, gl.RGBA);
     }
     colorRampTexture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
     painter.useProgram('heatmapTexture').draw(context, gl.TRIANGLES, DepthMode.disabled, StencilMode.disabled, painter.colorModeForRenderPass(), CullFaceMode.disabled, heatmapTextureUniformValues(painter, layer, 0, 1), layer.id, painter.viewportBuffer, painter.quadTriangleIndexBuffer, painter.viewportSegments, layer.paint, painter.transform.zoom);
@@ -32386,7 +32523,7 @@ function drawLine(painter, sourceCache, layer, coords) {
             return;
         }
         if (!gradientTexture) {
-            gradientTexture = layer.gradientTexture = new symbol_layout.Texture(context, layer.gradient, gl.RGBA);
+            gradientTexture = layer.gradientTexture = new __chunk_1.Texture(context, layer.gradient, gl.RGBA);
         }
         gradientTexture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
     }
@@ -32434,7 +32571,7 @@ function drawFill(painter, sourceCache, layer, coords) {
     }
     var colorMode = painter.colorModeForRenderPass();
     var pattern = layer.paint.get('fill-pattern');
-    var pass = painter.opaquePassEnabledForLayer() && (!pattern.constantOr(1) && color.constantOr(symbol_layout.Color.transparent).a === 1 && opacity.constantOr(0) === 1) ? 'opaque' : 'translucent';
+    var pass = painter.opaquePassEnabledForLayer() && (!pattern.constantOr(1) && color.constantOr(__chunk_1.Color.transparent).a === 1 && opacity.constantOr(0) === 1) ? 'opaque' : 'translucent';
     if (painter.renderPass === pass) {
         var depthMode = painter.depthModeForSublayer(1, painter.renderPass === 'opaque' ? DepthMode.ReadWrite : DepthMode.ReadOnly);
         drawFillTiles(painter, sourceCache, layer, coords, depthMode, colorMode, false);
@@ -32618,7 +32755,7 @@ function drawRaster(painter, sourceCache, layer, coords) {
 function getFadeValues(tile, parentTile, sourceCache, layer, transform) {
     var fadeDuration = layer.paint.get('raster-fade-duration');
     if (fadeDuration > 0) {
-        var now = symbol_layout.exported.now();
+        var now = __chunk_1.browser.now();
         var sinceTile = (now - tile.timeAdded) / fadeDuration;
         var sinceParent = parentTile ? (now - parentTile.timeAdded) / fadeDuration : -1;
         var source = sourceCache.getSource();
@@ -32627,7 +32764,7 @@ function getFadeValues(tile, parentTile, sourceCache, layer, transform) {
             roundZoom: source.roundZoom
         });
         var fadeIn = !parentTile || Math.abs(parentTile.tileID.overscaledZ - idealZ) > Math.abs(tile.tileID.overscaledZ - idealZ);
-        var childOpacity = fadeIn && tile.refreshedUponExpiration ? 1 : symbol_layout.clamp(fadeIn ? sinceTile : 1 - sinceParent, 0, 1);
+        var childOpacity = fadeIn && tile.refreshedUponExpiration ? 1 : __chunk_1.clamp(fadeIn ? sinceTile : 1 - sinceParent, 0, 1);
         if (tile.refreshedUponExpiration && sinceTile >= 1) {
             tile.refreshedUponExpiration = false;
         }
@@ -32703,22 +32840,22 @@ function drawDebugTile(painter, sourceCache, coord) {
     var stencilMode = StencilMode.disabled;
     var colorMode = painter.colorModeForRenderPass();
     var id = '$debug';
-    program.draw(context, gl.LINE_STRIP, depthMode, stencilMode, colorMode, CullFaceMode.disabled, debugUniformValues(posMatrix, symbol_layout.Color.red), id, painter.debugBuffer, painter.tileBorderIndexBuffer, painter.debugSegments);
+    program.draw(context, gl.LINE_STRIP, depthMode, stencilMode, colorMode, CullFaceMode.disabled, debugUniformValues(posMatrix, __chunk_1.Color.red), id, painter.debugBuffer, painter.tileBorderIndexBuffer, painter.debugSegments);
     var tileRawData = sourceCache.getTileByID(coord.key).latestRawTileData;
     var tileByteLength = tileRawData && tileRawData.byteLength || 0;
     var tileSizeKb = Math.floor(tileByteLength / 1024);
     var vertices = createTextVertices(coord.toString() + ' ' + tileSizeKb + 'kb', 50, 200, 5);
-    var debugTextArray = new symbol_layout.StructArrayLayout2i4();
-    var debugTextIndices = new symbol_layout.StructArrayLayout2ui4();
+    var debugTextArray = new __chunk_1.StructArrayLayout2i4();
+    var debugTextIndices = new __chunk_1.StructArrayLayout2ui4();
     for (var v = 0; v < vertices.length; v += 2) {
         debugTextArray.emplaceBack(vertices[v], vertices[v + 1]);
         debugTextIndices.emplaceBack(v, v + 1);
     }
     var debugTextBuffer = context.createVertexBuffer(debugTextArray, posAttributes.members);
     var debugTextIndexBuffer = context.createIndexBuffer(debugTextIndices);
-    var debugTextSegment = symbol_layout.SegmentVector.simpleSegment(0, 0, debugTextArray.length / 2, debugTextArray.length / 2);
+    var debugTextSegment = __chunk_1.SegmentVector.simpleSegment(0, 0, debugTextArray.length / 2, debugTextArray.length / 2);
     var tileSize = sourceCache.getTile(coord).tileSize;
-    var onePixel = symbol_layout.EXTENT / (Math.pow(2, painter.transform.zoom - coord.overscaledZ) * tileSize);
+    var onePixel = __chunk_1.EXTENT / (Math.pow(2, painter.transform.zoom - coord.overscaledZ) * tileSize);
     var translations = [
         [
             -1,
@@ -32739,13 +32876,13 @@ function drawDebugTile(painter, sourceCache, coord) {
     ];
     for (var i = 0; i < translations.length; i++) {
         var translation = translations[i];
-        program.draw(context, gl.LINES, depthMode, stencilMode, colorMode, CullFaceMode.disabled, debugUniformValues(translate([], posMatrix, [
+        program.draw(context, gl.LINES, depthMode, stencilMode, colorMode, CullFaceMode.disabled, debugUniformValues(__chunk_1.translate([], posMatrix, [
             onePixel * translation[0],
             onePixel * translation[1],
             0
-        ]), symbol_layout.Color.white), id, debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
+        ]), __chunk_1.Color.white), id, debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
     }
-    program.draw(context, gl.LINES, depthMode, stencilMode, colorMode, CullFaceMode.disabled, debugUniformValues(posMatrix, symbol_layout.Color.black), id, debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
+    program.draw(context, gl.LINES, depthMode, stencilMode, colorMode, CullFaceMode.disabled, debugUniformValues(posMatrix, __chunk_1.Color.black), id, debugTextBuffer, debugTextIndexBuffer, debugTextSegment);
     debugTextBuffer.destroy();
     debugTextIndexBuffer.destroy();
     debugTextSegment.destroy();
@@ -35689,12 +35826,12 @@ var Painter = function Painter(gl, transform) {
     this.setup();
     this.numSublayers = SourceCache.maxUnderzooming + SourceCache.maxOverzooming + 1;
     this.depthEpsilon = 1 / Math.pow(2, 16);
-    this.emptyProgramConfiguration = new symbol_layout.ProgramConfiguration();
+    this.emptyProgramConfiguration = new __chunk_1.ProgramConfiguration();
     this.crossTileSymbolIndex = new CrossTileSymbolIndex();
 };
 Painter.prototype.resize = function resize(width, height) {
-    this.width = width * symbol_layout.exported.devicePixelRatio;
-    this.height = height * symbol_layout.exported.devicePixelRatio;
+    this.width = width * __chunk_1.browser.devicePixelRatio;
+    this.height = height * __chunk_1.browser.devicePixelRatio;
     this.context.viewport.set([
         0,
         0,
@@ -35710,42 +35847,42 @@ Painter.prototype.resize = function resize(width, height) {
 };
 Painter.prototype.setup = function setup() {
     var context = this.context;
-    var tileExtentArray = new symbol_layout.StructArrayLayout2i4();
+    var tileExtentArray = new __chunk_1.StructArrayLayout2i4();
     tileExtentArray.emplaceBack(0, 0);
-    tileExtentArray.emplaceBack(symbol_layout.EXTENT, 0);
-    tileExtentArray.emplaceBack(0, symbol_layout.EXTENT);
-    tileExtentArray.emplaceBack(symbol_layout.EXTENT, symbol_layout.EXTENT);
+    tileExtentArray.emplaceBack(__chunk_1.EXTENT, 0);
+    tileExtentArray.emplaceBack(0, __chunk_1.EXTENT);
+    tileExtentArray.emplaceBack(__chunk_1.EXTENT, __chunk_1.EXTENT);
     this.tileExtentBuffer = context.createVertexBuffer(tileExtentArray, posAttributes.members);
-    this.tileExtentSegments = symbol_layout.SegmentVector.simpleSegment(0, 0, 4, 2);
-    var debugArray = new symbol_layout.StructArrayLayout2i4();
+    this.tileExtentSegments = __chunk_1.SegmentVector.simpleSegment(0, 0, 4, 2);
+    var debugArray = new __chunk_1.StructArrayLayout2i4();
     debugArray.emplaceBack(0, 0);
-    debugArray.emplaceBack(symbol_layout.EXTENT, 0);
-    debugArray.emplaceBack(0, symbol_layout.EXTENT);
-    debugArray.emplaceBack(symbol_layout.EXTENT, symbol_layout.EXTENT);
+    debugArray.emplaceBack(__chunk_1.EXTENT, 0);
+    debugArray.emplaceBack(0, __chunk_1.EXTENT);
+    debugArray.emplaceBack(__chunk_1.EXTENT, __chunk_1.EXTENT);
     this.debugBuffer = context.createVertexBuffer(debugArray, posAttributes.members);
-    this.debugSegments = symbol_layout.SegmentVector.simpleSegment(0, 0, 4, 5);
-    var rasterBoundsArray = new symbol_layout.StructArrayLayout4i8();
+    this.debugSegments = __chunk_1.SegmentVector.simpleSegment(0, 0, 4, 5);
+    var rasterBoundsArray = new __chunk_1.StructArrayLayout4i8();
     rasterBoundsArray.emplaceBack(0, 0, 0, 0);
-    rasterBoundsArray.emplaceBack(symbol_layout.EXTENT, 0, symbol_layout.EXTENT, 0);
-    rasterBoundsArray.emplaceBack(0, symbol_layout.EXTENT, 0, symbol_layout.EXTENT);
-    rasterBoundsArray.emplaceBack(symbol_layout.EXTENT, symbol_layout.EXTENT, symbol_layout.EXTENT, symbol_layout.EXTENT);
-    this.rasterBoundsBuffer = context.createVertexBuffer(rasterBoundsArray, symbol_layout.rasterBoundsAttributes.members);
-    this.rasterBoundsSegments = symbol_layout.SegmentVector.simpleSegment(0, 0, 4, 2);
-    var viewportArray = new symbol_layout.StructArrayLayout2i4();
+    rasterBoundsArray.emplaceBack(__chunk_1.EXTENT, 0, __chunk_1.EXTENT, 0);
+    rasterBoundsArray.emplaceBack(0, __chunk_1.EXTENT, 0, __chunk_1.EXTENT);
+    rasterBoundsArray.emplaceBack(__chunk_1.EXTENT, __chunk_1.EXTENT, __chunk_1.EXTENT, __chunk_1.EXTENT);
+    this.rasterBoundsBuffer = context.createVertexBuffer(rasterBoundsArray, __chunk_1.rasterBoundsAttributes.members);
+    this.rasterBoundsSegments = __chunk_1.SegmentVector.simpleSegment(0, 0, 4, 2);
+    var viewportArray = new __chunk_1.StructArrayLayout2i4();
     viewportArray.emplaceBack(0, 0);
     viewportArray.emplaceBack(1, 0);
     viewportArray.emplaceBack(0, 1);
     viewportArray.emplaceBack(1, 1);
     this.viewportBuffer = context.createVertexBuffer(viewportArray, posAttributes.members);
-    this.viewportSegments = symbol_layout.SegmentVector.simpleSegment(0, 0, 4, 2);
-    var tileLineStripIndices = new symbol_layout.StructArrayLayout1ui2();
+    this.viewportSegments = __chunk_1.SegmentVector.simpleSegment(0, 0, 4, 2);
+    var tileLineStripIndices = new __chunk_1.StructArrayLayout1ui2();
     tileLineStripIndices.emplaceBack(0);
     tileLineStripIndices.emplaceBack(1);
     tileLineStripIndices.emplaceBack(3);
     tileLineStripIndices.emplaceBack(2);
     tileLineStripIndices.emplaceBack(0);
     this.tileBorderIndexBuffer = context.createIndexBuffer(tileLineStripIndices);
-    var quadTriangleIndices = new symbol_layout.StructArrayLayout3ui6();
+    var quadTriangleIndices = new __chunk_1.StructArrayLayout3ui6();
     quadTriangleIndices.emplaceBack(0, 1, 2);
     quadTriangleIndices.emplaceBack(2, 1, 3);
     this.quadTriangleIndexBuffer = context.createIndexBuffer(quadTriangleIndices);
@@ -35760,9 +35897,9 @@ Painter.prototype.clearStencil = function clearStencil() {
     var gl = context.gl;
     this.nextStencilID = 1;
     this.currentStencilSource = undefined;
-    var matrix = create$2();
-    ortho(matrix, 0, this.width, this.height, 0, 0, 1);
-    scale(matrix, matrix, [
+    var matrix = __chunk_1.create();
+    __chunk_1.ortho(matrix, 0, this.width, this.height, 0, 0, 1);
+    __chunk_1.scale(matrix, matrix, [
         gl.drawingBufferWidth,
         gl.drawingBufferHeight,
         0
@@ -35821,7 +35958,7 @@ Painter.prototype.colorModeForRenderPass = function colorModeForRenderPass() {
         return new ColorMode([
             gl.CONSTANT_COLOR,
             gl.ONE
-        ], new symbol_layout.Color(a, a, a, 0), [
+        ], new __chunk_1.Color(a, a, a, 0), [
             true,
             true,
             true,
@@ -35859,7 +35996,7 @@ Painter.prototype.render = function render(style, options) {
     this.lineAtlas = style.lineAtlas;
     this.imageManager = style.imageManager;
     this.glyphManager = style.glyphManager;
-    this.symbolFadeChange = style.placement.symbolFadeChange(symbol_layout.exported.now());
+    this.symbolFadeChange = style.placement.symbolFadeChange(__chunk_1.browser.now());
     this.imageManager.beginFrame();
     var layerIds = this.style._order;
     var sourceCaches = this.style.sourceCaches;
@@ -35934,7 +36071,7 @@ Painter.prototype.render = function render(style, options) {
     }
     this.context.bindFramebuffer.set(null);
     this.context.clear({
-        color: options.showOverdrawInspector ? symbol_layout.Color.black : symbol_layout.Color.transparent,
+        color: options.showOverdrawInspector ? __chunk_1.Color.black : __chunk_1.Color.transparent,
         depth: 1
     });
     this.clearStencil();
@@ -35977,26 +36114,26 @@ Painter.prototype.renderLayer = function renderLayer(painter, sourceCache, layer
     this.id = layer.id;
     draw$1[layer.type](painter, sourceCache, layer, coords, this.style.placement.variableOffsets);
 };
-Painter.prototype.translatePosMatrix = function translatePosMatrix(matrix, tile, translate$1, translateAnchor, inViewportPixelUnitsUnits) {
-    if (!translate$1[0] && !translate$1[1]) {
+Painter.prototype.translatePosMatrix = function translatePosMatrix(matrix, tile, translate, translateAnchor, inViewportPixelUnitsUnits) {
+    if (!translate[0] && !translate[1]) {
         return matrix;
     }
     var angle = inViewportPixelUnitsUnits ? translateAnchor === 'map' ? this.transform.angle : 0 : translateAnchor === 'viewport' ? -this.transform.angle : 0;
     if (angle) {
         var sinA = Math.sin(angle);
         var cosA = Math.cos(angle);
-        translate$1 = [
-            translate$1[0] * cosA - translate$1[1] * sinA,
-            translate$1[0] * sinA + translate$1[1] * cosA
+        translate = [
+            translate[0] * cosA - translate[1] * sinA,
+            translate[0] * sinA + translate[1] * cosA
         ];
     }
     var translation = [
-        inViewportPixelUnitsUnits ? translate$1[0] : pixelsToTileUnits(tile, translate$1[0], this.transform.zoom),
-        inViewportPixelUnitsUnits ? translate$1[1] : pixelsToTileUnits(tile, translate$1[1], this.transform.zoom),
+        inViewportPixelUnitsUnits ? translate[0] : pixelsToTileUnits(tile, translate[0], this.transform.zoom),
+        inViewportPixelUnitsUnits ? translate[1] : pixelsToTileUnits(tile, translate[1], this.transform.zoom),
         0
     ];
     var translatedMatrix = new Float32Array(16);
-    translate(translatedMatrix, matrix, translation);
+    __chunk_1.translate(translatedMatrix, matrix, translation);
     return translatedMatrix;
 };
 Painter.prototype.saveTileTexture = function saveTileTexture(texture) {
@@ -36062,14 +36199,14 @@ function tileCover(z, bounds, actualZ, renderWorldCopies) {
                 w = Math.floor(x / tiles);
                 wx = (x % tiles + tiles) % tiles;
                 if (w === 0 || renderWorldCopies === true) {
-                    coord = new symbol_layout.OverscaledTileID(actualZ, w, z, wx, y);
+                    coord = new __chunk_1.OverscaledTileID(actualZ, w, z, wx, y);
                     t[coord.key] = coord;
                 }
             }
         }
     }
     var zoomedBounds = bounds.map(function (coord) {
-        return new symbol_layout.pointGeometry(coord.x, coord.y)._mult(tiles);
+        return new __chunk_1.Point(coord.x, coord.y)._mult(tiles);
     });
     scanTriangle(zoomedBounds[0], zoomedBounds[1], zoomedBounds[2], 0, tiles, scanLine);
     scanTriangle(zoomedBounds[2], zoomedBounds[3], zoomedBounds[0], 0, tiles, scanLine);
@@ -36150,7 +36287,7 @@ var Transform = function Transform(minZoom, maxZoom, minPitch, maxPitch, renderW
     this.setMaxBounds();
     this.width = 0;
     this.height = 0;
-    this._center = new symbol_layout.LngLat(0, 0);
+    this._center = new __chunk_1.LngLat(0, 0);
     this._elevation = 0;
     this.zoom = 0;
     this.angle = 0;
@@ -36230,7 +36367,7 @@ prototypeAccessors.centerPoint.get = function () {
     return this.size._div(2);
 };
 prototypeAccessors.size.get = function () {
-    return new symbol_layout.pointGeometry(this.width, this.height);
+    return new __chunk_1.Point(this.width, this.height);
 };
 prototypeAccessors.groundPixel.get = function () {
     return Math.min(this.maxSkyPixelRatio / (this.maxValidPitch - this._maxPitch) * (this.maxValidPitch - this.pitch) + (1 - this.maxSkyPixelRatio), 1);
@@ -36239,21 +36376,21 @@ prototypeAccessors.bearing.get = function () {
     return -this.angle / Math.PI * 180;
 };
 prototypeAccessors.bearing.set = function (bearing) {
-    var b = -symbol_layout.wrap(bearing, -180, 180) * Math.PI / 180;
+    var b = -__chunk_1.wrap(bearing, -180, 180) * Math.PI / 180;
     if (this.angle === b) {
         return;
     }
     this._unmodified = false;
     this.angle = b;
     this._calcMatrices();
-    this.rotationMatrix = create();
-    rotate(this.rotationMatrix, this.rotationMatrix, this.angle);
+    this.rotationMatrix = __chunk_1.create$2();
+    __chunk_1.rotate(this.rotationMatrix, this.rotationMatrix, this.angle);
 };
 prototypeAccessors.pitch.get = function () {
     return this._pitch / Math.PI * 180;
 };
 prototypeAccessors.pitch.set = function (pitch) {
-    var p = symbol_layout.clamp(pitch, 0, this.maxValidPitch) / 180 * Math.PI;
+    var p = __chunk_1.clamp(pitch, 0, this.maxValidPitch) / 180 * Math.PI;
     if (this._pitch === p) {
         return;
     }
@@ -36311,12 +36448,12 @@ Transform.prototype.coveringZoomLevel = function coveringZoomLevel(options) {
     return (options.roundZoom ? Math.round : Math.floor)(level + offset);
 };
 Transform.prototype.getVisibleUnwrappedCoordinates = function getVisibleUnwrappedCoordinates(tileID) {
-    var result = [new symbol_layout.UnwrappedTileID(0, tileID)];
+    var result = [new __chunk_1.UnwrappedTileID(0, tileID)];
     if (this._renderWorldCopies) {
-        var utl = this.pointCoordinate(new symbol_layout.pointGeometry(0, 0));
-        var utr = this.pointCoordinate(new symbol_layout.pointGeometry(this.width, 0));
-        var ubl = this.pointCoordinate(new symbol_layout.pointGeometry(this.width, this.height));
-        var ubr = this.pointCoordinate(new symbol_layout.pointGeometry(0, this.height));
+        var utl = this.pointCoordinate(new __chunk_1.Point(0, 0));
+        var utr = this.pointCoordinate(new __chunk_1.Point(this.width, 0));
+        var ubl = this.pointCoordinate(new __chunk_1.Point(this.width, this.height));
+        var ubr = this.pointCoordinate(new __chunk_1.Point(0, this.height));
         var w0 = Math.floor(Math.min(utl.x, utr.x, ubl.x, ubr.x));
         var w1 = Math.floor(Math.max(utl.x, utr.x, ubl.x, ubr.x));
         var extraWorldCopy = 1;
@@ -36324,7 +36461,7 @@ Transform.prototype.getVisibleUnwrappedCoordinates = function getVisibleUnwrappe
             if (w === 0) {
                 continue;
             }
-            result.push(new symbol_layout.UnwrappedTileID(w, tileID));
+            result.push(new __chunk_1.UnwrappedTileID(w, tileID));
         }
     }
     return result;
@@ -36338,15 +36475,15 @@ Transform.prototype.coveringTiles = function coveringTiles(options) {
     if (options.maxzoom !== undefined && z > options.maxzoom) {
         z = options.maxzoom;
     }
-    var centerCoord = symbol_layout.MercatorCoordinate.fromLngLat(this.center);
+    var centerCoord = __chunk_1.MercatorCoordinate.fromLngLat(this.center);
     var numTiles = Math.pow(2, z);
-    var centerPoint = new symbol_layout.pointGeometry(numTiles * centerCoord.x - 0.5, numTiles * centerCoord.y - 0.5);
+    var centerPoint = new __chunk_1.Point(numTiles * centerCoord.x - 0.5, numTiles * centerCoord.y - 0.5);
     var offset = options.tileSize ? options.tileSize : 0;
     var cornerCoords = [
-        this.pointCoordinate(new symbol_layout.pointGeometry(0, 0), true),
-        this.pointCoordinate(new symbol_layout.pointGeometry(this.width, 0), true),
-        this.pointCoordinate(new symbol_layout.pointGeometry(this.width, this.height + offset * 2), true),
-        this.pointCoordinate(new symbol_layout.pointGeometry(0, this.height + offset * 2), true)
+        this.pointCoordinate(new __chunk_1.Point(0, 0), true),
+        this.pointCoordinate(new __chunk_1.Point(this.width, 0), true),
+        this.pointCoordinate(new __chunk_1.Point(this.width, this.height + offset * 2), true),
+        this.pointCoordinate(new __chunk_1.Point(0, this.height + offset * 2), true)
     ];
     return tileCover(z, cornerCoords, options.reparseOverscaled ? actualZ : z, this._renderWorldCopies).sort(function (a, b) {
         return centerPoint.dist(a.canonical) - centerPoint.dist(b.canonical);
@@ -36372,11 +36509,11 @@ Transform.prototype.scaleZoom = function scaleZoom(scale) {
     return Math.log(scale) / Math.LN2;
 };
 Transform.prototype.project = function project(lnglat) {
-    var lat = symbol_layout.clamp(lnglat.lat, -this.maxValidLatitude, this.maxValidLatitude);
-    return new symbol_layout.pointGeometry(symbol_layout.mercatorXfromLng(lnglat.lng) * this.worldSize, symbol_layout.mercatorYfromLat(lat) * this.worldSize);
+    var lat = __chunk_1.clamp(lnglat.lat, -this.maxValidLatitude, this.maxValidLatitude);
+    return new __chunk_1.Point(__chunk_1.mercatorXfromLng(lnglat.lng) * this.worldSize, __chunk_1.mercatorYfromLat(lat) * this.worldSize);
 };
 Transform.prototype.unproject = function unproject(point) {
-    return new symbol_layout.MercatorCoordinate(point.x / this.worldSize, point.y / this.worldSize).toLngLat();
+    return new __chunk_1.MercatorCoordinate(point.x / this.worldSize, point.y / this.worldSize).toLngLat();
 };
 prototypeAccessors.point.get = function () {
     return this.project(this.center);
@@ -36385,7 +36522,7 @@ Transform.prototype.setLocationAtPoint = function setLocationAtPoint(lnglat, poi
     var a = this.pointCoordinate(point);
     var b = this.pointCoordinate(this.centerPoint);
     var loc = this.locationCoordinate(lnglat);
-    var newCenter = new symbol_layout.MercatorCoordinate(loc.x - (a.x - b.x), loc.y - (a.y - b.y));
+    var newCenter = new __chunk_1.MercatorCoordinate(loc.x - (a.x - b.x), loc.y - (a.y - b.y));
     this.center = this.coordinateLocation(newCenter);
     if (this._renderWorldCopies) {
         this.center = this.center.wrap();
@@ -36398,7 +36535,7 @@ Transform.prototype.pointLocation = function pointLocation(p) {
     return this.coordinateLocation(this.pointCoordinate(p));
 };
 Transform.prototype.locationCoordinate = function locationCoordinate(lnglat) {
-    return symbol_layout.MercatorCoordinate.fromLngLat(lnglat);
+    return __chunk_1.MercatorCoordinate.fromLngLat(lnglat);
 };
 Transform.prototype.coordinateLocation = function coordinateLocation(coord) {
     return coord.toLngLat();
@@ -36420,11 +36557,11 @@ Transform.prototype.pointCoordinate = function pointCoordinate(p, asTile) {
         1
     ];
     if (asTile) {
-        symbol_layout.transformMat4(coord0, coord0, this.pixelPointMatrixInverse);
-        symbol_layout.transformMat4(coord1, coord1, this.pixelPointMatrixInverse);
+        __chunk_1.transformMat4(coord0, coord0, this.pixelPointMatrixInverse);
+        __chunk_1.transformMat4(coord1, coord1, this.pixelPointMatrixInverse);
     } else {
-        symbol_layout.transformMat4(coord0, coord0, this.pixelMatrixInverse);
-        symbol_layout.transformMat4(coord1, coord1, this.pixelMatrixInverse);
+        __chunk_1.transformMat4(coord0, coord0, this.pixelMatrixInverse);
+        __chunk_1.transformMat4(coord1, coord1, this.pixelMatrixInverse);
     }
     var w0 = coord0[3];
     var w1 = coord1[3];
@@ -36435,7 +36572,7 @@ Transform.prototype.pointCoordinate = function pointCoordinate(p, asTile) {
     var z0 = coord0[2] / w0;
     var z1 = coord1[2] / w1;
     var t = z0 === z1 ? 0 : (targetZ - z0) / (z1 - z0);
-    return new symbol_layout.MercatorCoordinate(symbol_layout.number(x0, x1, t) / this.worldSize, symbol_layout.number(y0, y1, t) / this.worldSize);
+    return new __chunk_1.MercatorCoordinate(__chunk_1.number(x0, x1, t) / this.worldSize, __chunk_1.number(y0, y1, t) / this.worldSize);
 };
 Transform.prototype.coordinatePoint = function coordinatePoint(coord) {
     var p = [
@@ -36444,17 +36581,17 @@ Transform.prototype.coordinatePoint = function coordinatePoint(coord) {
         0,
         1
     ];
-    symbol_layout.transformMat4(p, p, this.pixelMatrix);
-    return new symbol_layout.pointGeometry(p[0] / p[3], p[1] / p[3]);
+    __chunk_1.transformMat4(p, p, this.pixelMatrix);
+    return new __chunk_1.Point(p[0] / p[3], p[1] / p[3]);
 };
 Transform.prototype.getBounds = function getBounds() {
-    return new symbol_layout.LngLatBounds().extend(this.pointLocation(new symbol_layout.pointGeometry(0, 0))).extend(this.pointLocation(new symbol_layout.pointGeometry(this.width, 0))).extend(this.pointLocation(new symbol_layout.pointGeometry(this.width, this.height))).extend(this.pointLocation(new symbol_layout.pointGeometry(0, this.height)));
+    return new __chunk_1.LngLatBounds().extend(this.pointLocation(new __chunk_1.Point(0, 0))).extend(this.pointLocation(new __chunk_1.Point(this.width, 0))).extend(this.pointLocation(new __chunk_1.Point(this.width, this.height))).extend(this.pointLocation(new __chunk_1.Point(0, this.height)));
 };
 Transform.prototype.getMaxBounds = function getMaxBounds() {
     if (!this.latRange || this.latRange.length !== 2 || !this.lngRange || this.lngRange.length !== 2) {
         return null;
     }
-    return new symbol_layout.LngLatBounds([
+    return new __chunk_1.LngLatBounds([
         this.lngRange[0],
         this.latRange[0]
     ], [
@@ -36490,21 +36627,21 @@ Transform.prototype.calculatePosMatrix = function calculatePosMatrix(unwrappedTi
         return cache[posMatrixKey];
     }
     var canonical = unwrappedTileID.canonical;
-    var scale$1 = this.worldSize / this.zoomScale(canonical.z);
-    var norm = scale$1 / symbol_layout.EXTENT;
+    var scale = this.worldSize / this.zoomScale(canonical.z);
+    var norm = scale / __chunk_1.EXTENT;
     var unwrappedX = canonical.x + Math.pow(2, canonical.z) * unwrappedTileID.wrap;
-    var posMatrix = identity(new Float64Array(16));
-    translate(posMatrix, posMatrix, [
-        unwrappedX * scale$1,
-        canonical.y * scale$1,
+    var posMatrix = __chunk_1.identity(new Float64Array(16));
+    __chunk_1.translate(posMatrix, posMatrix, [
+        unwrappedX * scale,
+        canonical.y * scale,
         0
     ]);
-    scale(posMatrix, posMatrix, [
+    __chunk_1.scale(posMatrix, posMatrix, [
         norm,
         norm,
         1
     ]);
-    multiply(posMatrix, aligned ? this.alignedProjMatrix : this.projMatrix, posMatrix);
+    __chunk_1.multiply(posMatrix, aligned ? this.alignedProjMatrix : this.projMatrix, posMatrix);
     cache[posMatrixKey] = new Float32Array(posMatrix);
     return cache[posMatrixKey];
 };
@@ -36524,20 +36661,20 @@ Transform.prototype._constrain = function _constrain() {
     var size = this.size, unmodified = this._unmodified;
     if (this.latRange) {
         var latRange = this.latRange;
-        minY = symbol_layout.mercatorYfromLat(latRange[1]) * this.worldSize;
-        maxY = symbol_layout.mercatorYfromLat(latRange[0]) * this.worldSize;
+        minY = __chunk_1.mercatorYfromLat(latRange[1]) * this.worldSize;
+        maxY = __chunk_1.mercatorYfromLat(latRange[0]) * this.worldSize;
         sy = maxY - minY < size.y ? size.y / (maxY - minY) : 0;
     }
     if (this.lngRange) {
         var lngRange = this.lngRange;
-        minX = symbol_layout.mercatorXfromLng(lngRange[0]) * this.worldSize;
-        maxX = symbol_layout.mercatorXfromLng(lngRange[1]) * this.worldSize;
+        minX = __chunk_1.mercatorXfromLng(lngRange[0]) * this.worldSize;
+        maxX = __chunk_1.mercatorXfromLng(lngRange[1]) * this.worldSize;
         sx = maxX - minX < size.x ? size.x / (maxX - minX) : 0;
     }
     var point = this.point;
     var s = Math.max(sx || 0, sy || 0);
     if (s) {
-        this.center = this.unproject(new symbol_layout.pointGeometry(sx ? (maxX + minX) / 2 : point.x, sy ? (maxY + minY) / 2 : point.y));
+        this.center = this.unproject(new __chunk_1.Point(sx ? (maxX + minX) / 2 : point.x, sy ? (maxY + minY) / 2 : point.y));
         this.zoom += this.scaleZoom(s);
         this._unmodified = unmodified;
         this._constraining = false;
@@ -36562,7 +36699,7 @@ Transform.prototype._constrain = function _constrain() {
         }
     }
     if (x2 !== undefined || y2 !== undefined) {
-        this.center = this.unproject(new symbol_layout.pointGeometry(x2 !== undefined ? x2 : point.x, y2 !== undefined ? y2 : point.y));
+        this.center = this.unproject(new __chunk_1.Point(x2 !== undefined ? x2 : point.x, y2 !== undefined ? y2 : point.y));
     }
     this._unmodified = unmodified;
     this._constraining = false;
@@ -36574,62 +36711,62 @@ Transform.prototype._calcMatrices = function _calcMatrices() {
     this.cameraToCenterDistance = 0.5 / Math.tan(this._fov / 2) * this.height;
     var halfFov = this._fov / 2;
     var groundAngle = Math.PI / 2 + this._pitch;
-    var topHalfSurfaceDistance = Math.sin(halfFov) * this.cameraToCenterDistance / Math.sin(symbol_layout.clamp(Math.PI - groundAngle - halfFov, 0.01, Math.PI - 0.01));
+    var topHalfSurfaceDistance = Math.sin(halfFov) * this.cameraToCenterDistance / Math.sin(__chunk_1.clamp(Math.PI - groundAngle - halfFov, 0.01, Math.PI - 0.01));
     var point = this.point;
     var x = point.x, y = point.y;
     var furthestDistance = Math.cos(Math.PI / 2 - this._pitch) * topHalfSurfaceDistance + this.cameraToCenterDistance;
     var farZ = furthestDistance * 1.01;
     var m = new Float64Array(16);
-    perspective(m, this._fov, this.width / this.height, 1, farZ);
-    scale(m, m, [
+    __chunk_1.perspective(m, this._fov, this.width / this.height, 1, farZ);
+    __chunk_1.scale(m, m, [
         1,
         -1,
         1
     ]);
-    translate(m, m, [
+    __chunk_1.translate(m, m, [
         0,
         0,
         -this.cameraToCenterDistance
     ]);
-    rotateX(m, m, this._pitch);
-    rotateZ(m, m, this.angle);
-    translate(m, m, [
+    __chunk_1.rotateX(m, m, this._pitch);
+    __chunk_1.rotateZ(m, m, this.angle);
+    __chunk_1.translate(m, m, [
         -x,
         -y,
         0
     ]);
     var m2 = new Float64Array(16);
-    perspective(m2, this._fov, this.width / this.height, 1, farZ);
-    scale(m2, m2, [
+    __chunk_1.perspective(m2, this._fov, this.width / this.height, 1, farZ);
+    __chunk_1.scale(m2, m2, [
         1,
         -1,
         1
     ]);
-    translate(m2, m2, [
+    __chunk_1.translate(m2, m2, [
         0,
         0,
         -this.cameraToCenterDistance
     ]);
-    rotateX(m2, m2, symbol_layout.clamp(this.pitch, 0, this._maxPitch) * Math.PI / 180);
-    rotateZ(m2, m2, this.angle);
-    translate(m2, m2, [
+    __chunk_1.rotateX(m2, m2, __chunk_1.clamp(this.pitch, 0, this._maxPitch) * Math.PI / 180);
+    __chunk_1.rotateZ(m2, m2, this.angle);
+    __chunk_1.translate(m2, m2, [
         -x,
         -y,
         0
     ]);
-    this.mercatorMatrix = scale([], m, [
+    this.mercatorMatrix = __chunk_1.scale([], m, [
         this.worldSize,
         this.worldSize,
         this.worldSize
     ]);
-    var verticalScale = symbol_layout.mercatorZfromAltitude(1, this.center.lat) * this.worldSize;
-    scale(m, m, [
+    var verticalScale = __chunk_1.mercatorZfromAltitude(1, this.center.lat) * this.worldSize;
+    __chunk_1.scale(m, m, [
         1,
         1,
         verticalScale,
         1
     ]);
-    scale(m2, m2, [
+    __chunk_1.scale(m2, m2, [
         1,
         1,
         verticalScale,
@@ -36638,48 +36775,48 @@ Transform.prototype._calcMatrices = function _calcMatrices() {
     this.projMatrix = m;
     var xShift = this.width % 2 / 2, yShift = this.height % 2 / 2, angleCos = Math.cos(this.angle), angleSin = Math.sin(this.angle), dx = x - Math.round(x) + angleCos * xShift + angleSin * yShift, dy = y - Math.round(y) + angleCos * yShift + angleSin * xShift;
     var alignedM = new Float64Array(m);
-    translate(alignedM, alignedM, [
+    __chunk_1.translate(alignedM, alignedM, [
         dx > 0.5 ? dx - 1 : dx,
         dy > 0.5 ? dy - 1 : dy,
         0
     ]);
     this.alignedProjMatrix = alignedM;
-    m = create$2();
-    scale(m, m, [
+    m = __chunk_1.create();
+    __chunk_1.scale(m, m, [
         this.width / 2,
         -this.height / 2,
         1
     ]);
-    translate(m, m, [
+    __chunk_1.translate(m, m, [
         1,
         -1,
         0
     ]);
     this.labelPlaneMatrix = m;
-    m = create$2();
-    scale(m, m, [
+    m = __chunk_1.create();
+    __chunk_1.scale(m, m, [
         1,
         -1,
         1
     ]);
-    translate(m, m, [
+    __chunk_1.translate(m, m, [
         -1,
         -1,
         0
     ]);
-    scale(m, m, [
+    __chunk_1.scale(m, m, [
         2 / this.width,
         2 / this.height,
         1
     ]);
     this.glCoordMatrix = m;
-    this.pixelMatrix = multiply(new Float64Array(16), this.labelPlaneMatrix, this.projMatrix);
-    m = invert(new Float64Array(16), this.pixelMatrix);
+    this.pixelMatrix = __chunk_1.multiply(new Float64Array(16), this.labelPlaneMatrix, this.projMatrix);
+    m = __chunk_1.invert(new Float64Array(16), this.pixelMatrix);
     if (!m) {
         throw new Error('failed to invert matrix');
     }
     this.pixelMatrixInverse = m;
-    m = invert(new Float64Array(16), multiply(new Float64Array(16), this.labelPlaneMatrix, m2));
+    m = __chunk_1.invert(new Float64Array(16), __chunk_1.multiply(new Float64Array(16), this.labelPlaneMatrix, m2));
     if (!m) {
         throw new Error('failed to invert matrix');
     }
@@ -36691,20 +36828,20 @@ Transform.prototype.maxPitchScaleFactor = function maxPitchScaleFactor() {
     if (!this.pixelMatrixInverse) {
         return 1;
     }
-    var coord = this.pointCoordinate(new symbol_layout.pointGeometry(0, 0));
+    var coord = this.pointCoordinate(new __chunk_1.Point(0, 0));
     var p = [
         coord.x * this.worldSize,
         coord.y * this.worldSize,
         0,
         1
     ];
-    var topPoint = symbol_layout.transformMat4(p, p, this.pixelMatrix);
+    var topPoint = __chunk_1.transformMat4(p, p, this.pixelMatrix);
     return topPoint[3] / this.cameraToCenterDistance;
 };
 Transform.prototype.getCameraPoint = function getCameraPoint() {
     var pitch = this._pitch;
     var yOffset = Math.tan(pitch) * (this.cameraToCenterDistance || 1);
-    return this.centerPoint.add(new symbol_layout.pointGeometry(0, yOffset));
+    return this.centerPoint.add(new __chunk_1.Point(0, yOffset));
 };
 Transform.prototype.getCameraQueryGeometry = function getCameraQueryGeometry(queryGeometry) {
     var c = this.getCameraPoint();
@@ -36726,11 +36863,11 @@ Transform.prototype.getCameraQueryGeometry = function getCameraQueryGeometry(que
             maxY = Math.max(maxY, p.y);
         }
         return [
-            new symbol_layout.pointGeometry(minX, minY),
-            new symbol_layout.pointGeometry(maxX, minY),
-            new symbol_layout.pointGeometry(maxX, maxY),
-            new symbol_layout.pointGeometry(minX, maxY),
-            new symbol_layout.pointGeometry(minX, minY)
+            new __chunk_1.Point(minX, minY),
+            new __chunk_1.Point(maxX, minY),
+            new __chunk_1.Point(maxX, maxY),
+            new __chunk_1.Point(minX, maxY),
+            new __chunk_1.Point(minX, minY)
         ];
     }
 };
@@ -36757,7 +36894,7 @@ function throttle(fn, time) {
 }
 
 var Hash = function Hash() {
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_onHashChange',
         '_updateHash'
     ], this);
@@ -36765,12 +36902,12 @@ var Hash = function Hash() {
 };
 Hash.prototype.addTo = function addTo(map) {
     this._map = map;
-    symbol_layout.window.addEventListener('hashchange', this._onHashChange, false);
+    __chunk_1.window.addEventListener('hashchange', this._onHashChange, false);
     this._map.on('moveend', this._updateHash);
     return this;
 };
 Hash.prototype.remove = function remove() {
-    symbol_layout.window.removeEventListener('hashchange', this._onHashChange, false);
+    __chunk_1.window.removeEventListener('hashchange', this._onHashChange, false);
     this._map.off('moveend', this._updateHash);
     clearTimeout(this._updateHash());
     delete this._map;
@@ -36793,7 +36930,7 @@ Hash.prototype.getHashString = function getHashString(mapFeedback) {
     return hash;
 };
 Hash.prototype._onHashChange = function _onHashChange() {
-    var loc = symbol_layout.window.location.hash.replace('#', '').split('/');
+    var loc = __chunk_1.window.location.hash.replace('#', '').split('/');
     if (loc.length >= 3) {
         this._map.jumpTo({
             center: [
@@ -36811,7 +36948,7 @@ Hash.prototype._onHashChange = function _onHashChange() {
 Hash.prototype._updateHashUnthrottled = function _updateHashUnthrottled() {
     var hash = this.getHashString();
     try {
-        symbol_layout.window.history.replaceState(symbol_layout.window.history.state, '', hash);
+        __chunk_1.window.history.replaceState(__chunk_1.window.history.state, '', hash);
     } catch (SecurityError) {
     }
 };
@@ -36822,7 +36959,7 @@ var MapMouseEvent = function (Event) {
             data = {};
         var point = DOM.mousePos(map.getCanvasContainer(), originalEvent);
         var lngLat = map.unproject(point);
-        Event.call(this, type, symbol_layout.extend({
+        Event.call(this, type, __chunk_1.extend({
             point: point,
             lngLat: lngLat,
             originalEvent: originalEvent
@@ -36843,7 +36980,7 @@ var MapMouseEvent = function (Event) {
     };
     Object.defineProperties(MapMouseEvent.prototype, prototypeAccessors);
     return MapMouseEvent;
-}(symbol_layout.Event);
+}(__chunk_1.Event);
 var MapTouchEvent = function (Event) {
     function MapTouchEvent(type, map, originalEvent) {
         var points = DOM.touchPos(map.getCanvasContainer(), originalEvent);
@@ -36852,7 +36989,7 @@ var MapTouchEvent = function (Event) {
         });
         var point = points.reduce(function (prev, curr, i, arr) {
             return prev.add(curr.div(arr.length));
-        }, new symbol_layout.pointGeometry(0, 0));
+        }, new __chunk_1.Point(0, 0));
         var lngLat = map.unproject(point);
         Event.call(this, type, {
             points: points,
@@ -36876,7 +37013,7 @@ var MapTouchEvent = function (Event) {
     };
     Object.defineProperties(MapTouchEvent.prototype, prototypeAccessors$1);
     return MapTouchEvent;
-}(symbol_layout.Event);
+}(__chunk_1.Event);
 var MapWheelEvent = function (Event) {
     function MapWheelEvent(type, map, originalEvent) {
         Event.call(this, type, { originalEvent: originalEvent });
@@ -36895,7 +37032,7 @@ var MapWheelEvent = function (Event) {
     };
     Object.defineProperties(MapWheelEvent.prototype, prototypeAccessors$2);
     return MapWheelEvent;
-}(symbol_layout.Event);
+}(__chunk_1.Event);
 
 var wheelZoomDelta = 4.000244140625;
 var defaultZoomRate = 1 / 100;
@@ -36905,7 +37042,7 @@ var ScrollZoomHandler = function ScrollZoomHandler(map) {
     this._map = map;
     this._el = map.getCanvasContainer();
     this._delta = 0;
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_onWheel',
         '_onTimeout',
         '_onScrollFrame',
@@ -36938,8 +37075,8 @@ ScrollZoomHandler.prototype.onWheel = function onWheel(e) {
     if (!this.isEnabled()) {
         return;
     }
-    var value = e.deltaMode === symbol_layout.window.WheelEvent.DOM_DELTA_LINE ? e.deltaY * 40 : e.deltaY;
-    var now = symbol_layout.exported.now(), timeDelta = now - (this._lastWheelEventTime || 0);
+    var value = e.deltaMode === __chunk_1.window.WheelEvent.DOM_DELTA_LINE ? e.deltaY * 40 : e.deltaY;
+    var now = __chunk_1.browser.now(), timeDelta = now - (this._lastWheelEventTime || 0);
     this._lastWheelEventTime = now;
     if (value !== 0 && value % wheelZoomDelta === 0) {
         this._type = 'wheel';
@@ -36986,13 +37123,13 @@ ScrollZoomHandler.prototype._start = function _start(e) {
     }
     this._active = true;
     this._zooming = true;
-    this._map.fire(new symbol_layout.Event('movestart', { originalEvent: e }));
-    this._map.fire(new symbol_layout.Event('zoomstart', { originalEvent: e }));
+    this._map.fire(new __chunk_1.Event('movestart', { originalEvent: e }));
+    this._map.fire(new __chunk_1.Event('zoomstart', { originalEvent: e }));
     if (this._finishTimeout) {
         clearTimeout(this._finishTimeout);
     }
     var pos = DOM.mousePos(this._el, e);
-    this._around = symbol_layout.LngLat.convert(this._aroundCenter ? this._map.getCenter() : this._map.unproject(pos));
+    this._around = __chunk_1.LngLat.convert(this._aroundCenter ? this._map.getCenter() : this._map.unproject(pos));
     this._aroundPoint = this._map.transform.locationPoint(this._around);
     if (!this._frameId) {
         this._frameId = this._map._requestRenderFrame(this._onScrollFrame);
@@ -37024,9 +37161,9 @@ ScrollZoomHandler.prototype._onScrollFrame = function _onScrollFrame() {
     var easing = this._easing;
     var finished = false;
     if (this._type === 'wheel' && startZoom && easing) {
-        var t = Math.min((symbol_layout.exported.now() - this._lastWheelEventTime) / 200, 1);
+        var t = Math.min((__chunk_1.browser.now() - this._lastWheelEventTime) / 200, 1);
         var k = easing(t);
-        tr.zoom = symbol_layout.number(startZoom, targetZoom, k);
+        tr.zoom = __chunk_1.number(startZoom, targetZoom, k);
         if (t < 1) {
             if (!this._frameId) {
                 this._frameId = this._map._requestRenderFrame(this._onScrollFrame);
@@ -37039,26 +37176,26 @@ ScrollZoomHandler.prototype._onScrollFrame = function _onScrollFrame() {
         finished = true;
     }
     tr.setLocationAtPoint(this._around, this._aroundPoint);
-    this._map.fire(new symbol_layout.Event('move', { originalEvent: this._lastWheelEvent }));
-    this._map.fire(new symbol_layout.Event('zoom', { originalEvent: this._lastWheelEvent }));
+    this._map.fire(new __chunk_1.Event('move', { originalEvent: this._lastWheelEvent }));
+    this._map.fire(new __chunk_1.Event('zoom', { originalEvent: this._lastWheelEvent }));
     if (finished) {
         this._active = false;
         this._finishTimeout = setTimeout(function () {
             this$1._zooming = false;
-            this$1._map.fire(new symbol_layout.Event('zoomend', { originalEvent: this$1._lastWheelEvent }));
-            this$1._map.fire(new symbol_layout.Event('moveend', { originalEvent: this$1._lastWheelEvent }));
+            this$1._map.fire(new __chunk_1.Event('zoomend', { originalEvent: this$1._lastWheelEvent }));
+            this$1._map.fire(new __chunk_1.Event('moveend', { originalEvent: this$1._lastWheelEvent }));
             delete this$1._targetZoom;
         }, 200);
     }
 };
 ScrollZoomHandler.prototype._smoothOutEasing = function _smoothOutEasing(duration) {
-    var easing = symbol_layout.ease;
+    var easing = __chunk_1.ease;
     if (this._prevEase) {
-        var ease = this._prevEase, t = (symbol_layout.exported.now() - ease.start) / ease.duration, speed = ease.easing(t + 0.01) - ease.easing(t), x = 0.27 / Math.sqrt(speed * speed + 0.0001) * 0.01, y = Math.sqrt(0.27 * 0.27 - x * x);
-        easing = symbol_layout.bezier(x, y, 0.25, 1);
+        var ease = this._prevEase, t = (__chunk_1.browser.now() - ease.start) / ease.duration, speed = ease.easing(t + 0.01) - ease.easing(t), x = 0.27 / Math.sqrt(speed * speed + 0.0001) * 0.01, y = Math.sqrt(0.27 * 0.27 - x * x);
+        easing = __chunk_1.bezier(x, y, 0.25, 1);
     }
     this._prevEase = {
-        start: symbol_layout.exported.now(),
+        start: __chunk_1.browser.now(),
         duration: duration,
         easing: easing
     };
@@ -37070,7 +37207,7 @@ var BoxZoomHandler = function BoxZoomHandler(map, options) {
     this._el = map.getCanvasContainer();
     this._container = map.getContainer();
     this._clickTolerance = options.clickTolerance || 1;
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_onMouseMove',
         '_onMouseUp',
         '_onKeyDown'
@@ -37101,9 +37238,9 @@ BoxZoomHandler.prototype.onMouseDown = function onMouseDown(e) {
     if (!(e.shiftKey && e.button === 0)) {
         return;
     }
-    symbol_layout.window.document.addEventListener('mousemove', this._onMouseMove, false);
-    symbol_layout.window.document.addEventListener('keydown', this._onKeyDown, false);
-    symbol_layout.window.document.addEventListener('mouseup', this._onMouseUp, false);
+    __chunk_1.window.document.addEventListener('mousemove', this._onMouseMove, false);
+    __chunk_1.window.document.addEventListener('keydown', this._onKeyDown, false);
+    __chunk_1.window.document.addEventListener('mouseup', this._onMouseUp, false);
     DOM.disableDrag();
     this._startPos = this._lastPos = DOM.mousePos(this._el, e);
     this._active = true;
@@ -37135,7 +37272,7 @@ BoxZoomHandler.prototype._onMouseUp = function _onMouseUp(e) {
     if (p0.x === p1.x && p0.y === p1.y) {
         this._fireEvent('boxzoomcancel', e);
     } else {
-        this._map.fitScreenCoordinates(p0, p1, this._map.getBearing(), { linear: true }).fire(new symbol_layout.Event('boxzoomend', { originalEvent: e }));
+        this._map.fitScreenCoordinates(p0, p1, this._map.getBearing(), { linear: true }).fire(new __chunk_1.Event('boxzoomend', { originalEvent: e }));
     }
 };
 BoxZoomHandler.prototype._onKeyDown = function _onKeyDown(e) {
@@ -37146,9 +37283,9 @@ BoxZoomHandler.prototype._onKeyDown = function _onKeyDown(e) {
 };
 BoxZoomHandler.prototype._finish = function _finish() {
     this._active = false;
-    symbol_layout.window.document.removeEventListener('mousemove', this._onMouseMove, false);
-    symbol_layout.window.document.removeEventListener('keydown', this._onKeyDown, false);
-    symbol_layout.window.document.removeEventListener('mouseup', this._onMouseUp, false);
+    __chunk_1.window.document.removeEventListener('mousemove', this._onMouseMove, false);
+    __chunk_1.window.document.removeEventListener('keydown', this._onKeyDown, false);
+    __chunk_1.window.document.removeEventListener('mouseup', this._onMouseUp, false);
     this._container.classList.remove('mapboxgl-crosshair');
     if (this._box) {
         DOM.remove(this._box);
@@ -37159,10 +37296,10 @@ BoxZoomHandler.prototype._finish = function _finish() {
     delete this._lastPos;
 };
 BoxZoomHandler.prototype._fireEvent = function _fireEvent(type, e) {
-    return this._map.fire(new symbol_layout.Event(type, { originalEvent: e }));
+    return this._map.fire(new __chunk_1.Event(type, { originalEvent: e }));
 };
 
-var inertiaLinearity = 0.25, inertiaEasing = symbol_layout.bezier(0, 0, inertiaLinearity, 1), inertiaMaxSpeed = 180, inertiaDeceleration = 720;
+var inertiaLinearity = 0.25, inertiaEasing = __chunk_1.bezier(0, 0, inertiaLinearity, 1), inertiaMaxSpeed = 180, inertiaDeceleration = 720;
 var DragRotateHandler = function DragRotateHandler(map, options) {
     this._map = map;
     this._el = options.element || map.getCanvasContainer();
@@ -37170,7 +37307,7 @@ var DragRotateHandler = function DragRotateHandler(map, options) {
     this._button = options.button || 'right';
     this._bearingSnap = options.bearingSnap || 0;
     this._pitchWithRotate = options.pitchWithRotate !== false;
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         'onMouseDown',
         '_onMouseMove',
         '_onMouseUp',
@@ -37230,12 +37367,12 @@ DragRotateHandler.prototype.onMouseDown = function onMouseDown(e) {
         this._eventButton = 0;
     }
     DOM.disableDrag();
-    symbol_layout.window.document.addEventListener('mousemove', this._onMouseMove, { capture: true });
-    symbol_layout.window.document.addEventListener('mouseup', this._onMouseUp);
-    symbol_layout.window.addEventListener('blur', this._onBlur);
+    __chunk_1.window.document.addEventListener('mousemove', this._onMouseMove, { capture: true });
+    __chunk_1.window.document.addEventListener('mouseup', this._onMouseUp);
+    __chunk_1.window.addEventListener('blur', this._onBlur);
     this._state = 'pending';
     this._inertia = [[
-            symbol_layout.exported.now(),
+            __chunk_1.browser.now(),
             this._map.getBearing()
         ]];
     this._startPos = this._lastPos = DOM.mousePos(this._el, e);
@@ -37271,7 +37408,7 @@ DragRotateHandler.prototype._onDragFrame = function _onDragFrame() {
     var p1 = this._startPos, p2 = this._lastPos, bearingDiff = (p1.x - p2.x) * 0.8, pitchDiff = (p1.y - p2.y) * -0.5, bearing = tr.bearing - bearingDiff, pitch = tr.pitch - pitchDiff, inertia = this._inertia, last = inertia[inertia.length - 1];
     this._drainInertiaBuffer();
     inertia.push([
-        symbol_layout.exported.now(),
+        __chunk_1.browser.now(),
         this._map._normalizeBearing(bearing, last[1])
     ]);
     tr.bearing = bearing;
@@ -37300,6 +37437,8 @@ DragRotateHandler.prototype._onMouseUp = function _onMouseUp(e) {
         this._state = 'enabled';
         this._unbind();
         break;
+    default:
+        break;
     }
 };
 DragRotateHandler.prototype._onBlur = function _onBlur(e) {
@@ -37318,12 +37457,14 @@ DragRotateHandler.prototype._onBlur = function _onBlur(e) {
         this._state = 'enabled';
         this._unbind();
         break;
+    default:
+        break;
     }
 };
 DragRotateHandler.prototype._unbind = function _unbind() {
-    symbol_layout.window.document.removeEventListener('mousemove', this._onMouseMove, { capture: true });
-    symbol_layout.window.document.removeEventListener('mouseup', this._onMouseUp);
-    symbol_layout.window.removeEventListener('blur', this._onBlur);
+    __chunk_1.window.document.removeEventListener('mousemove', this._onMouseMove, { capture: true });
+    __chunk_1.window.document.removeEventListener('mouseup', this._onMouseUp);
+    __chunk_1.window.removeEventListener('blur', this._onBlur);
     DOM.enableDrag();
 };
 DragRotateHandler.prototype._deactivate = function _deactivate() {
@@ -37377,22 +37518,22 @@ DragRotateHandler.prototype._inertialRotate = function _inertialRotate(e) {
     }, { originalEvent: e });
 };
 DragRotateHandler.prototype._fireEvent = function _fireEvent(type, e) {
-    return this._map.fire(new symbol_layout.Event(type, e ? { originalEvent: e } : {}));
+    return this._map.fire(new __chunk_1.Event(type, e ? { originalEvent: e } : {}));
 };
 DragRotateHandler.prototype._drainInertiaBuffer = function _drainInertiaBuffer() {
-    var inertia = this._inertia, now = symbol_layout.exported.now(), cutoff = 160;
+    var inertia = this._inertia, now = __chunk_1.browser.now(), cutoff = 160;
     while (inertia.length > 0 && now - inertia[0][0] > cutoff) {
         inertia.shift();
     }
 };
 
-var inertiaLinearity$1 = 0.3, inertiaEasing$1 = symbol_layout.bezier(0, 0, inertiaLinearity$1, 1), inertiaMaxSpeed$1 = 1400, inertiaDeceleration$1 = 2500;
+var inertiaLinearity$1 = 0.3, inertiaEasing$1 = __chunk_1.bezier(0, 0, inertiaLinearity$1, 1), inertiaMaxSpeed$1 = 1400, inertiaDeceleration$1 = 2500;
 var DragPanHandler = function DragPanHandler(map, options) {
     this._map = map;
     this._el = map.getCanvasContainer();
     this._state = 'disabled';
     this._clickTolerance = options.clickTolerance || 1;
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_onMove',
         '_onMouseUp',
         '_onTouchEnd',
@@ -37442,8 +37583,8 @@ DragPanHandler.prototype.onMouseDown = function onMouseDown(e) {
     if (e.ctrlKey || DOM.mouseButton(e) !== 0) {
         return;
     }
-    DOM.addEventListener(symbol_layout.window.document, 'mousemove', this._onMove, { capture: true });
-    DOM.addEventListener(symbol_layout.window.document, 'mouseup', this._onMouseUp);
+    DOM.addEventListener(__chunk_1.window.document, 'mousemove', this._onMove, { capture: true });
+    DOM.addEventListener(__chunk_1.window.document, 'mouseup', this._onMouseUp);
     this._start(e);
 };
 DragPanHandler.prototype.onTouchStart = function onTouchStart(e) {
@@ -37453,19 +37594,19 @@ DragPanHandler.prototype.onTouchStart = function onTouchStart(e) {
     if (e.touches.length > 1) {
         return;
     }
-    DOM.addEventListener(symbol_layout.window.document, 'touchmove', this._onMove, {
+    DOM.addEventListener(__chunk_1.window.document, 'touchmove', this._onMove, {
         capture: true,
         passive: false
     });
-    DOM.addEventListener(symbol_layout.window.document, 'touchend', this._onTouchEnd);
+    DOM.addEventListener(__chunk_1.window.document, 'touchend', this._onTouchEnd);
     this._start(e);
 };
 DragPanHandler.prototype._start = function _start(e) {
-    symbol_layout.window.addEventListener('blur', this._onBlur);
+    __chunk_1.window.addEventListener('blur', this._onBlur);
     this._state = 'pending';
     this._startPos = this._mouseDownPos = this._lastPos = DOM.mousePos(this._el, e);
     this._inertia = [[
-            symbol_layout.exported.now(),
+            __chunk_1.browser.now(),
             this._startPos
         ]];
 };
@@ -37479,7 +37620,7 @@ DragPanHandler.prototype._onMove = function _onMove(e) {
     this._lastPos = pos;
     this._drainInertiaBuffer();
     this._inertia.push([
-        symbol_layout.exported.now(),
+        __chunk_1.browser.now(),
         this._lastPos
     ]);
     if (this._state === 'pending') {
@@ -37520,6 +37661,8 @@ DragPanHandler.prototype._onMouseUp = function _onMouseUp(e) {
         this._state = 'enabled';
         this._unbind();
         break;
+    default:
+        break;
     }
 };
 DragPanHandler.prototype._onTouchEnd = function _onTouchEnd(e) {
@@ -37533,6 +37676,8 @@ DragPanHandler.prototype._onTouchEnd = function _onTouchEnd(e) {
     case 'pending':
         this._state = 'enabled';
         this._unbind();
+        break;
+    default:
         break;
     }
 };
@@ -37549,17 +37694,19 @@ DragPanHandler.prototype._onBlur = function _onBlur(e) {
         this._state = 'enabled';
         this._unbind();
         break;
+    default:
+        break;
     }
 };
 DragPanHandler.prototype._unbind = function _unbind() {
-    DOM.removeEventListener(symbol_layout.window.document, 'touchmove', this._onMove, {
+    DOM.removeEventListener(__chunk_1.window.document, 'touchmove', this._onMove, {
         capture: true,
         passive: false
     });
-    DOM.removeEventListener(symbol_layout.window.document, 'touchend', this._onTouchEnd);
-    DOM.removeEventListener(symbol_layout.window.document, 'mousemove', this._onMove, { capture: true });
-    DOM.removeEventListener(symbol_layout.window.document, 'mouseup', this._onMouseUp);
-    DOM.removeEventListener(symbol_layout.window, 'blur', this._onBlur);
+    DOM.removeEventListener(__chunk_1.window.document, 'touchend', this._onTouchEnd);
+    DOM.removeEventListener(__chunk_1.window.document, 'mousemove', this._onMove, { capture: true });
+    DOM.removeEventListener(__chunk_1.window.document, 'mouseup', this._onMouseUp);
+    DOM.removeEventListener(__chunk_1.window, 'blur', this._onBlur);
 };
 DragPanHandler.prototype._deactivate = function _deactivate() {
     if (this._frameId) {
@@ -37598,10 +37745,10 @@ DragPanHandler.prototype._inertialPan = function _inertialPan(e) {
     }, { originalEvent: e });
 };
 DragPanHandler.prototype._fireEvent = function _fireEvent(type, e) {
-    return this._map.fire(new symbol_layout.Event(type, e ? { originalEvent: e } : {}));
+    return this._map.fire(new __chunk_1.Event(type, e ? { originalEvent: e } : {}));
 };
 DragPanHandler.prototype._drainInertiaBuffer = function _drainInertiaBuffer() {
-    var inertia = this._inertia, now = symbol_layout.exported.now(), cutoff = 160;
+    var inertia = this._inertia, now = __chunk_1.browser.now(), cutoff = 160;
     while (inertia.length > 0 && now - inertia[0][0] > cutoff) {
         inertia.shift();
     }
@@ -37611,7 +37758,7 @@ var panStep = 100, bearingStep = 15, pitchStep = 10;
 var KeyboardHandler = function KeyboardHandler(map) {
     this._map = map;
     this._el = map.getCanvasContainer();
-    symbol_layout.bindAll(['_onKeyDown'], this);
+    __chunk_1.bindAll(['_onKeyDown'], this);
 };
 KeyboardHandler.prototype.isEnabled = function isEnabled() {
     return !!this._enabled;
@@ -37709,7 +37856,7 @@ function easeOut(t) {
 
 var DoubleClickZoomHandler = function DoubleClickZoomHandler(map) {
     this._map = map;
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_onDblClick',
         '_onZoomEnd'
     ], this);
@@ -37767,11 +37914,11 @@ DoubleClickZoomHandler.prototype._onZoomEnd = function _onZoomEnd() {
     this._map.off('zoomend', this._onZoomEnd);
 };
 
-var inertiaLinearity$2 = 0.15, inertiaEasing$2 = symbol_layout.bezier(0, 0, inertiaLinearity$2, 1), inertiaDeceleration$2 = 12, inertiaMaxSpeed$2 = 2.5, significantScaleThreshold = 0.15, significantRotateThreshold = 10;
+var inertiaLinearity$2 = 0.15, inertiaEasing$2 = __chunk_1.bezier(0, 0, inertiaLinearity$2, 1), inertiaDeceleration$2 = 12, inertiaMaxSpeed$2 = 2.5, significantScaleThreshold = 0.15, significantRotateThreshold = 10;
 var TouchZoomRotateHandler = function TouchZoomRotateHandler(map) {
     this._map = map;
     this._el = map.getCanvasContainer();
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_onMove',
         '_onEnd',
         '_onTouchFrame'
@@ -37813,8 +37960,8 @@ TouchZoomRotateHandler.prototype.onStart = function onStart(e) {
     this._startAround = this._map.transform.pointLocation(center);
     this._gestureIntent = undefined;
     this._inertia = [];
-    DOM.addEventListener(symbol_layout.window.document, 'touchmove', this._onMove, { passive: false });
-    DOM.addEventListener(symbol_layout.window.document, 'touchend', this._onEnd);
+    DOM.addEventListener(__chunk_1.window.document, 'touchmove', this._onMove, { passive: false });
+    DOM.addEventListener(__chunk_1.window.document, 'touchend', this._onEnd);
 };
 TouchZoomRotateHandler.prototype._getTouchEventData = function _getTouchEventData(e) {
     var p0 = DOM.mousePos(this._el, e.touches[0]), p1 = DOM.mousePos(this._el, e.touches[1]);
@@ -37842,8 +37989,8 @@ TouchZoomRotateHandler.prototype._onMove = function _onMove(e) {
             this._gestureIntent = 'zoom';
         }
         if (this._gestureIntent) {
-            this._map.fire(new symbol_layout.Event(this._gestureIntent + 'start', { originalEvent: e }));
-            this._map.fire(new symbol_layout.Event('movestart', { originalEvent: e }));
+            this._map.fire(new __chunk_1.Event(this._gestureIntent + 'start', { originalEvent: e }));
+            this._map.fire(new __chunk_1.Event('movestart', { originalEvent: e }));
             this._startVec = vec;
         }
     }
@@ -37875,18 +38022,18 @@ TouchZoomRotateHandler.prototype._onTouchFrame = function _onTouchFrame() {
     }
     tr.zoom = tr.scaleZoom(this._startScale * scale);
     tr.setLocationAtPoint(this._startAround, aroundPoint);
-    this._map.fire(new symbol_layout.Event(gestureIntent, { originalEvent: this._lastTouchEvent }));
-    this._map.fire(new symbol_layout.Event('move', { originalEvent: this._lastTouchEvent }));
+    this._map.fire(new __chunk_1.Event(gestureIntent, { originalEvent: this._lastTouchEvent }));
+    this._map.fire(new __chunk_1.Event('move', { originalEvent: this._lastTouchEvent }));
     this._drainInertiaBuffer();
     this._inertia.push([
-        symbol_layout.exported.now(),
+        __chunk_1.browser.now(),
         scale,
         center
     ]);
 };
 TouchZoomRotateHandler.prototype._onEnd = function _onEnd(e) {
-    DOM.removeEventListener(symbol_layout.window.document, 'touchmove', this._onMove, { passive: false });
-    DOM.removeEventListener(symbol_layout.window.document, 'touchend', this._onEnd);
+    DOM.removeEventListener(__chunk_1.window.document, 'touchmove', this._onMove, { passive: false });
+    DOM.removeEventListener(__chunk_1.window.document, 'touchend', this._onEnd);
     var gestureIntent = this._gestureIntent;
     var startScale = this._startScale;
     if (this._frameId) {
@@ -37900,7 +38047,7 @@ TouchZoomRotateHandler.prototype._onEnd = function _onEnd(e) {
     if (!gestureIntent) {
         return;
     }
-    this._map.fire(new symbol_layout.Event(gestureIntent + 'end', { originalEvent: e }));
+    this._map.fire(new __chunk_1.Event(gestureIntent + 'end', { originalEvent: e }));
     this._drainInertiaBuffer();
     var inertia = this._inertia, map = this._map;
     if (inertia.length < 2) {
@@ -37934,7 +38081,7 @@ TouchZoomRotateHandler.prototype._onEnd = function _onEnd(e) {
     }, { originalEvent: e });
 };
 TouchZoomRotateHandler.prototype._drainInertiaBuffer = function _drainInertiaBuffer() {
-    var inertia = this._inertia, now = symbol_layout.exported.now(), cutoff = 160;
+    var inertia = this._inertia, now = __chunk_1.browser.now(), cutoff = 160;
     while (inertia.length > 2 && now - inertia[0][0] > cutoff) {
         inertia.shift();
     }
@@ -38099,24 +38246,24 @@ var Camera = function (Evented) {
         this._zooming = false;
         this.transform = transform;
         this._bearingSnap = options.bearingSnap;
-        symbol_layout.bindAll(['_renderFrameCallback'], this);
+        __chunk_1.bindAll(['_renderFrameCallback'], this);
     }
     if (Evented)
         Camera.__proto__ = Evented;
     Camera.prototype = Object.create(Evented && Evented.prototype);
     Camera.prototype.constructor = Camera;
     Camera.prototype.getCenter = function getCenter() {
-        return new symbol_layout.LngLat(this.transform.center.lng, this.transform.center.lat, this.transform.center.ele);
+        return new __chunk_1.LngLat(this.transform.center.lng, this.transform.center.lat, this.transform.center.ele);
     };
     Camera.prototype.setCenter = function setCenter(center, eventData) {
         return this.jumpTo({ center: center }, eventData);
     };
     Camera.prototype.panBy = function panBy(offset, options, eventData) {
-        offset = symbol_layout.pointGeometry.convert(offset).mult(-1);
-        return this.panTo(this.transform.center, symbol_layout.extend({ offset: offset }, options), eventData);
+        offset = __chunk_1.Point.convert(offset).mult(-1);
+        return this.panTo(this.transform.center, __chunk_1.extend({ offset: offset }, options), eventData);
     };
     Camera.prototype.panTo = function panTo(lnglat, options, eventData) {
-        return this.easeTo(symbol_layout.extend({ center: lnglat }, options), eventData);
+        return this.easeTo(__chunk_1.extend({ center: lnglat }, options), eventData);
     };
     Camera.prototype.getZoom = function getZoom() {
         return this.transform.zoom;
@@ -38126,7 +38273,7 @@ var Camera = function (Evented) {
         return this;
     };
     Camera.prototype.zoomTo = function zoomTo(zoom, options, eventData) {
-        return this.easeTo(symbol_layout.extend({ zoom: zoom }, options), eventData);
+        return this.easeTo(__chunk_1.extend({ zoom: zoom }, options), eventData);
     };
     Camera.prototype.zoomIn = function zoomIn(options, eventData) {
         this.zoomTo(this.getZoom() + 1, options, eventData);
@@ -38144,10 +38291,10 @@ var Camera = function (Evented) {
         return this;
     };
     Camera.prototype.rotateTo = function rotateTo(bearing, options, eventData) {
-        return this.easeTo(symbol_layout.extend({ bearing: bearing }, options), eventData);
+        return this.easeTo(__chunk_1.extend({ bearing: bearing }, options), eventData);
     };
     Camera.prototype.resetNorth = function resetNorth(options, eventData) {
-        this.rotateTo(0, symbol_layout.extend({ duration: 1000 }, options), eventData);
+        this.rotateTo(0, __chunk_1.extend({ duration: 1000 }, options), eventData);
         return this;
     };
     Camera.prototype.snapToNorth = function snapToNorth(options, eventData) {
@@ -38164,11 +38311,11 @@ var Camera = function (Evented) {
         return this;
     };
     Camera.prototype.cameraForBounds = function cameraForBounds(bounds, options) {
-        bounds = symbol_layout.LngLatBounds.convert(bounds);
+        bounds = __chunk_1.LngLatBounds.convert(bounds);
         return this._cameraForBoxAndBearing(bounds.getNorthWest(), bounds.getSouthEast(), 0, options);
     };
     Camera.prototype._cameraForBoxAndBearing = function _cameraForBoxAndBearing(p0, p1, bearing, options) {
-        options = symbol_layout.extend({
+        options = __chunk_1.extend({
             padding: {
                 top: 0,
                 bottom: 0,
@@ -38190,7 +38337,7 @@ var Camera = function (Evented) {
                 left: p
             };
         }
-        if (!symbol_layout.deepEqual(Object.keys(options.padding).sort(function (a, b) {
+        if (!__chunk_1.deepEqual(Object.keys(options.padding).sort(function (a, b) {
                 if (a < b) {
                     return -1;
                 }
@@ -38204,28 +38351,28 @@ var Camera = function (Evented) {
                 'right',
                 'top'
             ])) {
-            symbol_layout.warnOnce('options.padding must be a positive number, or an Object with keys \'bottom\', \'left\', \'right\', \'top\'');
+            __chunk_1.warnOnce('options.padding must be a positive number, or an Object with keys \'bottom\', \'left\', \'right\', \'top\'');
             return;
         }
         var tr = this.transform;
-        var p0world = tr.project(symbol_layout.LngLat.convert(p0));
-        var p1world = tr.project(symbol_layout.LngLat.convert(p1));
+        var p0world = tr.project(__chunk_1.LngLat.convert(p0));
+        var p1world = tr.project(__chunk_1.LngLat.convert(p1));
         var p0rotated = p0world.rotate(-bearing * Math.PI / 180);
         var p1rotated = p1world.rotate(-bearing * Math.PI / 180);
-        var upperRight = new symbol_layout.pointGeometry(Math.max(p0rotated.x, p1rotated.x), Math.max(p0rotated.y, p1rotated.y));
-        var lowerLeft = new symbol_layout.pointGeometry(Math.min(p0rotated.x, p1rotated.x), Math.min(p0rotated.y, p1rotated.y));
+        var upperRight = new __chunk_1.Point(Math.max(p0rotated.x, p1rotated.x), Math.max(p0rotated.y, p1rotated.y));
+        var lowerLeft = new __chunk_1.Point(Math.min(p0rotated.x, p1rotated.x), Math.min(p0rotated.y, p1rotated.y));
         var size = upperRight.sub(lowerLeft);
         var scaleX = (tr.width - options.padding.left - options.padding.right) / size.x;
         var scaleY = (tr.height - options.padding.top - options.padding.bottom) / size.y;
         if (scaleY < 0 || scaleX < 0) {
-            symbol_layout.warnOnce('Map cannot fit within canvas with the given bounds, padding, and/or offset.');
+            __chunk_1.warnOnce('Map cannot fit within canvas with the given bounds, padding, and/or offset.');
             return;
         }
         var zoom = Math.min(tr.scaleZoom(tr.scale * Math.min(scaleX, scaleY)), options.maxZoom);
-        var offset = symbol_layout.pointGeometry.convert(options.offset);
+        var offset = __chunk_1.Point.convert(options.offset);
         var paddingOffsetX = (options.padding.left - options.padding.right) / 2;
         var paddingOffsetY = (options.padding.top - options.padding.bottom) / 2;
-        var offsetAtInitialZoom = new symbol_layout.pointGeometry(offset.x + paddingOffsetX, offset.y + paddingOffsetY);
+        var offsetAtInitialZoom = new __chunk_1.Point(offset.x + paddingOffsetX, offset.y + paddingOffsetY);
         var offsetAtFinalZoom = offsetAtInitialZoom.mult(tr.scale / tr.zoomScale(zoom));
         var center = tr.unproject(p0world.add(p1world).div(2).sub(offsetAtFinalZoom));
         return {
@@ -38238,13 +38385,13 @@ var Camera = function (Evented) {
         return this._fitInternal(this.cameraForBounds(bounds, options), options, eventData);
     };
     Camera.prototype.fitScreenCoordinates = function fitScreenCoordinates(p0, p1, bearing, options, eventData) {
-        return this._fitInternal(this._cameraForBoxAndBearing(this.transform.pointLocation(symbol_layout.pointGeometry.convert(p0)), this.transform.pointLocation(symbol_layout.pointGeometry.convert(p1)), bearing, options), options, eventData);
+        return this._fitInternal(this._cameraForBoxAndBearing(this.transform.pointLocation(__chunk_1.Point.convert(p0)), this.transform.pointLocation(__chunk_1.Point.convert(p1)), bearing, options), options, eventData);
     };
     Camera.prototype._fitInternal = function _fitInternal(calculatedOptions, options, eventData) {
         if (!calculatedOptions) {
             return this;
         }
-        options = symbol_layout.extend(calculatedOptions, options);
+        options = __chunk_1.extend(calculatedOptions, options);
         return options.linear ? this.easeTo(options, eventData) : this.flyTo(options, eventData);
     };
     Camera.prototype.jumpTo = function jumpTo(options, eventData) {
@@ -38256,7 +38403,7 @@ var Camera = function (Evented) {
             tr.zoom = +options.zoom;
         }
         if (options.center !== undefined) {
-            tr.center = symbol_layout.LngLat.convert(options.center);
+            tr.center = __chunk_1.LngLat.convert(options.center);
         }
         if ('bearing' in options && tr.bearing !== +options.bearing) {
             bearingChanged = true;
@@ -38266,43 +38413,43 @@ var Camera = function (Evented) {
             pitchChanged = true;
             tr.pitch = +options.pitch;
         }
-        this.fire(new symbol_layout.Event('movestart', eventData)).fire(new symbol_layout.Event('move', eventData));
+        this.fire(new __chunk_1.Event('movestart', eventData)).fire(new __chunk_1.Event('move', eventData));
         if (zoomChanged) {
-            this.fire(new symbol_layout.Event('zoomstart', eventData)).fire(new symbol_layout.Event('zoom', eventData)).fire(new symbol_layout.Event('zoomend', eventData));
+            this.fire(new __chunk_1.Event('zoomstart', eventData)).fire(new __chunk_1.Event('zoom', eventData)).fire(new __chunk_1.Event('zoomend', eventData));
         }
         if (bearingChanged) {
-            this.fire(new symbol_layout.Event('rotatestart', eventData)).fire(new symbol_layout.Event('rotate', eventData)).fire(new symbol_layout.Event('rotateend', eventData));
+            this.fire(new __chunk_1.Event('rotatestart', eventData)).fire(new __chunk_1.Event('rotate', eventData)).fire(new __chunk_1.Event('rotateend', eventData));
         }
         if (pitchChanged) {
-            this.fire(new symbol_layout.Event('pitchstart', eventData)).fire(new symbol_layout.Event('pitch', eventData)).fire(new symbol_layout.Event('pitchend', eventData));
+            this.fire(new __chunk_1.Event('pitchstart', eventData)).fire(new __chunk_1.Event('pitch', eventData)).fire(new __chunk_1.Event('pitchend', eventData));
         }
-        return this.fire(new symbol_layout.Event('moveend', eventData));
+        return this.fire(new __chunk_1.Event('moveend', eventData));
     };
     Camera.prototype.easeTo = function easeTo(options, eventData) {
         var this$1 = this;
         this.stop();
-        options = symbol_layout.extend({
+        options = __chunk_1.extend({
             offset: [
                 0,
                 0
             ],
             duration: 500,
-            easing: symbol_layout.ease
+            easing: __chunk_1.ease
         }, options);
         if (options.animate === false) {
             options.duration = 0;
         }
         var tr = this.transform, startZoom = this.getZoom(), startBearing = this.getBearing(), startPitch = this.getPitch(), zoom = 'zoom' in options ? +options.zoom : startZoom, bearing = 'bearing' in options ? this._normalizeBearing(options.bearing, startBearing) : startBearing, pitch = 'pitch' in options ? +options.pitch : startPitch;
-        var pointAtOffset = tr.centerPoint.add(symbol_layout.pointGeometry.convert(options.offset));
+        var pointAtOffset = tr.centerPoint.add(__chunk_1.Point.convert(options.offset));
         var locationAtOffset = tr.pointLocation(pointAtOffset);
-        var center = symbol_layout.LngLat.convert(options.center || locationAtOffset);
+        var center = __chunk_1.LngLat.convert(options.center || locationAtOffset);
         this._normalizeCenter(center);
         var from = tr.project(locationAtOffset);
         var delta = tr.project(center).sub(from);
         var finalScale = tr.zoomScale(zoom - startZoom);
         var around, aroundPoint;
         if (options.around) {
-            around = symbol_layout.LngLat.convert(options.around);
+            around = __chunk_1.LngLat.convert(options.around);
             aroundPoint = tr.locationPoint(around);
         }
         this._zooming = zoom !== startZoom;
@@ -38312,13 +38459,13 @@ var Camera = function (Evented) {
         clearTimeout(this._easeEndTimeoutID);
         this._ease(function (k) {
             if (this$1._zooming) {
-                tr.zoom = symbol_layout.number(startZoom, zoom, k);
+                tr.zoom = __chunk_1.number(startZoom, zoom, k);
             }
             if (this$1._rotating) {
-                tr.bearing = symbol_layout.number(startBearing, bearing, k);
+                tr.bearing = __chunk_1.number(startBearing, bearing, k);
             }
             if (this$1._pitching) {
-                tr.pitch = symbol_layout.number(startPitch, pitch, k);
+                tr.pitch = __chunk_1.number(startPitch, pitch, k);
             }
             if (around) {
                 tr.setLocationAtPoint(around, aroundPoint);
@@ -38344,28 +38491,28 @@ var Camera = function (Evented) {
     Camera.prototype._prepareEase = function _prepareEase(eventData, noMoveStart) {
         this._moving = true;
         if (!noMoveStart) {
-            this.fire(new symbol_layout.Event('movestart', eventData));
+            this.fire(new __chunk_1.Event('movestart', eventData));
         }
         if (this._zooming) {
-            this.fire(new symbol_layout.Event('zoomstart', eventData));
+            this.fire(new __chunk_1.Event('zoomstart', eventData));
         }
         if (this._rotating) {
-            this.fire(new symbol_layout.Event('rotatestart', eventData));
+            this.fire(new __chunk_1.Event('rotatestart', eventData));
         }
         if (this._pitching) {
-            this.fire(new symbol_layout.Event('pitchstart', eventData));
+            this.fire(new __chunk_1.Event('pitchstart', eventData));
         }
     };
     Camera.prototype._fireMoveEvents = function _fireMoveEvents(eventData) {
-        this.fire(new symbol_layout.Event('move', eventData));
+        this.fire(new __chunk_1.Event('move', eventData));
         if (this._zooming) {
-            this.fire(new symbol_layout.Event('zoom', eventData));
+            this.fire(new __chunk_1.Event('zoom', eventData));
         }
         if (this._rotating) {
-            this.fire(new symbol_layout.Event('rotate', eventData));
+            this.fire(new __chunk_1.Event('rotate', eventData));
         }
         if (this._pitching) {
-            this.fire(new symbol_layout.Event('pitch', eventData));
+            this.fire(new __chunk_1.Event('pitch', eventData));
         }
     };
     Camera.prototype._afterEase = function _afterEase(eventData) {
@@ -38377,43 +38524,43 @@ var Camera = function (Evented) {
         this._rotating = false;
         this._pitching = false;
         if (wasZooming) {
-            this.fire(new symbol_layout.Event('zoomend', eventData));
+            this.fire(new __chunk_1.Event('zoomend', eventData));
         }
         if (wasRotating) {
-            this.fire(new symbol_layout.Event('rotateend', eventData));
+            this.fire(new __chunk_1.Event('rotateend', eventData));
         }
         if (wasPitching) {
-            this.fire(new symbol_layout.Event('pitchend', eventData));
+            this.fire(new __chunk_1.Event('pitchend', eventData));
         }
-        this.fire(new symbol_layout.Event('moveend', eventData));
+        this.fire(new __chunk_1.Event('moveend', eventData));
     };
     Camera.prototype.flyTo = function flyTo(options, eventData) {
         var this$1 = this;
         this.stop();
-        options = symbol_layout.extend({
+        options = __chunk_1.extend({
             offset: [
                 0,
                 0
             ],
             speed: 1.2,
             curve: 1.42,
-            easing: symbol_layout.ease
+            easing: __chunk_1.ease
         }, options);
         var tr = this.transform, startZoom = this.getZoom(), startBearing = this.getBearing(), startPitch = this.getPitch();
-        var zoom = 'zoom' in options ? symbol_layout.clamp(+options.zoom, tr.minZoom, tr.maxZoom) : startZoom;
+        var zoom = 'zoom' in options ? __chunk_1.clamp(+options.zoom, tr.minZoom, tr.maxZoom) : startZoom;
         var bearing = 'bearing' in options ? this._normalizeBearing(options.bearing, startBearing) : startBearing;
         var pitch = 'pitch' in options ? +options.pitch : startPitch;
         var scale = tr.zoomScale(zoom - startZoom);
-        var pointAtOffset = tr.centerPoint.add(symbol_layout.pointGeometry.convert(options.offset));
+        var pointAtOffset = tr.centerPoint.add(__chunk_1.Point.convert(options.offset));
         var locationAtOffset = tr.pointLocation(pointAtOffset);
-        var center = symbol_layout.LngLat.convert(options.center || locationAtOffset);
+        var center = __chunk_1.LngLat.convert(options.center || locationAtOffset);
         this._normalizeCenter(center);
         var from = tr.project(locationAtOffset);
         var delta = tr.project(center).sub(from);
         var rho = options.curve;
         var w0 = Math.max(tr.width, tr.height), w1 = w0 / scale, u1 = delta.mag();
         if ('minZoom' in options) {
-            var minZoom = symbol_layout.clamp(Math.min(options.minZoom, startZoom, zoom), tr.minZoom, tr.maxZoom);
+            var minZoom = __chunk_1.clamp(Math.min(options.minZoom, startZoom, zoom), tr.minZoom, tr.maxZoom);
             var wMax = w0 / tr.zoomScale(minZoom - startZoom);
             rho = Math.sqrt(wMax / u1 * 2);
         }
@@ -38470,10 +38617,10 @@ var Camera = function (Evented) {
             var scale = 1 / w(s);
             tr.zoom = k === 1 ? zoom : startZoom + tr.scaleZoom(scale);
             if (this$1._rotating) {
-                tr.bearing = symbol_layout.number(startBearing, bearing, k);
+                tr.bearing = __chunk_1.number(startBearing, bearing, k);
             }
             if (this$1._pitching) {
-                tr.pitch = symbol_layout.number(startPitch, pitch, k);
+                tr.pitch = __chunk_1.number(startPitch, pitch, k);
             }
             var newCenter = k === 1 ? center : tr.unproject(from.add(delta.mult(u(s))).mult(scale));
             tr.setLocationAtPoint(tr.renderWorldCopies ? newCenter.wrap() : newCenter, pointAtOffset);
@@ -38504,7 +38651,7 @@ var Camera = function (Evented) {
             frame(1);
             finish();
         } else {
-            this._easeStart = symbol_layout.exported.now();
+            this._easeStart = __chunk_1.browser.now();
             this._easeOptions = options;
             this._onEaseFrame = frame;
             this._onEaseEnd = finish;
@@ -38512,7 +38659,7 @@ var Camera = function (Evented) {
         }
     };
     Camera.prototype._renderFrameCallback = function _renderFrameCallback() {
-        var t = Math.min((symbol_layout.exported.now() - this._easeStart) / this._easeOptions.duration, 1);
+        var t = Math.min((__chunk_1.browser.now() - this._easeStart) / this._easeOptions.duration, 1);
         this._onEaseFrame(this._easeOptions.easing(t));
         if (t < 1) {
             this._easeFrameId = this._requestRenderFrame(this._renderFrameCallback);
@@ -38521,7 +38668,7 @@ var Camera = function (Evented) {
         }
     };
     Camera.prototype._normalizeBearing = function _normalizeBearing(bearing, currentBearing) {
-        bearing = symbol_layout.wrap(bearing, -180, 180);
+        bearing = __chunk_1.wrap(bearing, -180, 180);
         var diff = Math.abs(bearing - currentBearing);
         if (Math.abs(bearing - 360 - currentBearing) < diff) {
             bearing -= 360;
@@ -38540,13 +38687,13 @@ var Camera = function (Evented) {
         center.lng += delta > 180 ? -360 : delta < -180 ? 360 : 0;
     };
     return Camera;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 var AttributionControl = function AttributionControl(options) {
     if (options === void 0)
         options = {};
     this.options = options;
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_updateEditLink',
         '_updateData',
         '_updateCompact'
@@ -38598,7 +38745,7 @@ AttributionControl.prototype._updateEditLink = function _updateEditLink() {
         },
         {
             key: 'access_token',
-            value: symbol_layout.config.ACCESS_TOKEN
+            value: __chunk_1.config.ACCESS_TOKEN
         }
     ];
     if (editLink) {
@@ -38608,7 +38755,7 @@ AttributionControl.prototype._updateEditLink = function _updateEditLink() {
             }
             return acc;
         }, '?');
-        editLink.href = symbol_layout.config.FEEDBACK_URL + '/' + paramString + (this._map._hash ? this._map._hash.getHashString(true) : '');
+        editLink.href = __chunk_1.config.FEEDBACK_URL + '/' + paramString + (this._map._hash ? this._map._hash.getHashString(true) : '');
         editLink.rel = 'noopener';
     }
 };
@@ -38678,8 +38825,8 @@ AttributionControl.prototype._updateCompact = function _updateCompact() {
 };
 
 var LogoControl = function LogoControl() {
-    symbol_layout.bindAll(['_updateLogo'], this);
-    symbol_layout.bindAll(['_updateCompact'], this);
+    __chunk_1.bindAll(['_updateLogo'], this);
+    __chunk_1.bindAll(['_updateCompact'], this);
 };
 LogoControl.prototype.onAdd = function onAdd(map) {
     this._map = map;
@@ -38786,8 +38933,8 @@ TaskQueue.prototype.clear = function clear() {
     this._queue = [];
 };
 
-var HTMLImageElement = symbol_layout.window.HTMLImageElement;
-var HTMLElement = symbol_layout.window.HTMLElement;
+var HTMLImageElement = __chunk_1.window.HTMLImageElement;
+var HTMLElement = __chunk_1.window.HTMLElement;
 var defaultMinZoom = 0;
 var defaultMaxZoom = 22;
 var defaultOptions = {
@@ -38827,7 +38974,7 @@ var defaultOptions = {
 var Map = function (Camera) {
     function Map(options) {
         var this$1 = this;
-        options = symbol_layout.extend({}, defaultOptions, options);
+        options = __chunk_1.extend({}, defaultOptions, options);
         if (options.minZoom != null && options.maxZoom != null && options.minZoom > options.maxZoom) {
             throw new Error('maxZoom must be greater than minZoom');
         }
@@ -38852,10 +38999,10 @@ var Map = function (Camera) {
         this._collectResourceTiming = options.collectResourceTiming;
         this._renderTaskQueue = new TaskQueue();
         this._controls = [];
-        this._mapId = symbol_layout.uniqueId();
-        this._requestManager = new symbol_layout.RequestManager(options.transformRequest);
+        this._mapId = __chunk_1.uniqueId();
+        this._requestManager = new __chunk_1.RequestManager(options.transformRequest);
         if (typeof options.container === 'string') {
-            this._container = symbol_layout.window.document.getElementById(options.container);
+            this._container = __chunk_1.window.document.getElementById(options.container);
             if (!this._container) {
                 throw new Error('Container \'' + options.container + '\' not found.');
             }
@@ -38867,7 +39014,7 @@ var Map = function (Camera) {
         if (options.maxBounds) {
             this.setMaxBounds(options.maxBounds);
         }
-        symbol_layout.bindAll([
+        __chunk_1.bindAll([
             '_onWindowOnline',
             '_onWindowResize',
             '_contextLost',
@@ -38887,9 +39034,9 @@ var Map = function (Camera) {
         this.on('zoom', function () {
             return this$1._update(true);
         });
-        if (typeof symbol_layout.window !== 'undefined') {
-            symbol_layout.window.addEventListener('online', this._onWindowOnline, false);
-            symbol_layout.window.addEventListener('resize', this._onWindowResize, false);
+        if (typeof __chunk_1.window !== 'undefined') {
+            __chunk_1.window.addEventListener('online', this._onWindowOnline, false);
+            __chunk_1.window.addEventListener('resize', this._onWindowResize, false);
         }
         bindHandlers(this, options);
         this._hash = options.hash && new Hash().addTo(this);
@@ -38902,7 +39049,7 @@ var Map = function (Camera) {
             });
             if (options.bounds) {
                 this.resize();
-                this.fitBounds(options.bounds, symbol_layout.extend({}, options.fitBoundsOptions, { duration: 0 }));
+                this.fitBounds(options.bounds, __chunk_1.extend({}, options.fitBoundsOptions, { duration: 0 }));
             }
         }
         this.resize();
@@ -38921,10 +39068,10 @@ var Map = function (Camera) {
         });
         this.on('data', function (event) {
             this$1._update(event.dataType === 'style');
-            this$1.fire(new symbol_layout.Event(event.dataType + 'data', event));
+            this$1.fire(new __chunk_1.Event(event.dataType + 'data', event));
         });
         this.on('dataloading', function (event) {
-            this$1.fire(new symbol_layout.Event(event.dataType + 'dataloading', event));
+            this$1.fire(new __chunk_1.Event(event.dataType + 'dataloading', event));
         });
     }
     if (Camera)
@@ -38949,7 +39096,7 @@ var Map = function (Camera) {
             position = 'top-right';
         }
         if (!control || !control.onAdd) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('Invalid argument to map.addControl(). Argument must be a control with onAdd and onRemove methods.')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('Invalid argument to map.addControl(). Argument must be a control with onAdd and onRemove methods.')));
         }
         var controlElement = control.onAdd(this);
         this._controls.push(control);
@@ -38963,7 +39110,7 @@ var Map = function (Camera) {
     };
     Map.prototype.removeControl = function removeControl(control) {
         if (!control || !control.onRemove) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('Invalid argument to map.removeControl(). Argument must be a control with onAdd and onRemove methods.')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('Invalid argument to map.removeControl(). Argument must be a control with onAdd and onRemove methods.')));
         }
         var ci = this._controls.indexOf(control);
         if (ci > -1) {
@@ -38979,7 +39126,7 @@ var Map = function (Camera) {
         this._resizeCanvas(width, height);
         this.transform.resize(width, height);
         this.painter.resize(width, height);
-        this.fire(new symbol_layout.Event('movestart', eventData)).fire(new symbol_layout.Event('move', eventData)).fire(new symbol_layout.Event('resize', eventData)).fire(new symbol_layout.Event('moveend', eventData));
+        this.fire(new __chunk_1.Event('movestart', eventData)).fire(new __chunk_1.Event('move', eventData)).fire(new __chunk_1.Event('resize', eventData)).fire(new __chunk_1.Event('moveend', eventData));
         return this;
     };
     Map.prototype.getBounds = function getBounds() {
@@ -38989,7 +39136,7 @@ var Map = function (Camera) {
         return this.transform.getMaxBounds();
     };
     Map.prototype.setMaxBounds = function setMaxBounds(bounds) {
-        this.transform.setMaxBounds(symbol_layout.LngLatBounds.convert(bounds));
+        this.transform.setMaxBounds(__chunk_1.LngLatBounds.convert(bounds));
         return this._update();
     };
     Map.prototype.setMinZoom = function setMinZoom(minZoom) {
@@ -39032,10 +39179,10 @@ var Map = function (Camera) {
         return this.transform.maxZoom;
     };
     Map.prototype.project = function project(lnglat) {
-        return this.transform.locationPoint(symbol_layout.LngLat.convert(lnglat));
+        return this.transform.locationPoint(__chunk_1.LngLat.convert(lnglat));
     };
     Map.prototype.unproject = function unproject(point) {
-        return this.transform.pointLocation(symbol_layout.pointGeometry.convert(point));
+        return this.transform.pointLocation(__chunk_1.Point.convert(point));
     };
     Map.prototype.isMoving = function isMoving() {
         return this._moving || this.dragPan.isActive() || this.dragRotate.isActive() || this.scrollZoom.isActive();
@@ -39147,7 +39294,7 @@ var Map = function (Camera) {
         if (!this.style) {
             return [];
         }
-        if (options === undefined && geometry !== undefined && !(geometry instanceof symbol_layout.pointGeometry) && !Array.isArray(geometry)) {
+        if (options === undefined && geometry !== undefined && !(geometry instanceof __chunk_1.Point) && !Array.isArray(geometry)) {
             options = geometry;
             geometry = undefined;
         }
@@ -39163,16 +39310,16 @@ var Map = function (Camera) {
             ]
         ];
         var queryGeometry;
-        if (geometry instanceof symbol_layout.pointGeometry || typeof geometry[0] === 'number') {
-            queryGeometry = [symbol_layout.pointGeometry.convert(geometry)];
+        if (geometry instanceof __chunk_1.Point || typeof geometry[0] === 'number') {
+            queryGeometry = [__chunk_1.Point.convert(geometry)];
         } else {
-            var tl = symbol_layout.pointGeometry.convert(geometry[0]);
-            var br = symbol_layout.pointGeometry.convert(geometry[1]);
+            var tl = __chunk_1.Point.convert(geometry[0]);
+            var br = __chunk_1.Point.convert(geometry[1]);
             queryGeometry = [
                 tl,
-                new symbol_layout.pointGeometry(br.x, tl.y),
+                new __chunk_1.Point(br.x, tl.y),
                 br,
-                new symbol_layout.pointGeometry(tl.x, br.y),
+                new __chunk_1.Point(tl.x, br.y),
                 tl
             ];
         }
@@ -39182,7 +39329,7 @@ var Map = function (Camera) {
         return this.style.querySourceFeatures(sourceId, parameters);
     };
     Map.prototype.setStyle = function setStyle(style, options) {
-        options = symbol_layout.extend({}, { localIdeographFontFamily: defaultOptions.localIdeographFontFamily }, options);
+        options = __chunk_1.extend({}, { localIdeographFontFamily: defaultOptions.localIdeographFontFamily }, options);
         if (options.diff !== false && options.localIdeographFontFamily === this._localIdeographFontFamily && this.style && style) {
             this._diffStyle(style, options);
             return this;
@@ -39214,10 +39361,10 @@ var Map = function (Camera) {
         var this$1 = this;
         if (typeof style === 'string') {
             var url = this._requestManager.normalizeStyleURL(style);
-            var request = this._requestManager.transformRequest(url, symbol_layout.ResourceType.Style);
-            symbol_layout.getJSON(request, function (error, json) {
+            var request = this._requestManager.transformRequest(url, __chunk_1.ResourceType.Style);
+            __chunk_1.getJSON(request, function (error, json) {
                 if (error) {
-                    this$1.fire(new symbol_layout.ErrorEvent(error));
+                    this$1.fire(new __chunk_1.ErrorEvent(error));
                 } else if (json) {
                     this$1._updateDiff(json, options);
                 }
@@ -39232,7 +39379,7 @@ var Map = function (Camera) {
                 this._update(true);
             }
         } catch (e) {
-            symbol_layout.warnOnce('Unable to perform style diff: ' + (e.message || e.error || e) + '.  Rebuilding the style from scratch.');
+            __chunk_1.warnOnce('Unable to perform style diff: ' + (e.message || e.error || e) + '.  Rebuilding the style from scratch.');
             this._updateStyle(style, options);
         }
     };
@@ -39243,7 +39390,7 @@ var Map = function (Camera) {
     };
     Map.prototype.isStyleLoaded = function isStyleLoaded() {
         if (!this.style) {
-            return symbol_layout.warnOnce('There is no style added to the map.');
+            return __chunk_1.warnOnce('There is no style added to the map.');
         }
         return this.style.loaded();
     };
@@ -39254,7 +39401,7 @@ var Map = function (Camera) {
     Map.prototype.isSourceLoaded = function isSourceLoaded(id) {
         var source = this.style && this.style.sourceCaches[id];
         if (source === undefined) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('There is no source with ID \'' + id + '\'')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('There is no source with ID \'' + id + '\'')));
             return;
         }
         return source.loaded();
@@ -39294,12 +39441,12 @@ var Map = function (Camera) {
             sdf = false;
         var version = 0;
         if (image instanceof HTMLImageElement) {
-            var ref$1 = symbol_layout.exported.getImageData(image);
+            var ref$1 = __chunk_1.browser.getImageData(image);
             var width = ref$1.width;
             var height = ref$1.height;
             var data = ref$1.data;
             this.style.addImage(id, {
-                data: new symbol_layout.RGBAImage({
+                data: new __chunk_1.RGBAImage({
                     width: width,
                     height: height
                 }, data),
@@ -39308,14 +39455,14 @@ var Map = function (Camera) {
                 version: version
             });
         } else if (image.width === undefined || image.height === undefined) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('Invalid arguments to map.addImage(). The second argument must be an `HTMLImageElement`, `ImageData`, ' + 'or object with `width`, `height`, and `data` properties with the same format as `ImageData`')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('Invalid arguments to map.addImage(). The second argument must be an `HTMLImageElement`, `ImageData`, ' + 'or object with `width`, `height`, and `data` properties with the same format as `ImageData`')));
         } else {
             var width$1 = image.width;
             var height$1 = image.height;
             var data$1 = image.data;
             var userImage = image;
             this.style.addImage(id, {
-                data: new symbol_layout.RGBAImage({
+                data: new __chunk_1.RGBAImage({
                     width: width$1,
                     height: height$1
                 }, new Uint8Array(data$1)),
@@ -39332,17 +39479,17 @@ var Map = function (Camera) {
     Map.prototype.updateImage = function updateImage(id, image) {
         var existingImage = this.style.getImage(id);
         if (!existingImage) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('The map has no image with that id. If you are adding a new image use `map.addImage(...)` instead.')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('The map has no image with that id. If you are adding a new image use `map.addImage(...)` instead.')));
         }
-        var imageData = image instanceof HTMLImageElement ? symbol_layout.exported.getImageData(image) : image;
+        var imageData = image instanceof HTMLImageElement ? __chunk_1.browser.getImageData(image) : image;
         var width = imageData.width;
         var height = imageData.height;
         var data = imageData.data;
         if (width === undefined || height === undefined) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('Invalid arguments to map.updateImage(). The second argument must be an `HTMLImageElement`, `ImageData`, ' + 'or object with `width`, `height`, and `data` properties with the same format as `ImageData`')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('Invalid arguments to map.updateImage(). The second argument must be an `HTMLImageElement`, `ImageData`, ' + 'or object with `width`, `height`, and `data` properties with the same format as `ImageData`')));
         }
         if (width !== existingImage.data.width || height !== existingImage.data.height) {
-            return this.fire(new symbol_layout.ErrorEvent(new Error('The width and height of the updated image must be that same as the previous version of the image')));
+            return this.fire(new __chunk_1.ErrorEvent(new Error('The width and height of the updated image must be that same as the previous version of the image')));
         }
         var copy = !(image instanceof HTMLImageElement);
         existingImage.data.replace(data, copy);
@@ -39350,7 +39497,7 @@ var Map = function (Camera) {
     };
     Map.prototype.hasImage = function hasImage(id) {
         if (!id) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('Missing required image id')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('Missing required image id')));
             return false;
         }
         return !!this.style.getImage(id);
@@ -39359,7 +39506,7 @@ var Map = function (Camera) {
         this.style.removeImage(id);
     };
     Map.prototype.loadImage = function loadImage(url, callback) {
-        symbol_layout.getImage(this._requestManager.transformRequest(url, symbol_layout.ResourceType.Image), callback);
+        __chunk_1.getImage(this._requestManager.transformRequest(url, __chunk_1.ResourceType.Image), callback);
     };
     Map.prototype.listImages = function listImages() {
         return this.style.listImages();
@@ -39452,9 +39599,9 @@ var Map = function (Camera) {
         ];
     };
     Map.prototype._detectMissingCSS = function _detectMissingCSS() {
-        var computedColor = symbol_layout.window.getComputedStyle(this._missingCSSCanary).getPropertyValue('background-color');
+        var computedColor = __chunk_1.window.getComputedStyle(this._missingCSSCanary).getPropertyValue('background-color');
         if (computedColor !== 'rgb(250, 128, 114)') {
-            symbol_layout.warnOnce('This page appears to be missing CSS declarations for ' + 'Mapbox GL JS, which may cause the map to display incorrectly. ' + 'Please ensure your page includes mapbox-gl.css, as described ' + 'in https://www.mapbox.com/mapbox-gl-js/api/.');
+            __chunk_1.warnOnce('This page appears to be missing CSS declarations for ' + 'Mapbox GL JS, which may cause the map to display incorrectly. ' + 'Please ensure your page includes mapbox-gl.css, as described ' + 'in https://www.mapbox.com/mapbox-gl-js/api/.');
         }
     };
     Map.prototype._setupContainer = function _setupContainer() {
@@ -39486,14 +39633,14 @@ var Map = function (Camera) {
         });
     };
     Map.prototype._resizeCanvas = function _resizeCanvas(width, height) {
-        var pixelRatio = symbol_layout.window.devicePixelRatio || 1;
+        var pixelRatio = __chunk_1.window.devicePixelRatio || 1;
         this._canvas.width = pixelRatio * width;
         this._canvas.height = pixelRatio * height;
         this._canvas.style.width = width + 'px';
         this._canvas.style.height = height + 'px';
     };
     Map.prototype._setupPainter = function _setupPainter() {
-        var attributes = symbol_layout.extend({}, mapboxGlSupported.webGLContextAttributes, {
+        var attributes = __chunk_1.extend({}, mapboxGlSupported.webGLContextAttributes, {
             failIfMajorPerformanceCaveat: this._failIfMajorPerformanceCaveat,
             preserveDrawingBuffer: this._preserveDrawingBuffer,
             premultipliedAlpha: this._premultipliedAlpha,
@@ -39501,11 +39648,11 @@ var Map = function (Camera) {
         });
         var gl = this._canvas.getContext('webgl', attributes) || this._canvas.getContext('experimental-webgl', attributes);
         if (!gl) {
-            this.fire(new symbol_layout.ErrorEvent(new Error('Failed to initialize WebGL')));
+            this.fire(new __chunk_1.ErrorEvent(new Error('Failed to initialize WebGL')));
             return;
         }
         this.painter = new Painter(gl, this.transform);
-        symbol_layout.exported$1.testSupport(gl);
+        __chunk_1.webpSupported.testSupport(gl);
     };
     Map.prototype._contextLost = function _contextLost(event) {
         event.preventDefault();
@@ -39513,13 +39660,13 @@ var Map = function (Camera) {
             this._frame.cancel();
             this._frame = null;
         }
-        this.fire(new symbol_layout.Event('webglcontextlost', { originalEvent: event }));
+        this.fire(new __chunk_1.Event('webglcontextlost', { originalEvent: event }));
     };
     Map.prototype._contextRestored = function _contextRestored(event) {
         this._setupPainter();
         this.resize();
         this._update();
-        this.fire(new symbol_layout.Event('webglcontextrestored', { originalEvent: event }));
+        this.fire(new __chunk_1.Event('webglcontextrestored', { originalEvent: event }));
     };
     Map.prototype.loaded = function loaded() {
         return !this._styleDirty && !this._sourcesDirty && !!this.style && this.style.loaded();
@@ -39548,9 +39695,9 @@ var Map = function (Camera) {
         if (this.style && this._styleDirty) {
             this._styleDirty = false;
             var zoom = this.transform.zoom;
-            var now = symbol_layout.exported.now();
+            var now = __chunk_1.browser.now();
             this.style.zoomHistory.update(zoom, now);
-            var parameters = new symbol_layout.EvaluationParameters(zoom, {
+            var parameters = new __chunk_1.EvaluationParameters(zoom, {
                 now: now,
                 fadeDuration: this._fadeDuration,
                 zoomHistory: this.style.zoomHistory,
@@ -39577,10 +39724,10 @@ var Map = function (Camera) {
             fadeDuration: this._fadeDuration,
             highResolution: this._highResolution
         });
-        this.fire(new symbol_layout.Event('render'));
+        this.fire(new __chunk_1.Event('render'));
         if (this.loaded() && !this._loaded) {
             this._loaded = true;
-            this.fire(new symbol_layout.Event('load'));
+            this.fire(new __chunk_1.Event('load'));
         }
         if (this.style && (this.style.hasTransitions() || crossFading)) {
             this._styleDirty = true;
@@ -39591,7 +39738,7 @@ var Map = function (Camera) {
         if (this._sourcesDirty || this._repaint || this._styleDirty || this._placementDirty) {
             this.triggerRepaint();
         } else if (!this.isMoving() && this.loaded()) {
-            this.fire(new symbol_layout.Event('idle'));
+            this.fire(new __chunk_1.Event('idle'));
         }
         return this;
     };
@@ -39610,9 +39757,9 @@ var Map = function (Camera) {
         }
         this._renderTaskQueue.clear();
         this.setStyle(null);
-        if (typeof symbol_layout.window !== 'undefined') {
-            symbol_layout.window.removeEventListener('resize', this._onWindowResize, false);
-            symbol_layout.window.removeEventListener('online', this._onWindowOnline, false);
+        if (typeof __chunk_1.window !== 'undefined') {
+            __chunk_1.window.removeEventListener('resize', this._onWindowResize, false);
+            __chunk_1.window.removeEventListener('online', this._onWindowOnline, false);
         }
         var extension = this.painter.context.gl.getExtension('WEBGL_lose_context');
         if (extension) {
@@ -39622,12 +39769,12 @@ var Map = function (Camera) {
         removeNode(this._controlContainer);
         removeNode(this._missingCSSCanary);
         this._container.classList.remove('mapboxgl-map');
-        this.fire(new symbol_layout.Event('remove'));
+        this.fire(new __chunk_1.Event('remove'));
     };
     Map.prototype.triggerRepaint = function triggerRepaint() {
         var this$1 = this;
         if (this.style && !this._frame) {
-            this._frame = symbol_layout.exported.frame(function () {
+            this._frame = __chunk_1.browser.frame(function () {
                 this$1._frame = null;
                 this$1._render();
             });
@@ -39706,13 +39853,13 @@ var defaultOptions$1 = {
 };
 var NavigationControl = function NavigationControl(options) {
     var this$1 = this;
-    this.options = symbol_layout.extend({}, defaultOptions$1, options);
+    this.options = __chunk_1.extend({}, defaultOptions$1, options);
     this._container = DOM.create('div', 'mapboxgl-ctrl mapboxgl-ctrl-group');
     this._container.addEventListener('contextmenu', function (e) {
         return e.preventDefault();
     });
     if (this.options.showZoom) {
-        symbol_layout.bindAll(['_updateZoomButtons'], this);
+        __chunk_1.bindAll(['_updateZoomButtons'], this);
         this._zoomInButton = this._createButton('mapboxgl-ctrl-icon mapboxgl-ctrl-zoom-in', 'Zoom in', function () {
             return this$1._map.zoomIn();
         });
@@ -39721,7 +39868,7 @@ var NavigationControl = function NavigationControl(options) {
         });
     }
     if (this.options.showCompass) {
-        symbol_layout.bindAll(['_rotateCompassArrow'], this);
+        __chunk_1.bindAll(['_rotateCompassArrow'], this);
         this._compass = this._createButton('mapboxgl-ctrl-icon mapboxgl-ctrl-compass', 'Reset bearing to north', function () {
             return this$1._map.resetNorth();
         });
@@ -39778,10 +39925,10 @@ NavigationControl.prototype._createButton = function _createButton(className, ar
 };
 
 function smartWrap (lngLat, priorPos, transform) {
-    lngLat = new symbol_layout.LngLat(lngLat.lng, lngLat.lat);
+    lngLat = new __chunk_1.LngLat(lngLat.lng, lngLat.lat);
     if (priorPos) {
-        var left = new symbol_layout.LngLat(lngLat.lng - 360, lngLat.lat);
-        var right = new symbol_layout.LngLat(lngLat.lng + 360, lngLat.lat);
+        var left = new __chunk_1.LngLat(lngLat.lng - 360, lngLat.lat);
+        var right = new __chunk_1.LngLat(lngLat.lng + 360, lngLat.lat);
         var delta = transform.locationPoint(lngLat).distSqr(priorPos);
         if (transform.locationPoint(left).distSqr(priorPos) < delta) {
             lngLat = left;
@@ -39825,10 +39972,10 @@ function applyAnchorClass(element, anchor, prefix) {
 var Marker = function (Evented) {
     function Marker(options, legacyOptions) {
         Evented.call(this);
-        if (options instanceof symbol_layout.window.HTMLElement || legacyOptions) {
-            options = symbol_layout.extend({ element: options }, legacyOptions);
+        if (options instanceof __chunk_1.window.HTMLElement || legacyOptions) {
+            options = __chunk_1.extend({ element: options }, legacyOptions);
         }
-        symbol_layout.bindAll([
+        __chunk_1.bindAll([
             '_update',
             '_onMove',
             '_onUp',
@@ -39937,13 +40084,13 @@ var Marker = function (Evented) {
             page1.appendChild(circleContainer);
             svg.appendChild(page1);
             this._element.appendChild(svg);
-            this._offset = symbol_layout.pointGeometry.convert(options && options.offset || [
+            this._offset = __chunk_1.Point.convert(options && options.offset || [
                 0,
                 -14
             ]);
         } else {
             this._element = options.element;
-            this._offset = symbol_layout.pointGeometry.convert(options && options.offset || [
+            this._offset = __chunk_1.Point.convert(options && options.offset || [
                 0,
                 0
             ]);
@@ -39991,7 +40138,7 @@ var Marker = function (Evented) {
         return this._lngLat;
     };
     Marker.prototype.setLngLat = function setLngLat(lnglat) {
-        this._lngLat = symbol_layout.LngLat.convert(lnglat);
+        this._lngLat = __chunk_1.LngLat.convert(lnglat);
         this._pos = null;
         if (this._popup) {
             this._popup.setLngLat(this._lngLat);
@@ -40092,7 +40239,7 @@ var Marker = function (Evented) {
         return this._offset;
     };
     Marker.prototype.setOffset = function setOffset(offset) {
-        this._offset = symbol_layout.pointGeometry.convert(offset);
+        this._offset = __chunk_1.Point.convert(offset);
         this._update();
         return this;
     };
@@ -40103,9 +40250,9 @@ var Marker = function (Evented) {
         this._element.style.pointerEvents = 'none';
         if (this._state === 'pending') {
             this._state = 'active';
-            this.fire(new symbol_layout.Event('dragstart'));
+            this.fire(new __chunk_1.Event('dragstart'));
         }
-        this.fire(new symbol_layout.Event('drag'));
+        this.fire(new __chunk_1.Event('drag'));
     };
     Marker.prototype._onUp = function _onUp() {
         this._element.style.pointerEvents = 'auto';
@@ -40113,7 +40260,7 @@ var Marker = function (Evented) {
         this._map.off('mousemove', this._onMove);
         this._map.off('touchmove', this._onMove);
         if (this._state === 'active') {
-            this.fire(new symbol_layout.Event('dragend'));
+            this.fire(new __chunk_1.Event('dragend'));
         }
         this._state = 'inactive';
     };
@@ -40145,7 +40292,7 @@ var Marker = function (Evented) {
         return this._draggable;
     };
     return Marker;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 var defaultOptions$2 = {
     positionOptions: {
@@ -40162,21 +40309,21 @@ var supportsGeolocation;
 function checkGeolocationSupport(callback) {
     if (supportsGeolocation !== undefined) {
         callback(supportsGeolocation);
-    } else if (symbol_layout.window.navigator.permissions !== undefined) {
-        symbol_layout.window.navigator.permissions.query({ name: 'geolocation' }).then(function (p) {
+    } else if (__chunk_1.window.navigator.permissions !== undefined) {
+        __chunk_1.window.navigator.permissions.query({ name: 'geolocation' }).then(function (p) {
             supportsGeolocation = p.state !== 'denied';
             callback(supportsGeolocation);
         });
     } else {
-        supportsGeolocation = !!symbol_layout.window.navigator.geolocation;
+        supportsGeolocation = !!__chunk_1.window.navigator.geolocation;
         callback(supportsGeolocation);
     }
 }
 var GeolocateControl = function (Evented) {
     function GeolocateControl(options) {
         Evented.call(this);
-        this.options = symbol_layout.extend({}, defaultOptions$2, options);
-        symbol_layout.bindAll([
+        this.options = __chunk_1.extend({}, defaultOptions$2, options);
+        __chunk_1.bindAll([
             '_onSuccess',
             '_onError',
             '_finish',
@@ -40197,7 +40344,7 @@ var GeolocateControl = function (Evented) {
     };
     GeolocateControl.prototype.onRemove = function onRemove() {
         if (this._geolocationWatchID !== undefined) {
-            symbol_layout.window.navigator.geolocation.clearWatch(this._geolocationWatchID);
+            __chunk_1.window.navigator.geolocation.clearWatch(this._geolocationWatchID);
             this._geolocationWatchID = undefined;
         }
         if (this.options.showUserLocation && this._userLocationDotMarker) {
@@ -40225,6 +40372,7 @@ var GeolocateControl = function (Evented) {
                 this._geolocateButton.classList.remove('mapboxgl-ctrl-geolocate-background-error');
                 this._geolocateButton.classList.add('mapboxgl-ctrl-geolocate-background');
                 break;
+            default:
             }
         }
         if (this.options.showUserLocation && this._watchState !== 'OFF') {
@@ -40236,14 +40384,14 @@ var GeolocateControl = function (Evented) {
         if (this.options.showUserLocation) {
             this._dotElement.classList.remove('mapboxgl-user-location-dot-stale');
         }
-        this.fire(new symbol_layout.Event('geolocate', position));
+        this.fire(new __chunk_1.Event('geolocate', position));
         this._finish();
     };
     GeolocateControl.prototype._updateCamera = function _updateCamera(position) {
-        var center = new symbol_layout.LngLat(position.coords.longitude, position.coords.latitude);
+        var center = new __chunk_1.LngLat(position.coords.longitude, position.coords.latitude);
         var radius = position.coords.accuracy;
         var bearing = this._map.getBearing();
-        var options = symbol_layout.extend({ bearing: bearing }, this.options.fitBoundsOptions);
+        var options = __chunk_1.extend({ bearing: bearing }, this.options.fitBoundsOptions);
         this._map.fitBounds(center.toBounds(radius), options, { geolocateSource: true });
     };
     GeolocateControl.prototype._updateMarker = function _updateMarker(position) {
@@ -40287,13 +40435,16 @@ var GeolocateControl = function (Evented) {
                     this._geolocateButton.classList.add('mapboxgl-ctrl-geolocate-background-error');
                     this._geolocateButton.classList.add('mapboxgl-ctrl-geolocate-waiting');
                     break;
+                case 'ACTIVE_ERROR':
+                    break;
+                default:
                 }
             }
         }
         if (this._watchState !== 'OFF' && this.options.showUserLocation) {
             this._dotElement.classList.add('mapboxgl-user-location-dot-stale');
         }
-        this.fire(new symbol_layout.Event('error', error));
+        this.fire(new __chunk_1.Event('error', error));
         this._finish();
     };
     GeolocateControl.prototype._finish = function _finish() {
@@ -40305,7 +40456,7 @@ var GeolocateControl = function (Evented) {
     GeolocateControl.prototype._setupUI = function _setupUI(supported) {
         var this$1 = this;
         if (supported === false) {
-            symbol_layout.warnOnce('Geolocation support is not available, the GeolocateControl will not be visible.');
+            __chunk_1.warnOnce('Geolocation support is not available, the GeolocateControl will not be visible.');
             return;
         }
         this._container.addEventListener('contextmenu', function (e) {
@@ -40333,21 +40484,21 @@ var GeolocateControl = function (Evented) {
                     this$1._watchState = 'BACKGROUND';
                     this$1._geolocateButton.classList.add('mapboxgl-ctrl-geolocate-background');
                     this$1._geolocateButton.classList.remove('mapboxgl-ctrl-geolocate-active');
-                    this$1.fire(new symbol_layout.Event('trackuserlocationend'));
+                    this$1.fire(new __chunk_1.Event('trackuserlocationend'));
                 }
             });
         }
     };
     GeolocateControl.prototype.trigger = function trigger() {
         if (!this._setup) {
-            symbol_layout.warnOnce('Geolocate control triggered before added to a map');
+            __chunk_1.warnOnce('Geolocate control triggered before added to a map');
             return false;
         }
         if (this.options.trackUserLocation) {
             switch (this._watchState) {
             case 'OFF':
                 this._watchState = 'WAITING_ACTIVE';
-                this.fire(new symbol_layout.Event('trackuserlocationstart'));
+                this.fire(new __chunk_1.Event('trackuserlocationstart'));
                 break;
             case 'WAITING_ACTIVE':
             case 'ACTIVE_LOCK':
@@ -40359,7 +40510,7 @@ var GeolocateControl = function (Evented) {
                 this._geolocateButton.classList.remove('mapboxgl-ctrl-geolocate-active-error');
                 this._geolocateButton.classList.remove('mapboxgl-ctrl-geolocate-background');
                 this._geolocateButton.classList.remove('mapboxgl-ctrl-geolocate-background-error');
-                this.fire(new symbol_layout.Event('trackuserlocationend'));
+                this.fire(new __chunk_1.Event('trackuserlocationend'));
                 break;
             case 'BACKGROUND':
                 this._watchState = 'ACTIVE_LOCK';
@@ -40367,8 +40518,9 @@ var GeolocateControl = function (Evented) {
                 if (this._lastKnownPosition) {
                     this._updateCamera(this._lastKnownPosition);
                 }
-                this.fire(new symbol_layout.Event('trackuserlocationstart'));
+                this.fire(new __chunk_1.Event('trackuserlocationstart'));
                 break;
+            default:
             }
             switch (this._watchState) {
             case 'WAITING_ACTIVE':
@@ -40389,22 +40541,25 @@ var GeolocateControl = function (Evented) {
                 this._geolocateButton.classList.add('mapboxgl-ctrl-geolocate-waiting');
                 this._geolocateButton.classList.add('mapboxgl-ctrl-geolocate-background-error');
                 break;
+            case 'OFF':
+                break;
+            default:
             }
             if (this._watchState === 'OFF' && this._geolocationWatchID !== undefined) {
                 this._clearWatch();
             } else if (this._geolocationWatchID === undefined) {
                 this._geolocateButton.classList.add('mapboxgl-ctrl-geolocate-waiting');
                 this._geolocateButton.setAttribute('aria-pressed', 'true');
-                this._geolocationWatchID = symbol_layout.window.navigator.geolocation.watchPosition(this._onSuccess, this._onError, this.options.positionOptions);
+                this._geolocationWatchID = __chunk_1.window.navigator.geolocation.watchPosition(this._onSuccess, this._onError, this.options.positionOptions);
             }
         } else {
-            symbol_layout.window.navigator.geolocation.getCurrentPosition(this._onSuccess, this._onError, this.options.positionOptions);
+            __chunk_1.window.navigator.geolocation.getCurrentPosition(this._onSuccess, this._onError, this.options.positionOptions);
             this._timeoutId = setTimeout(this._finish, 10000);
         }
         return true;
     };
     GeolocateControl.prototype._clearWatch = function _clearWatch() {
-        symbol_layout.window.navigator.geolocation.clearWatch(this._geolocationWatchID);
+        __chunk_1.window.navigator.geolocation.clearWatch(this._geolocationWatchID);
         this._geolocationWatchID = undefined;
         this._geolocateButton.classList.remove('mapboxgl-ctrl-geolocate-waiting');
         this._geolocateButton.setAttribute('aria-pressed', 'false');
@@ -40413,15 +40568,15 @@ var GeolocateControl = function (Evented) {
         }
     };
     return GeolocateControl;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 
 var defaultOptions$3 = {
     maxWidth: 100,
     unit: 'metric'
 };
 var ScaleControl = function ScaleControl(options) {
-    this.options = symbol_layout.extend({}, defaultOptions$3, options);
-    symbol_layout.bindAll([
+    this.options = __chunk_1.extend({}, defaultOptions$3, options);
+    __chunk_1.bindAll([
         '_onMove',
         'setUnit'
     ], this);
@@ -40503,23 +40658,23 @@ function getRoundNum(num) {
 var FullscreenControl = function FullscreenControl(options) {
     this._fullscreen = false;
     if (options && options.container) {
-        if (options.container instanceof symbol_layout.window.HTMLElement) {
+        if (options.container instanceof __chunk_1.window.HTMLElement) {
             this._container = options.container;
         } else {
-            symbol_layout.warnOnce('Full screen control \'container\' must be a DOM element.');
+            __chunk_1.warnOnce('Full screen control \'container\' must be a DOM element.');
         }
     }
-    symbol_layout.bindAll([
+    __chunk_1.bindAll([
         '_onClickFullscreen',
         '_changeIcon'
     ], this);
-    if ('onfullscreenchange' in symbol_layout.window.document) {
+    if ('onfullscreenchange' in __chunk_1.window.document) {
         this._fullscreenchange = 'fullscreenchange';
-    } else if ('onmozfullscreenchange' in symbol_layout.window.document) {
+    } else if ('onmozfullscreenchange' in __chunk_1.window.document) {
         this._fullscreenchange = 'mozfullscreenchange';
-    } else if ('onwebkitfullscreenchange' in symbol_layout.window.document) {
+    } else if ('onwebkitfullscreenchange' in __chunk_1.window.document) {
         this._fullscreenchange = 'webkitfullscreenchange';
-    } else if ('onmsfullscreenchange' in symbol_layout.window.document) {
+    } else if ('onmsfullscreenchange' in __chunk_1.window.document) {
         this._fullscreenchange = 'MSFullscreenChange';
     }
     this._className = 'mapboxgl-ctrl';
@@ -40534,24 +40689,24 @@ FullscreenControl.prototype.onAdd = function onAdd(map) {
         this._setupUI();
     } else {
         this._controlContainer.style.display = 'none';
-        symbol_layout.warnOnce('This device does not support fullscreen mode.');
+        __chunk_1.warnOnce('This device does not support fullscreen mode.');
     }
     return this._controlContainer;
 };
 FullscreenControl.prototype.onRemove = function onRemove() {
     DOM.remove(this._controlContainer);
     this._map = null;
-    symbol_layout.window.document.removeEventListener(this._fullscreenchange, this._changeIcon);
+    __chunk_1.window.document.removeEventListener(this._fullscreenchange, this._changeIcon);
 };
 FullscreenControl.prototype._checkFullscreenSupport = function _checkFullscreenSupport() {
-    return !!(symbol_layout.window.document.fullscreenEnabled || symbol_layout.window.document.mozFullScreenEnabled || symbol_layout.window.document.msFullscreenEnabled || symbol_layout.window.document.webkitFullscreenEnabled);
+    return !!(__chunk_1.window.document.fullscreenEnabled || __chunk_1.window.document.mozFullScreenEnabled || __chunk_1.window.document.msFullscreenEnabled || __chunk_1.window.document.webkitFullscreenEnabled);
 };
 FullscreenControl.prototype._setupUI = function _setupUI() {
     var button = this._fullscreenButton = DOM.create('button', this._className + '-icon ' + this._className + '-fullscreen', this._controlContainer);
     button.type = 'button';
     this._updateTitle();
     this._fullscreenButton.addEventListener('click', this._onClickFullscreen);
-    symbol_layout.window.document.addEventListener(this._fullscreenchange, this._changeIcon);
+    __chunk_1.window.document.addEventListener(this._fullscreenchange, this._changeIcon);
 };
 FullscreenControl.prototype._updateTitle = function _updateTitle() {
     var title = this._isFullscreen() ? 'Exit fullscreen' : 'Enter fullscreen';
@@ -40562,7 +40717,7 @@ FullscreenControl.prototype._isFullscreen = function _isFullscreen() {
     return this._fullscreen;
 };
 FullscreenControl.prototype._changeIcon = function _changeIcon() {
-    var fullscreenElement = symbol_layout.window.document.fullscreenElement || symbol_layout.window.document.mozFullScreenElement || symbol_layout.window.document.webkitFullscreenElement || symbol_layout.window.document.msFullscreenElement;
+    var fullscreenElement = __chunk_1.window.document.fullscreenElement || __chunk_1.window.document.mozFullScreenElement || __chunk_1.window.document.webkitFullscreenElement || __chunk_1.window.document.msFullscreenElement;
     if (fullscreenElement === this._container !== this._fullscreen) {
         this._fullscreen = !this._fullscreen;
         this._fullscreenButton.classList.toggle(this._className + '-shrink');
@@ -40572,14 +40727,14 @@ FullscreenControl.prototype._changeIcon = function _changeIcon() {
 };
 FullscreenControl.prototype._onClickFullscreen = function _onClickFullscreen() {
     if (this._isFullscreen()) {
-        if (symbol_layout.window.document.exitFullscreen) {
-            symbol_layout.window.document.exitFullscreen();
-        } else if (symbol_layout.window.document.mozCancelFullScreen) {
-            symbol_layout.window.document.mozCancelFullScreen();
-        } else if (symbol_layout.window.document.msExitFullscreen) {
-            symbol_layout.window.document.msExitFullscreen();
-        } else if (symbol_layout.window.document.webkitCancelFullScreen) {
-            symbol_layout.window.document.webkitCancelFullScreen();
+        if (__chunk_1.window.document.exitFullscreen) {
+            __chunk_1.window.document.exitFullscreen();
+        } else if (__chunk_1.window.document.mozCancelFullScreen) {
+            __chunk_1.window.document.mozCancelFullScreen();
+        } else if (__chunk_1.window.document.msExitFullscreen) {
+            __chunk_1.window.document.msExitFullscreen();
+        } else if (__chunk_1.window.document.webkitCancelFullScreen) {
+            __chunk_1.window.document.webkitCancelFullScreen();
         }
     } else if (this._container.requestFullscreen) {
         this._container.requestFullscreen();
@@ -40601,8 +40756,8 @@ var defaultOptions$4 = {
 var Popup = function (Evented) {
     function Popup(options) {
         Evented.call(this);
-        this.options = symbol_layout.extend(Object.create(defaultOptions$4), options);
-        symbol_layout.bindAll([
+        this.options = __chunk_1.extend(Object.create(defaultOptions$4), options);
+        __chunk_1.bindAll([
             '_update',
             '_onClickClose',
             'remove'
@@ -40620,7 +40775,7 @@ var Popup = function (Evented) {
         }
         this._map.on('remove', this.remove);
         this._update();
-        this.fire(new symbol_layout.Event('open'));
+        this.fire(new __chunk_1.Event('open'));
         return this;
     };
     Popup.prototype.isOpen = function isOpen() {
@@ -40640,24 +40795,24 @@ var Popup = function (Evented) {
             this._map.off('remove', this.remove);
             delete this._map;
         }
-        this.fire(new symbol_layout.Event('close'));
+        this.fire(new __chunk_1.Event('close'));
         return this;
     };
     Popup.prototype.getLngLat = function getLngLat() {
         return this._lngLat;
     };
     Popup.prototype.setLngLat = function setLngLat(lnglat) {
-        this._lngLat = symbol_layout.LngLat.convert(lnglat);
+        this._lngLat = __chunk_1.LngLat.convert(lnglat);
         this._pos = null;
         this._update();
         return this;
     };
     Popup.prototype.setText = function setText(text) {
-        return this.setDOMContent(symbol_layout.window.document.createTextNode(text));
+        return this.setDOMContent(__chunk_1.window.document.createTextNode(text));
     };
     Popup.prototype.setHTML = function setHTML(html) {
-        var frag = symbol_layout.window.document.createDocumentFragment();
-        var temp = symbol_layout.window.document.createElement('body');
+        var frag = __chunk_1.window.document.createDocumentFragment();
+        var temp = __chunk_1.window.document.createElement('body');
         var child;
         temp.innerHTML = html;
         while (true) {
@@ -40750,25 +40905,25 @@ var Popup = function (Evented) {
         this.remove();
     };
     return Popup;
-}(symbol_layout.Evented);
+}(__chunk_1.Evented);
 function normalizeOffset(offset) {
     if (!offset) {
-        return normalizeOffset(new symbol_layout.pointGeometry(0, 0));
+        return normalizeOffset(new __chunk_1.Point(0, 0));
     } else if (typeof offset === 'number') {
         var cornerOffset = Math.round(Math.sqrt(0.5 * Math.pow(offset, 2)));
         return {
-            'center': new symbol_layout.pointGeometry(0, 0),
-            'top': new symbol_layout.pointGeometry(0, offset),
-            'top-left': new symbol_layout.pointGeometry(cornerOffset, cornerOffset),
-            'top-right': new symbol_layout.pointGeometry(-cornerOffset, cornerOffset),
-            'bottom': new symbol_layout.pointGeometry(0, -offset),
-            'bottom-left': new symbol_layout.pointGeometry(cornerOffset, -cornerOffset),
-            'bottom-right': new symbol_layout.pointGeometry(-cornerOffset, -cornerOffset),
-            'left': new symbol_layout.pointGeometry(offset, 0),
-            'right': new symbol_layout.pointGeometry(-offset, 0)
+            'center': new __chunk_1.Point(0, 0),
+            'top': new __chunk_1.Point(0, offset),
+            'top-left': new __chunk_1.Point(cornerOffset, cornerOffset),
+            'top-right': new __chunk_1.Point(-cornerOffset, cornerOffset),
+            'bottom': new __chunk_1.Point(0, -offset),
+            'bottom-left': new __chunk_1.Point(cornerOffset, -cornerOffset),
+            'bottom-right': new __chunk_1.Point(-cornerOffset, -cornerOffset),
+            'left': new __chunk_1.Point(offset, 0),
+            'right': new __chunk_1.Point(-offset, 0)
         };
-    } else if (offset instanceof symbol_layout.pointGeometry || Array.isArray(offset)) {
-        var convertedOffset = symbol_layout.pointGeometry.convert(offset);
+    } else if (offset instanceof __chunk_1.Point || Array.isArray(offset)) {
+        var convertedOffset = __chunk_1.Point.convert(offset);
         return {
             'center': convertedOffset,
             'top': convertedOffset,
@@ -40782,39 +40937,39 @@ function normalizeOffset(offset) {
         };
     } else {
         return {
-            'center': symbol_layout.pointGeometry.convert(offset['center'] || [
+            'center': __chunk_1.Point.convert(offset['center'] || [
                 0,
                 0
             ]),
-            'top': symbol_layout.pointGeometry.convert(offset['top'] || [
+            'top': __chunk_1.Point.convert(offset['top'] || [
                 0,
                 0
             ]),
-            'top-left': symbol_layout.pointGeometry.convert(offset['top-left'] || [
+            'top-left': __chunk_1.Point.convert(offset['top-left'] || [
                 0,
                 0
             ]),
-            'top-right': symbol_layout.pointGeometry.convert(offset['top-right'] || [
+            'top-right': __chunk_1.Point.convert(offset['top-right'] || [
                 0,
                 0
             ]),
-            'bottom': symbol_layout.pointGeometry.convert(offset['bottom'] || [
+            'bottom': __chunk_1.Point.convert(offset['bottom'] || [
                 0,
                 0
             ]),
-            'bottom-left': symbol_layout.pointGeometry.convert(offset['bottom-left'] || [
+            'bottom-left': __chunk_1.Point.convert(offset['bottom-left'] || [
                 0,
                 0
             ]),
-            'bottom-right': symbol_layout.pointGeometry.convert(offset['bottom-right'] || [
+            'bottom-right': __chunk_1.Point.convert(offset['bottom-right'] || [
                 0,
                 0
             ]),
-            'left': symbol_layout.pointGeometry.convert(offset['left'] || [
+            'left': __chunk_1.Point.convert(offset['left'] || [
                 0,
                 0
             ]),
-            'right': symbol_layout.pointGeometry.convert(offset['right'] || [
+            'right': __chunk_1.Point.convert(offset['right'] || [
                 0,
                 0
             ])
@@ -40823,9 +40978,9 @@ function normalizeOffset(offset) {
 }
 
 var exported = {
-    version: symbol_layout.version,
+    version: __chunk_1.version,
     supported: mapboxGlSupported,
-    setRTLTextPlugin: symbol_layout.setRTLTextPlugin,
+    setRTLTextPlugin: __chunk_1.setRTLTextPlugin,
     Map: Map,
     NavigationControl: NavigationControl,
     GeolocateControl: GeolocateControl,
@@ -40835,23 +40990,23 @@ var exported = {
     Popup: Popup,
     Marker: Marker,
     Style: Style,
-    LngLat: symbol_layout.LngLat,
-    LngLatBounds: symbol_layout.LngLatBounds,
-    Point: symbol_layout.pointGeometry,
-    MercatorCoordinate: symbol_layout.MercatorCoordinate,
-    Evented: symbol_layout.Evented,
-    config: symbol_layout.config,
+    LngLat: __chunk_1.LngLat,
+    LngLatBounds: __chunk_1.LngLatBounds,
+    Point: __chunk_1.Point,
+    MercatorCoordinate: __chunk_1.MercatorCoordinate,
+    Evented: __chunk_1.Evented,
+    config: __chunk_1.config,
     get accessToken() {
-        return symbol_layout.config.ACCESS_TOKEN;
+        return __chunk_1.config.ACCESS_TOKEN;
     },
     set accessToken(token) {
-        symbol_layout.config.ACCESS_TOKEN = token;
+        __chunk_1.config.ACCESS_TOKEN = token;
     },
     get baseApiUrl() {
-        return symbol_layout.config.API_URL;
+        return __chunk_1.config.API_URL;
     },
     set baseApiUrl(url) {
-        symbol_layout.config.API_URL = url;
+        __chunk_1.config.API_URL = url;
     },
     get workerCount() {
         return WorkerPool.workerCount;
@@ -40860,10 +41015,10 @@ var exported = {
         WorkerPool.workerCount = count;
     },
     get maxParallelImageRequests() {
-        return symbol_layout.config.MAX_PARALLEL_IMAGE_REQUESTS;
+        return __chunk_1.config.MAX_PARALLEL_IMAGE_REQUESTS;
     },
     set maxParallelImageRequests(numRequests) {
-        symbol_layout.config.MAX_PARALLEL_IMAGE_REQUESTS = numRequests;
+        __chunk_1.config.MAX_PARALLEL_IMAGE_REQUESTS = numRequests;
     },
     workerUrl: ''
 };
@@ -40874,9 +41029,7 @@ return exported;
 
 //
 
-var mapboxgl$1 = mapboxgl;
+return mapboxgl;
 
-return mapboxgl$1;
-
-})));
+}));
 //# sourceMappingURL=mapbox-gl-unminified.js.map
